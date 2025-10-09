@@ -1,7 +1,7 @@
-# MEAB: Macrodata Entity Alignment Benchmark
+# BEAM: A First Benchmark for Knowledge Graph Entity Alignment with Microdata
 
 This repository contains the **code, data, and preprocessing pipeline** for the benchmark introduced in the paper:
-**MEAB: An Open Source Real-world Macrodata Entity Alignment Benchmark** (📄 link to be added).
+**BEAM : Un premier benchmark pour l’alignement des microdonnées du web avec les graphes de connaissances** (📄 link to be added).
 
 The benchmark aligns **Web Data Commons (WDC) macrodata** with **Wikidata** using **key-based matching** (e.g., IATA codes for airports, ISBN for books). Unlike synthetic benchmarks (e.g., DBP15K, OpenEA datasets), MEAB preserves the **noise, heterogeneity, and incompleteness** of real-world data, offering a more realistic evaluation for entity alignment (EA).
 
