@@ -1,0 +1,573 @@
+http://www.wikidata.org/entity/Q99232934	http://schema.org/version	1618502137
+http://www.wikidata.org/entity/Q99232934	http://schema.org/dateModified	2022-04-13T23:22:25Z
+http://www.wikidata.org/entity/Q99232934	http://schema.org/description	livre sur le thé au maroc
+http://www.wikidata.org/entity/Q99232934	http://www.w3.org/2000/01/rdf-schema#label	L'Art du thé au Maroc
+http://www.wikidata.org/entity/Q99232934	http://wikiba.se/ontology#statements	11
+http://www.wikidata.org/entity/Q99232934	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q99232934	http://wikiba.se/ontology#identifiers	5
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P212	978-2-86770-163-4
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-2-86770-163-4
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P304	312
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P577	2003-10-15T00:00:00Z
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P648	OL20714023M
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P957	2-86770-163-5
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P1476	L'Art du thé au Maroc
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P2093	Noufissa Kessar-Raji
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P2969	4925150
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct/P8383	4990751
+http://www.wikidata.org/entity/Q99232934	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:2-86770-163-5
+http://www.wikidata.org/entity/Q113073322	http://schema.org/version	1686410387
+http://www.wikidata.org/entity/Q113073322	http://schema.org/dateModified	2022-07-24T01:01:16Z
+http://www.wikidata.org/entity/Q113073322	http://schema.org/description	Memoir of the 70th US Secretary of the Treasury
+http://www.wikidata.org/entity/Q113073322	http://www.w3.org/2000/01/rdf-schema#label	In an Uncertain World: Tough Choices from Wall Street to Washington
+http://www.wikidata.org/entity/Q113073322	http://www.w3.org/2004/02/skos/core#altLabel	In an Uncertain World
+http://www.wikidata.org/entity/Q113073322	http://wikiba.se/ontology#statements	19
+http://www.wikidata.org/entity/Q113073322	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q113073322	http://wikiba.se/ontology#identifiers	5
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P212	978-0-375-50585-0
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P212	978-0-375-75730-3
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-375-50585-0
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-375-75730-3
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P577	2003-11-18T00:00:00Z
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P957	0-375-50585-7
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P957	0-375-75730-9
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P1476	In an Uncertain World: Tough Choices from Wall Street to Washington
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct/P5749	0375757309
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-375-50585-7
+http://www.wikidata.org/entity/Q113073322	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-375-75730-9
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:1-61689-706-6
+http://www.wikidata.org/entity/Q110205542	http://schema.org/version	1618947958
+http://www.wikidata.org/entity/Q110205542	http://schema.org/dateModified	2022-04-14T18:28:34Z
+http://www.wikidata.org/entity/Q110205542	http://schema.org/description	llibre
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2000/01/rdf-schema#label	W. E. B. Du Bois's Data Portraits: Visualizing Black America
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2000/01/rdf-schema#label	Visualizing black america
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2004/02/skos/core#altLabel	Visualizing Black America
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2004/02/skos/core#altLabel	W.E.B. Du Bois's Data Portraits: Visualizing Black America
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2004/02/skos/core#altLabel	WEB Du Bois's Data Portraits: Visualizing Black America
+http://www.wikidata.org/entity/Q110205542	http://www.w3.org/2004/02/skos/core#altLabel	WEB. Du Bois's Data Portraits: Visualizing Black America
+http://www.wikidata.org/entity/Q110205542	http://wikiba.se/ontology#statements	10
+http://www.wikidata.org/entity/Q110205542	http://wikiba.se/ontology#sitelinks	2
+http://www.wikidata.org/entity/Q110205542	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct/P577	2018-10-23T00:00:00Z
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct/P648	OL28238181M
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct/P957	1-61689-706-6
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct/P1104	144
+http://www.wikidata.org/entity/Q110205542	http://www.wikidata.org/prop/direct/P1476	W. E. B. Du Bois's Data Portraits: Visualizing Black America
+http://www.wikidata.org/entity/Q111906390	http://schema.org/version	1656220558
+http://www.wikidata.org/entity/Q111906390	http://schema.org/dateModified	2022-06-07T13:06:10Z
+http://www.wikidata.org/entity/Q111906390	http://schema.org/description	Book
+http://www.wikidata.org/entity/Q111906390	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q111906390	http://www.w3.org/2000/01/rdf-schema#label	Transforming Culture: Creating and Sustaining a Better Manufacturing Organization
+http://www.wikidata.org/entity/Q111906390	http://wikiba.se/ontology#statements	16
+http://www.wikidata.org/entity/Q111906390	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q111906390	http://wikiba.se/ontology#identifiers	5
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P212	978-0-230-10617-8
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-230-10617-8
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P577	2016-06-11T00:00:00Z
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P675	HkfeCwAAQBAJ
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P957	0-230-10617-X
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P1104	235
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P1476	Transforming Culture: Creating and Sustaining a Better Manufacturing Organization
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P2093	Tracy L. Meerwarth
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P2671	/g/12bm3g9qw
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct/P5749	B06XWG49ZW
+http://www.wikidata.org/entity/Q111906390	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-230-10617-X
+http://www.wikidata.org/entity/Q114735400	http://schema.org/version	2306692027
+http://www.wikidata.org/entity/Q114735400	http://schema.org/dateModified	2025-02-04T08:29:49Z
+http://www.wikidata.org/entity/Q114735400	http://schema.org/description	كتاب من تأليف غاري شابمان
+http://www.wikidata.org/entity/Q114735400	http://schema.org/description	book by Gary Chapman
+http://www.wikidata.org/entity/Q114735400	http://www.w3.org/2000/01/rdf-schema#label	The 5 Love Languages
+http://www.wikidata.org/entity/Q114735400	http://wikiba.se/ontology#statements	11
+http://www.wikidata.org/entity/Q114735400	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q114735400	http://wikiba.se/ontology#identifiers	3
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P212	978-0-8024-1270-6
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-8024-1270-6
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P304	208
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P577	2015-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P957	0-8024-1270-X
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P1476	Gary Chapman
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P2284	7.57
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct/P6179	5.5 x 0.39 x 8.5 inches
+http://www.wikidata.org/entity/Q114735400	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-8024-1270-X
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P1476	Gerard P. Kuiper and the Rise of Modern Planetary Science
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P2969	42199030
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P2969	53140748
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P5749	0816539006
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P8359	523.4092
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P8360	QB36.K9 S43 2019
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-8165-3900-6
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-8165-3973-1
+http://www.wikidata.org/entity/Q115380592	http://schema.org/version	1777772602
+http://www.wikidata.org/entity/Q115380592	http://schema.org/dateModified	2022-11-23T17:04:06Z
+http://www.wikidata.org/entity/Q115380592	http://schema.org/description	book published in 2019
+http://www.wikidata.org/entity/Q115380592	http://www.w3.org/2000/01/rdf-schema#label	Gerard P. Kuiper and the Rise of Modern Planetary Science
+http://www.wikidata.org/entity/Q115380592	http://wikiba.se/ontology#statements	24
+http://www.wikidata.org/entity/Q115380592	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q115380592	http://wikiba.se/ontology#identifiers	12
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P212	978-0-8165-3900-0
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P212	978-0-8165-3973-4
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P243	1088354155
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-8165-3900-0
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-8165-3973-4
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P304	368
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P577	2019-03-26T00:00:00Z
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P675	dfGIDwAAQBAJ
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P888	10.2307/j.ctvckq9jx
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P957	0-8165-3900-6
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P957	0-8165-3973-1
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P1085	25403424
+http://www.wikidata.org/entity/Q115380592	http://www.wikidata.org/prop/direct/P1144	2018038445
+http://www.wikidata.org/entity/Q114137350	http://schema.org/version	1736726259
+http://www.wikidata.org/entity/Q114137350	http://schema.org/dateModified	2022-09-26T08:22:41Z
+http://www.wikidata.org/entity/Q114137350	http://www.w3.org/2000/01/rdf-schema#label	ইকোস: দ্য কমপ্লিট হিস্ট্রি অব পিংক ফ্লয়েড
+http://www.wikidata.org/entity/Q114137350	http://www.w3.org/2000/01/rdf-schema#label	Echoes: The Complete History of Pink Floyd
+http://www.wikidata.org/entity/Q114137350	http://wikiba.se/ontology#statements	11
+http://www.wikidata.org/entity/Q114137350	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q114137350	http://wikiba.se/ontology#identifiers	5
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P212	978-0-9554624-0-5
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P243	493367109
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-9554624-0-5
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P304	368
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P577	2007-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P675	qnnl3FnO-B4C
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P957	0-9554624-0-1
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P1476	Echoes: The Complete History of Pink Floyd
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct/P2969	870709
+http://www.wikidata.org/entity/Q114137350	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:0-9554624-0-1
+http://www.wikidata.org/entity/Q119988618	http://schema.org/version	2284395334
+http://www.wikidata.org/entity/Q119988618	http://schema.org/dateModified	2024-12-07T10:55:20Z
+http://www.wikidata.org/entity/Q119988618	http://schema.org/description	Story of a woman who underwent more trials than one human woman can cry in her heart.
+http://www.wikidata.org/entity/Q119988618	http://www.w3.org/2000/01/rdf-schema#label	Court of Mist and Fury
+http://www.wikidata.org/entity/Q119988618	http://wikiba.se/ontology#statements	12
+http://www.wikidata.org/entity/Q119988618	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q119988618	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P212	978-1-5266-1716-3
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-5266-1716-3
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P304	656
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P433	2020
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P478	2
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P577	2020-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P957	1-5266-1716-1
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct/P1476	Court of Mist and Fury
+http://www.wikidata.org/entity/Q119988618	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:1-5266-1716-1
+http://www.wikidata.org/entity/Q121141423	http://schema.org/version	2224045393
+http://www.wikidata.org/entity/Q121141423	http://schema.org/dateModified	2024-08-09T21:38:25Z
+http://www.wikidata.org/entity/Q121141423	http://schema.org/description	book
+http://www.wikidata.org/entity/Q121141423	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q121141423	http://schema.org/description	գիրք
+http://www.wikidata.org/entity/Q121141423	http://www.w3.org/2000/01/rdf-schema#label	Python and HDF5
+http://www.wikidata.org/entity/Q121141423	http://wikiba.se/ontology#statements	14
+http://www.wikidata.org/entity/Q121141423	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q121141423	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P212	978-1-4493-6783-1
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-4493-6783-1
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P577	2013-11-01T00:00:00Z
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P957	1-4493-6783-6
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P1104	148
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P1476	Python and HDF5
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct/P2093	Andrew Collette
+http://www.wikidata.org/entity/Q121141423	http://www.wikidata.org/prop/direct-normalized/P957	urn:ISBN:1-4493-6783-6
+http://www.wikidata.org/entity/Q102306435	http://schema.org/version	2000974383
+http://www.wikidata.org/entity/Q102306435	http://schema.org/dateModified	2023-10-30T19:45:47Z
+http://www.wikidata.org/entity/Q102306435	http://schema.org/description	বই
+http://www.wikidata.org/entity/Q102306435	http://schema.org/description	book
+http://www.wikidata.org/entity/Q102306435	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q102306435	http://www.w3.org/2000/01/rdf-schema#label	Inference and Disputed Authorship: The Federalist
+http://www.wikidata.org/entity/Q102306435	http://www.w3.org/2004/02/skos/core#altLabel	Inference and Disputed Authorship
+http://www.wikidata.org/entity/Q102306435	http://wikiba.se/ontology#statements	12
+http://www.wikidata.org/entity/Q102306435	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q102306435	http://wikiba.se/ontology#identifiers	3
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P212	978-1-57586-552-2
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-57586-552-2
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P577	1964-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P577	2007-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P648	OL17891964M
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P724	inferencedispute00most
+http://www.wikidata.org/entity/Q102306435	http://www.wikidata.org/prop/direct/P1476	Inference and Disputed Authorship The Federalist
+http://www.wikidata.org/entity/Q103812562	http://schema.org/version	1576298585
+http://www.wikidata.org/entity/Q103812562	http://schema.org/dateModified	2022-02-12T11:08:25Z
+http://www.wikidata.org/entity/Q103812562	http://schema.org/description	Livre de Dimitri Rouchon-Borie
+http://www.wikidata.org/entity/Q103812562	http://www.w3.org/2000/01/rdf-schema#label	Au tribunal
+http://www.wikidata.org/entity/Q103812562	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q103812562	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q103812562	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q103812562	http://www.wikidata.org/prop/direct/P212	978-2-35887-264-5
+http://www.wikidata.org/entity/Q103812562	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-2-35887-264-5
+http://www.wikidata.org/entity/Q103812562	http://www.wikidata.org/prop/direct/P577	2018-11-01T00:00:00Z
+http://www.wikidata.org/entity/Q103812562	http://www.wikidata.org/prop/direct/P1476	Au tribunal
+http://www.wikidata.org/entity/Q103998937	http://wikiba.se/ontology#statements	8
+http://www.wikidata.org/entity/Q103998937	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q103998937	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q103998937	http://www.wikidata.org/prop/direct/P212	978-88-9357-028-2
+http://www.wikidata.org/entity/Q103998937	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-88-9357-028-2
+http://www.wikidata.org/entity/Q103998937	http://www.wikidata.org/prop/direct/P577	2018-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q103998937	http://www.wikidata.org/prop/direct/P1104	371
+http://www.wikidata.org/entity/Q103998937	http://www.wikidata.org/prop/direct/P1476	La lettura: storie, teorie, luoghi
+http://www.wikidata.org/entity/Q101094730	http://schema.org/version	1779750212
+http://www.wikidata.org/entity/Q101094730	http://schema.org/dateModified	2022-11-27T15:07:21Z
+http://www.wikidata.org/entity/Q101094730	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q101094730	http://schema.org/description	كتاب من تأليف فيليكس لوكلير
+http://www.wikidata.org/entity/Q101094730	http://schema.org/description	book by Félix Leclerc, published in 2013
+http://www.wikidata.org/entity/Q101094730	http://schema.org/description	livre de Félix Leclerc, publié aux éditions La Montagne secrète en 2013
+http://www.wikidata.org/entity/Q101094730	http://www.w3.org/2000/01/rdf-schema#label	Le petit ours gris de la Mauricie
+http://www.wikidata.org/entity/Q101094730	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q101094730	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q101094730	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q101094730	http://www.wikidata.org/prop/direct/P212	978-2-924217-17-7
+http://www.wikidata.org/entity/Q101094730	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-2-924217-17-7
+http://www.wikidata.org/entity/Q101094730	http://www.wikidata.org/prop/direct/P577	2013-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q103998937	http://schema.org/version	2394249218
+http://www.wikidata.org/entity/Q103998937	http://schema.org/dateModified	2025-08-19T18:34:32Z
+http://www.wikidata.org/entity/Q103998937	http://schema.org/description	edizione dell'Editrice Bibliografica, 2018
+http://www.wikidata.org/entity/Q103998937	http://schema.org/description	uitgave van Maurizio Vivarelli
+http://www.wikidata.org/entity/Q103998937	http://www.w3.org/2000/01/rdf-schema#label	La lettura : storie, teorie, luoghi
+http://www.wikidata.org/entity/Q103998937	http://www.w3.org/2004/02/skos/core#altLabel	La lettura
+http://www.wikidata.org/entity/Q106412313	http://schema.org/version	1618350944
+http://www.wikidata.org/entity/Q106412313	http://schema.org/dateModified	2022-04-13T18:11:34Z
+http://www.wikidata.org/entity/Q106412313	http://schema.org/description	boek van William J Mitsch
+http://www.wikidata.org/entity/Q106412313	http://www.w3.org/2000/01/rdf-schema#label	Wetlands: Second Edition
+http://www.wikidata.org/entity/Q106412313	http://www.w3.org/2004/02/skos/core#altLabel	WETLANDS. SECOND EDITION.
+http://www.wikidata.org/entity/Q106412313	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q106412313	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q106412313	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q106412313	http://www.wikidata.org/prop/direct/P212	978-0-442-00805-5
+http://www.wikidata.org/entity/Q106412313	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-442-00805-5
+http://www.wikidata.org/entity/Q106412313	http://www.wikidata.org/prop/direct/P648	OL1731596M
+http://www.wikidata.org/entity/Q106412313	http://www.wikidata.org/prop/direct/P1476	Wetlands: Second Edition
+http://www.wikidata.org/entity/Q106412313	http://www.wikidata.org/prop/direct/P2093	J. G. Gosselink
+http://www.wikidata.org/entity/Q106812862	http://schema.org/version	2394250420
+http://www.wikidata.org/entity/Q106812862	http://schema.org/dateModified	2025-08-19T18:37:15Z
+http://www.wikidata.org/entity/Q106812862	http://schema.org/description	raccolta di poesie
+http://www.wikidata.org/entity/Q106812862	http://schema.org/description	boek
+http://www.wikidata.org/entity/Q106812862	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q106812862	http://www.w3.org/2000/01/rdf-schema#label	Variazione madre
+http://www.wikidata.org/entity/Q106812862	http://wikiba.se/ontology#statements	11
+http://www.wikidata.org/entity/Q106812862	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q106812862	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P212	978-88-85791-85-5
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-88-85791-85-5
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P478	lepisma floema
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P577	2019-07-05T00:00:00Z
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P1476	Variazione madre
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P2093	Federico Preziosi
+http://www.wikidata.org/entity/Q106812862	http://www.wikidata.org/prop/direct/P2284	9.9
+http://www.wikidata.org/entity/Q113332436	http://schema.org/version	1715031641
+http://www.wikidata.org/entity/Q113332436	http://schema.org/dateModified	2022-08-28T07:26:18Z
+http://www.wikidata.org/entity/Q113332436	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q113332436	http://schema.org/description	Biography of Elizabeth von Arnim
+http://www.wikidata.org/entity/Q113332436	http://www.w3.org/2000/01/rdf-schema#label	Only Happiness Here
+http://www.wikidata.org/entity/Q113332436	http://wikiba.se/ontology#statements	8
+http://www.wikidata.org/entity/Q113332436	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q113332436	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q113332436	http://www.wikidata.org/prop/direct/P212	978-0-7022-6297-5
+http://www.wikidata.org/entity/Q113332436	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-7022-6297-5
+http://www.wikidata.org/entity/Q113332436	http://www.wikidata.org/prop/direct/P577	2020-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q113332436	http://www.wikidata.org/prop/direct/P1476	Only Happiness Here
+http://www.wikidata.org/entity/Q113332436	http://www.wikidata.org/prop/direct/P1680	In Search of Elizabeth von Arnim
+http://www.wikidata.org/entity/Q109616152	http://schema.org/version	1713260305
+http://www.wikidata.org/entity/Q109616152	http://schema.org/dateModified	2022-08-25T23:58:02Z
+http://www.wikidata.org/entity/Q109616152	http://schema.org/description	exhibition catalogue for the Pomona College Museum of Art
+http://www.wikidata.org/entity/Q109616152	http://www.w3.org/2000/01/rdf-schema#label	It Happened at Pomona: Art at the Edge of Los Angeles 1969–1973
+http://www.wikidata.org/entity/Q109616152	http://www.w3.org/2004/02/skos/core#altLabel	It Happened at Pomona
+http://www.wikidata.org/entity/Q109616152	http://www.w3.org/2004/02/skos/core#altLabel	It Happened at Pomona: Art at the Edge of Los Angeles 1969-1973
+http://www.wikidata.org/entity/Q109616152	http://wikiba.se/ontology#statements	18
+http://www.wikidata.org/entity/Q109616152	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q109616152	http://wikiba.se/ontology#identifiers	3
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P212	978-0-9818955-8-1
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-9818955-8-1
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P577	2011-08-31T00:00:00Z
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P648	OL26039257M
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P1104	386
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P1476	It Happened at Pomona
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P1680	Art at the Edge of Los Angeles 1969-1973
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P5331	727705855
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P7103	1969-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q109616152	http://www.wikidata.org/prop/direct/P7104	1973-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q107493734	http://schema.org/version	2394249998
+http://www.wikidata.org/entity/Q107493734	http://schema.org/dateModified	2025-08-19T18:36:25Z
+http://www.wikidata.org/entity/Q107493734	http://schema.org/description	boek
+http://www.wikidata.org/entity/Q107493734	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q107493734	http://schema.org/description	Historian Jacqueline Tobin and scholar Raymond Dobard offer the first proof that certain quilt patterns, including a prominent one called the Charleston Code, were, in fact, essential tools for escape along the Underground Railroad.
+http://www.wikidata.org/entity/Q107493734	http://www.w3.org/2000/01/rdf-schema#label	Hidden in Plain View: The Secret Story of Quilts and the Underground Railroad
+http://www.wikidata.org/entity/Q107493734	http://wikiba.se/ontology#statements	3
+http://www.wikidata.org/entity/Q107493734	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q107493734	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q107493734	http://www.wikidata.org/prop/direct/P212	978-0-385-49767-1
+http://www.wikidata.org/entity/Q107493734	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-385-49767-1
+http://www.wikidata.org/entity/Q107493734	http://www.wikidata.org/prop/direct/P648	OL16980572M
+http://www.wikidata.org/entity/Q108042788	http://schema.org/version	1618351392
+http://www.wikidata.org/entity/Q108042788	http://schema.org/dateModified	2022-04-13T18:12:35Z
+http://www.wikidata.org/entity/Q108042788	http://schema.org/description	Lutheran Commentary on 1 Kings 1-11
+http://www.wikidata.org/entity/Q108042788	http://schema.org/description	boek van Walter A. Maier III
+http://www.wikidata.org/entity/Q108042788	http://www.w3.org/2000/01/rdf-schema#label	1 Kings 1-11
+http://www.wikidata.org/entity/Q108042788	http://wikiba.se/ontology#statements	12
+http://www.wikidata.org/entity/Q108042788	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q108042788	http://wikiba.se/ontology#identifiers	4
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P212	978-0-570-06362-9
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P243	999671892
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-570-06362-9
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P577	2018-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P648	OL26469000M
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P1144	2017034617
+http://www.wikidata.org/entity/Q108042788	http://www.wikidata.org/prop/direct/P1476	1 Kings 1-11
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P212	978-88-470-3986-5
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P212	978-88-470-3987-2
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-88-470-3986-5
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-88-470-3987-2
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P356	10.1007/978-88-470-3987-2
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P577	2019-08-07T00:00:00Z
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P675	Jy2oDwAAQBAJ
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P894	1422.00013
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P1104	211
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P1154	2-s2.0-85090524295
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P1184	11311/1117083
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P1476	Matematica e Design
+http://www.wikidata.org/entity/Q111668052	http://www.wikidata.org/prop/direct/P5875	335020626
+http://www.wikidata.org/entity/Q111668052	http://schema.org/version	2070440183
+http://www.wikidata.org/entity/Q111668052	http://schema.org/dateModified	2024-02-06T17:11:36Z
+http://www.wikidata.org/entity/Q111668052	http://schema.org/description	book
+http://www.wikidata.org/entity/Q111668052	http://schema.org/description	libro
+http://www.wikidata.org/entity/Q111668052	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q111668052	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q111668052	http://www.w3.org/2000/01/rdf-schema#label	Mathematics and Design
+http://www.wikidata.org/entity/Q111668052	http://www.w3.org/2000/01/rdf-schema#label	Matematica e Design
+http://www.wikidata.org/entity/Q111668052	http://wikiba.se/ontology#statements	20
+http://www.wikidata.org/entity/Q111668052	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q111668052	http://wikiba.se/ontology#identifiers	8
+http://www.wikidata.org/entity/Q110413317	http://schema.org/version	2332924266
+http://www.wikidata.org/entity/Q110413317	http://schema.org/dateModified	2025-03-31T16:35:59Z
+http://www.wikidata.org/entity/Q110413317	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q110413317	http://schema.org/description	2019 young adult novel by Saundra Mitchell
+http://www.wikidata.org/entity/Q110413317	http://www.w3.org/2000/01/rdf-schema#label	All the Things We Do in the Dark
+http://www.wikidata.org/entity/Q110413317	http://wikiba.se/ontology#statements	9
+http://www.wikidata.org/entity/Q110413317	http://wikiba.se/ontology#sitelinks	1
+http://www.wikidata.org/entity/Q110413317	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q110413317	http://www.wikidata.org/prop/direct/P212	978-0-06-285259-5
+http://www.wikidata.org/entity/Q110413317	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-06-285259-5
+http://www.wikidata.org/entity/Q110413317	http://www.wikidata.org/prop/direct/P577	2019-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q110413317	http://www.wikidata.org/prop/direct/P1476	All the Things We Do in the Dark
+http://www.wikidata.org/entity/Q110590025	http://schema.org/version	1618966201
+http://www.wikidata.org/entity/Q110590025	http://schema.org/dateModified	2022-04-14T19:18:43Z
+http://www.wikidata.org/entity/Q110590025	http://schema.org/description	2021 history book by Britni de la Cretaz and Lyndsey D'Arcangelo
+http://www.wikidata.org/entity/Q110590025	http://www.w3.org/2000/01/rdf-schema#label	Hail Mary: The Rise and Fall of the National Women's Football League
+http://www.wikidata.org/entity/Q110590025	http://wikiba.se/ontology#statements	18
+http://www.wikidata.org/entity/Q110590025	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q111015531	http://schema.org/version	2000999123
+http://www.wikidata.org/entity/Q111015531	http://schema.org/dateModified	2023-10-30T20:17:44Z
+http://www.wikidata.org/entity/Q111015531	http://schema.org/description	book
+http://www.wikidata.org/entity/Q111015531	http://schema.org/description	libro
+http://www.wikidata.org/entity/Q111015531	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q111015531	http://schema.org/description	Llibre publicat per la Institució Alfons el Magnànim
+http://www.wikidata.org/entity/Q111015531	http://www.w3.org/2000/01/rdf-schema#label	José Vidal-Beneyto
+http://www.wikidata.org/entity/Q111015531	http://wikiba.se/ontology#statements	9
+http://www.wikidata.org/entity/Q111015531	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q111015531	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q111015531	http://www.wikidata.org/prop/direct/P212	978-84-7822-812-6
+http://www.wikidata.org/entity/Q111015531	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-7822-812-6
+http://www.wikidata.org/entity/Q111015531	http://www.wikidata.org/prop/direct/P577	2019-09-30T00:00:00Z
+http://www.wikidata.org/entity/Q111015531	http://www.wikidata.org/prop/direct/P648	OL28335803M
+http://www.wikidata.org/entity/Q111015531	http://www.wikidata.org/prop/direct/P1476	José Vidal-Beneyto
+http://www.wikidata.org/entity/Q110590025	http://wikiba.se/ontology#identifiers	4
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P212	978-1-64503-662-3
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P212	978-1-64503-661-6
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-64503-662-3
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-64503-661-6
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P577	2021-11-01T00:00:00Z
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P648	OL34140361M
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P1144	2021010467
+http://www.wikidata.org/entity/Q110590025	http://www.wikidata.org/prop/direct/P1476	Hail Mary: The Rise and Fall of the National Women's Football League
+http://www.wikidata.org/entity/Q111015549	http://schema.org/version	2000999367
+http://www.wikidata.org/entity/Q111015549	http://schema.org/dateModified	2023-10-30T20:18:06Z
+http://www.wikidata.org/entity/Q111015549	http://schema.org/description	book
+http://www.wikidata.org/entity/Q111015549	http://schema.org/description	libro
+http://www.wikidata.org/entity/Q111015549	http://schema.org/description	книга
+http://www.wikidata.org/entity/Q111015549	http://schema.org/description	Llibre publicat per la Institució Alfons el Magnànim
+http://www.wikidata.org/entity/Q111015549	http://www.w3.org/2000/01/rdf-schema#label	Defensa d'una forma. Poesia completa 1976-2018
+http://www.wikidata.org/entity/Q111015549	http://wikiba.se/ontology#statements	8
+http://www.wikidata.org/entity/Q111015549	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q111015549	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q111015549	http://www.wikidata.org/prop/direct/P212	978-84-7822-776-1
+http://www.wikidata.org/entity/Q111015549	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-7822-776-1
+http://www.wikidata.org/entity/Q111015549	http://www.wikidata.org/prop/direct/P577	2019-09-30T00:00:00Z
+http://www.wikidata.org/entity/Q111015549	http://www.wikidata.org/prop/direct/P648	OL32029871M
+http://www.wikidata.org/entity/Q111853794	http://schema.org/version	2258581644
+http://www.wikidata.org/entity/Q111853794	http://schema.org/dateModified	2024-10-10T02:50:05Z
+http://www.wikidata.org/entity/Q111853794	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q111853794	http://schema.org/description	Joxean Agirreren eleberriak
+http://www.wikidata.org/entity/Q111853794	http://www.w3.org/2000/01/rdf-schema#label	Solteroen dantzalekuak
+http://www.wikidata.org/entity/Q111853794	http://wikiba.se/ontology#statements	7
+http://www.wikidata.org/entity/Q111853794	http://wikiba.se/ontology#sitelinks	1
+http://www.wikidata.org/entity/Q111853794	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q111853794	http://www.wikidata.org/prop/direct/P212	978-84-1360-199-1
+http://www.wikidata.org/entity/Q111853794	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-1360-199-1
+http://www.wikidata.org/entity/Q111853794	http://www.wikidata.org/prop/direct/P577	2022-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q111853794	http://www.wikidata.org/prop/direct/P1104	177
+http://www.wikidata.org/entity/Q110936211	http://schema.org/version	1618513614
+http://www.wikidata.org/entity/Q110936211	http://schema.org/dateModified	2022-04-13T23:43:16Z
+http://www.wikidata.org/entity/Q110936211	http://schema.org/description	llibre divulgatiu sobre dones inventores
+http://www.wikidata.org/entity/Q110936211	http://schema.org/description	libro divulgativo sobre mujeres inventoras
+http://www.wikidata.org/entity/Q110936211	http://www.w3.org/2000/01/rdf-schema#label	Supermujeres Superinventoras
+http://www.wikidata.org/entity/Q110936211	http://wikiba.se/ontology#statements	11
+http://www.wikidata.org/entity/Q110936211	http://wikiba.se/ontology#sitelinks	1
+http://www.wikidata.org/entity/Q110936211	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q110936211	http://www.wikidata.org/prop/direct/P212	978-84-16890-59-0
+http://www.wikidata.org/entity/Q110936211	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-16890-59-0
+http://www.wikidata.org/entity/Q110936211	http://www.wikidata.org/prop/direct/P577	2018-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q110936211	http://www.wikidata.org/prop/direct/P648	OL28361821M
+http://www.wikidata.org/entity/Q110936211	http://www.wikidata.org/prop/direct/P1104	216
+http://www.wikidata.org/entity/Q112233813	http://schema.org/version	2394254598
+http://www.wikidata.org/entity/Q112233813	http://schema.org/dateModified	2025-08-19T18:45:17Z
+http://www.wikidata.org/entity/Q112233813	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q112233813	http://schema.org/description	2022 book by Dominique Guillo [in French]
+http://www.wikidata.org/entity/Q112233813	http://schema.org/description	ouvrage de Dominique Guillo présentant sa méthode, simple et économique, pour construire soi-même une maison en bois et autonome
+http://www.wikidata.org/entity/Q112233813	http://www.w3.org/2000/01/rdf-schema#label	Autoconstruire sa maison en bois autonome
+http://www.wikidata.org/entity/Q112233813	http://wikiba.se/ontology#statements	9
+http://www.wikidata.org/entity/Q112233813	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q112233813	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q112233813	http://www.wikidata.org/prop/direct/P212	978-2-37922-204-7
+http://www.wikidata.org/entity/Q112233813	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-2-37922-204-7
+http://www.wikidata.org/entity/Q112233813	http://www.wikidata.org/prop/direct/P577	2022-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q112233813	http://www.wikidata.org/prop/direct/P1104	96
+http://www.wikidata.org/entity/Q112233813	http://www.wikidata.org/prop/direct/P1476	Autoconstruire sa maison en bois autonome
+http://www.wikidata.org/entity/Q113450928	http://schema.org/version	1720597128
+http://www.wikidata.org/entity/Q113450928	http://schema.org/dateModified	2022-09-04T07:06:20Z
+http://www.wikidata.org/entity/Q113450928	http://schema.org/description	كتاب
+http://www.wikidata.org/entity/Q113450928	http://schema.org/description	Essay by Juan Eslava Galán that doesn't pretend to be a systematic encyclopedia.
+http://www.wikidata.org/entity/Q113450928	http://schema.org/description	Ensayo de Juan Eslava Galán que no pretende ser una enciclopedia sistemática.
+http://www.wikidata.org/entity/Q113450928	http://www.w3.org/2000/01/rdf-schema#label	Enciclopedia Nazi contada para escépticos
+http://www.wikidata.org/entity/Q113450928	http://wikiba.se/ontology#statements	7
+http://www.wikidata.org/entity/Q113450928	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q113450928	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q113450928	http://www.wikidata.org/prop/direct/P212	978-84-08-24702-9
+http://www.wikidata.org/entity/Q113450928	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-08-24702-9
+http://www.wikidata.org/entity/Q113450928	http://www.wikidata.org/prop/direct/P577	2021-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q113450928	http://www.wikidata.org/prop/direct/P1476	Enciclopedia Nazi contada para escépticos
+http://www.wikidata.org/entity/Q114737514	http://schema.org/version	2394257641
+http://www.wikidata.org/entity/Q114737514	http://schema.org/dateModified	2025-08-19T18:51:06Z
+http://www.wikidata.org/entity/Q114737514	http://schema.org/description	كتاب من تأليف ريتشارد فـان كامب وآخرون
+http://www.wikidata.org/entity/Q114737514	http://schema.org/description	2019 Arctic horror anthology book
+http://www.wikidata.org/entity/Q114737514	http://schema.org/description	Libro de Antología de Terror del Ártico del año 2019
+http://www.wikidata.org/entity/Q114737514	http://www.w3.org/2000/01/rdf-schema#label	Taaqtumi: An Anthology of Arctic Horror Stories
+http://www.wikidata.org/entity/Q114737514	http://www.w3.org/2000/01/rdf-schema#label	Taaqtumi: Ana Antología de Historias de Terror del Artico
+http://www.wikidata.org/entity/Q114737514	http://www.w3.org/2000/01/rdf-schema#label	ᑖᖅᑐᒥ
+http://www.wikidata.org/entity/Q114737514	http://wikiba.se/ontology#statements	33
+http://www.wikidata.org/entity/Q114737514	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q114737514	http://wikiba.se/ontology#identifiers	4
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P212	978-1-77227-451-6
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P212	978-1-77227-214-7
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-77227-451-6
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-77227-214-7
+http://www.wikidata.org/entity/Q116278125	http://schema.org/version	2291868017
+http://www.wikidata.org/entity/Q116278125	http://schema.org/dateModified	2024-12-27T18:41:26Z
+http://www.wikidata.org/entity/Q116278125	http://schema.org/description	Book by Grafton Tanner
+http://www.wikidata.org/entity/Q116278125	http://schema.org/description	Libro de Grafton Tanner
+http://www.wikidata.org/entity/Q116278125	http://www.w3.org/2000/01/rdf-schema#label	The hours have lost their clock
+http://www.wikidata.org/entity/Q116278125	http://www.w3.org/2000/01/rdf-schema#label	Las horas han perdido su reloj
+http://www.wikidata.org/entity/Q116278125	http://www.w3.org/2004/02/skos/core#altLabel	The hours have lost their clock: The politics of nostalgia
+http://www.wikidata.org/entity/Q116278125	http://www.w3.org/2004/02/skos/core#altLabel	Las horas han perdido su reloj: Las políticas de la nostalgia
+http://www.wikidata.org/entity/Q116278125	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q116278125	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q116278125	http://wikiba.se/ontology#identifiers	2
+http://www.wikidata.org/entity/Q116278125	http://www.wikidata.org/prop/direct/P212	978-84-125777-2-3
+http://www.wikidata.org/entity/Q116278125	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-84-125777-2-3
+http://www.wikidata.org/entity/Q116278125	http://www.wikidata.org/prop/direct/P577	2021-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q116278125	http://www.wikidata.org/prop/direct/P648	OL25465207W
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P577	2019-09-10T00:00:00Z
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P648	OL29426153M
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P1104	184
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P1476	Taaqtumi: An Anthology of Arctic Horror Stories
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P8359	C813/.08738089719—dc23
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P8360	PS8323.H67 T33 2019
+http://www.wikidata.org/entity/Q114737514	http://www.wikidata.org/prop/direct/P8383	68751436
+http://www.wikidata.org/entity/Q116679776	http://schema.org/version	1837352064
+http://www.wikidata.org/entity/Q116679776	http://schema.org/dateModified	2023-02-19T18:52:13Z
+http://www.wikidata.org/entity/Q116679776	http://schema.org/description	Gravity Falls book
+http://www.wikidata.org/entity/Q116679776	http://www.w3.org/2000/01/rdf-schema#label	Gravity Falls: Dipper and Mabel and the Curse of the Time Pirates' Treasure!: A "Select Your Own Choose-Venture!"
+http://www.wikidata.org/entity/Q116679776	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q116679776	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q116679776	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q116679776	http://www.wikidata.org/prop/direct/P212	978-1-4847-4668-4
+http://www.wikidata.org/entity/Q116679776	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-4847-4668-4
+http://www.wikidata.org/entity/Q116679776	http://www.wikidata.org/prop/direct/P577	2016-07-26T00:00:00Z
+http://www.wikidata.org/entity/Q116679776	http://www.wikidata.org/prop/direct/P2093	Jeffrey Rowe
+http://www.wikidata.org/entity/Q131982253	http://schema.org/version	2309411107
+http://www.wikidata.org/entity/Q131982253	http://schema.org/dateModified	2025-02-10T03:37:30Z
+http://www.wikidata.org/entity/Q131982253	http://www.w3.org/2000/01/rdf-schema#label	Diary of a Wimpy Kid: Rodrick Rules
+http://www.wikidata.org/entity/Q131982253	http://www.w3.org/2000/01/rdf-schema#label	يوميات طفل جبان: قواعد رودريك
+http://www.wikidata.org/entity/Q131982253	http://www.w3.org/2000/01/rdf-schema#label	Diary of a wimpy kid: rodrick rules
+http://www.wikidata.org/entity/Q131982253	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q131982253	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q131982253	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q131982253	http://www.wikidata.org/prop/direct/P212	978-0-14-132491-3
+http://www.wikidata.org/entity/Q131982253	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-14-132491-3
+http://www.wikidata.org/entity/Q131982253	http://www.wikidata.org/prop/direct/P577	2008-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q131982257	http://schema.org/version	2305996254
+http://www.wikidata.org/entity/Q131982257	http://schema.org/dateModified	2025-02-02T21:21:26Z
+http://www.wikidata.org/entity/Q131982257	http://schema.org/description	كتاب ستين موشين
+http://www.wikidata.org/entity/Q131982257	http://schema.org/description	Book by Steve Mushin
+http://www.wikidata.org/entity/Q131982257	http://www.w3.org/2000/01/rdf-schema#label	فائق البرية
+http://www.wikidata.org/entity/Q131982257	http://www.w3.org/2000/01/rdf-schema#label	Ultrawild
+http://www.wikidata.org/entity/Q131982257	http://wikiba.se/ontology#statements	6
+http://www.wikidata.org/entity/Q131982257	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q131982257	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q131982257	http://www.wikidata.org/prop/direct/P212	978-1-76029-281-2
+http://www.wikidata.org/entity/Q131982257	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-1-76029-281-2
+http://www.wikidata.org/entity/Q131982257	http://www.wikidata.org/prop/direct/P577	2023-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P356	10.1007/978-3-030-64606-6
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P577	2021-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P1476	Advancing Cultural Astronomy
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P1680	Studies In Honour of Clive Ruggles
+http://www.wikidata.org/entity/Q129172008	http://schema.org/version	2231141173
+http://www.wikidata.org/entity/Q129172008	http://schema.org/dateModified	2024-08-19T06:36:26Z
+http://www.wikidata.org/entity/Q129172008	http://schema.org/description	This open access book discusses current thinking and presents the main issues and challenges associated with climate change in Africa. It introduces evidences from studies and projects which show how climate change adaptation is being
+http://www.wikidata.org/entity/Q129172008	http://www.w3.org/2000/01/rdf-schema#label	African hand book of climate change adaptation
+http://www.wikidata.org/entity/Q129172008	http://wikiba.se/ontology#statements	13
+http://www.wikidata.org/entity/Q129172008	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q129172008	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q129172008	http://www.wikidata.org/prop/direct/P212	978-3-030-45105-9
+http://www.wikidata.org/entity/Q129172008	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-3-030-45105-9
+http://www.wikidata.org/entity/Q129172008	http://www.wikidata.org/prop/direct/P304	2,838
+http://www.wikidata.org/entity/Q129172008	http://www.wikidata.org/prop/direct/P577	2021-05-21T00:00:00Z
+http://www.wikidata.org/entity/Q129172008	http://www.wikidata.org/prop/direct/P1476	African Hand book of climate change adaptation
+http://www.wikidata.org/entity/Q124633869	http://schema.org/version	2083756174
+http://www.wikidata.org/entity/Q124633869	http://schema.org/dateModified	2024-02-22T12:28:30Z
+http://www.wikidata.org/entity/Q124633869	http://www.w3.org/2000/01/rdf-schema#label	Advancing Cultural Astronomy
+http://www.wikidata.org/entity/Q124633869	http://wikiba.se/ontology#statements	9
+http://www.wikidata.org/entity/Q124633869	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q124633869	http://wikiba.se/ontology#identifiers	3
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P212	978-3-030-64605-9
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct/P212	978-3-030-64606-6
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-3-030-64605-9
+http://www.wikidata.org/entity/Q124633869	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-3-030-64606-6
+http://www.wikidata.org/entity/Q134085401	http://schema.org/version	2341368161
+http://www.wikidata.org/entity/Q134085401	http://schema.org/dateModified	2025-04-24T14:46:18Z
+http://www.wikidata.org/entity/Q134085401	http://schema.org/description	Sachbuch von Mathias Fischedick, 2014
+http://www.wikidata.org/entity/Q134085401	http://schema.org/description	Non-fiction book by Mathias Fischedick, 2014
+http://www.wikidata.org/entity/Q134085401	http://www.w3.org/2000/01/rdf-schema#label	Wer es leicht nimmt, hat es leichter: Wie wir endlich aufhören, uns selbst im Weg zu stehen
+http://www.wikidata.org/entity/Q134085401	http://wikiba.se/ontology#statements	8
+http://www.wikidata.org/entity/Q134085401	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q134085401	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q134085401	http://www.wikidata.org/prop/direct/P212	978-3-492-30513-6
+http://www.wikidata.org/entity/Q134085401	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-3-492-30513-6
+http://www.wikidata.org/entity/Q134085401	http://www.wikidata.org/prop/direct/P577	2014-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q131981398	http://schema.org/version	2305232849
+http://www.wikidata.org/entity/Q131981398	http://schema.org/dateModified	2025-02-01T14:48:01Z
+http://www.wikidata.org/entity/Q131981398	http://schema.org/description	كتاب من تأليف واسيني الأعرج
+http://www.wikidata.org/entity/Q131981398	http://www.w3.org/2000/01/rdf-schema#label	سيرة المنتهى
+http://www.wikidata.org/entity/Q131981398	http://wikiba.se/ontology#statements	7
+http://www.wikidata.org/entity/Q131981398	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q131981398	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q131981398	http://www.wikidata.org/prop/direct/P212	978-9953-89-467-6
+http://www.wikidata.org/entity/Q131981398	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-9953-89-467-6
+http://www.wikidata.org/entity/Q131981398	http://www.wikidata.org/prop/direct/P577	2022-01-01T00:00:00Z
+http://www.wikidata.org/entity/Q131548311	http://schema.org/version	2291601497
+http://www.wikidata.org/entity/Q131548311	http://schema.org/dateModified	2024-12-26T22:28:43Z
+http://www.wikidata.org/entity/Q131548311	http://schema.org/description	كتاب من تأليف جيمس باترسون
+http://www.wikidata.org/entity/Q131548311	http://schema.org/description	book by author James Patterson and Chris Grabenstein
+http://www.wikidata.org/entity/Q131548311	http://www.w3.org/2000/01/rdf-schema#label	I Even Funnier: A Middle School Story
+http://www.wikidata.org/entity/Q131548311	http://wikiba.se/ontology#statements	5
+http://www.wikidata.org/entity/Q131548311	http://wikiba.se/ontology#sitelinks	0
+http://www.wikidata.org/entity/Q131548311	http://wikiba.se/ontology#identifiers	1
+http://www.wikidata.org/entity/Q131548311	http://www.wikidata.org/prop/direct/P212	978-0-316-20697-6
+http://www.wikidata.org/entity/Q131548311	http://www.wikidata.org/prop/direct-normalized/P212	urn:ISBN:978-0-316-20697-6
+http://www.wikidata.org/entity/Q131548311	http://www.wikidata.org/prop/direct/P1104	361
