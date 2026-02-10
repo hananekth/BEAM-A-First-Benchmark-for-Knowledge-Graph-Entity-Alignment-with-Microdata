@@ -5,6 +5,8 @@ import re
 import json
 import sys
 import time
+import fcntl
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Iterable, List
 
 import requests
@@ -31,6 +33,204 @@ def parse_nq_or_nt(line):
         s, p, o = m.groups()
         return s, p, o
     return None
+
+
+def _format_eta(seconds):
+    if seconds is None or seconds < 0:
+        return "ETA: N/A"
+    m, s = divmod(int(seconds), 60)
+    h, m = divmod(m, 60)
+    if h:
+        return f"ETA: {h}h{m:02d}m{s:02d}s"
+    if m:
+        return f"ETA: {m}m{s:02d}s"
+    return f"ETA: {s}s"
+
+
+def _eta_update(start_ts, done_bytes, total_bytes):
+    if done_bytes <= 0:
+        return "ETA: N/A"
+    elapsed = time.time() - start_ts
+    if elapsed <= 0:
+        return "ETA: N/A"
+    rate = done_bytes / elapsed
+    remaining = max(0, total_bytes - done_bytes)
+    return _format_eta(remaining / rate if rate > 0 else None)
+
+
+def _progress_line(start_ts, done_bytes, total_bytes):
+    pct = 0.0 if total_bytes <= 0 else (done_bytes / total_bytes) * 100
+    return f"{pct:5.1f}% | {_eta_update(start_ts, done_bytes, total_bytes)}"
+
+
+def _split_worker(args):
+    (
+        input_path,
+        targets,
+        lowercase_wd,
+        mask_values,
+        exclude_props,
+        exclude_prop_patterns,
+        replace_map,
+        follow_iri_objects,
+    ) = args
+    tmp_attr = input_path + f".tmp_attr_{os.getpid()}"
+    tmp_rel = input_path + f".tmp_rel_{os.getpid()}"
+    new_subjects = set()
+    line_count = 0
+    kept_attr = 0
+    kept_rel = 0
+    with open(input_path, "r", encoding="utf-8") as f, \
+         open(tmp_attr, "w", encoding="utf-8") as attr_out, \
+         open(tmp_rel, "w", encoding="utf-8") as rel_out:
+        for line in f:
+            line_count += 1
+            parsed = parse_nq_or_nt(line)
+            if not parsed:
+                continue
+            s, p, o = parsed
+            if s not in targets:
+                continue
+            if exclude_props and p in exclude_props:
+                continue
+            if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
+                continue
+            if replace_map and s in replace_map:
+                s = replace_map[s]
+            if replace_map and (not o.startswith('"')) and o in replace_map:
+                o = replace_map[o]
+            s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
+            if o.startswith('"'):
+                o_out = clean_literal(o_out)
+                if mask_values:
+                    lex = literal_lex(o_out)
+                    if lex in mask_values:
+                        continue
+                attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
+                kept_attr += 1
+            else:
+                rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
+                kept_rel += 1
+                if o.startswith("_:"):
+                    new_subjects.add(o)
+                elif follow_iri_objects and o.startswith("<"):
+                    new_subjects.add(o)
+    size = os.path.getsize(input_path)
+    return tmp_attr, tmp_rel, new_subjects, line_count, kept_attr, kept_rel, size
+
+
+def _count_worker(args):
+    path, subjects, exclude_props, exclude_prop_patterns, mask_values = args
+    local = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            parsed = parse_nq_or_nt(line)
+            if not parsed:
+                continue
+            s, p, o = parsed
+            if s not in subjects:
+                continue
+            if exclude_props and p in exclude_props:
+                continue
+            if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
+                continue
+            if mask_values and o.startswith('"'):
+                lex = literal_lex(o)
+                if lex in mask_values:
+                    continue
+            local[s] = local.get(s, 0) + 1
+    size = os.path.getsize(path)
+    return local, size
+
+
+def _labels_worker(args):
+    path, target_iris, label_preds = args
+    tmp = path + f".tmp_wdc_labels_{os.getpid()}"
+    written = 0
+    with open(path, "r", encoding="utf-8") as f, open(tmp, "w", encoding="utf-8") as out:
+        for line in f:
+            parsed = parse_nq_or_nt(line)
+            if not parsed:
+                continue
+            s, p, o = parsed
+            if s not in target_iris:
+                continue
+            if p not in label_preds:
+                continue
+            out.write(f"{s}\t{p}\t{o}\n")
+            written += 1
+    size = os.path.getsize(path)
+    return tmp, written, size
+
+
+def _prop_label_worker(args):
+    path, targets, label_preds = args
+    local_labels = {}
+    local_descs = {}
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            parsed = parse_nq_or_nt(line)
+            if not parsed:
+                continue
+            s, p, o = parsed
+            if s not in targets:
+                continue
+            if p not in label_preds:
+                continue
+            lex = literal_lex(o) or o.strip('"')
+            if p.endswith("#label") or p.endswith("prefLabel"):
+                if s not in local_labels:
+                    local_labels[s] = lex
+            elif p.endswith("description"):
+                if s not in local_descs:
+                    local_descs[s] = lex
+    size = os.path.getsize(path)
+    return local_labels, local_descs, size
+
+
+def _is_pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def compute_shared_workers(lock_path, share=0.8):
+    cpu = os.cpu_count() or 1
+    lock_path = os.path.abspath(lock_path)
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+    with open(lock_path, "a+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.seek(0)
+        lines = [ln.strip() for ln in f.readlines() if ln.strip()]
+        active_pids = []
+        for ln in lines:
+            try:
+                pid_str, _ts = ln.split(",", 1)
+                pid = int(pid_str)
+            except Exception:
+                continue
+            if _is_pid_alive(pid):
+                active_pids.append(pid)
+        if os.getpid() not in active_pids:
+            active_pids.append(os.getpid())
+        f.seek(0)
+        f.truncate()
+        now = int(time.time())
+        for pid in active_pids:
+            f.write(f"{pid},{now}\n")
+        f.flush()
+        fcntl.flock(f, fcntl.LOCK_UN)
+    runs = max(1, len(active_pids))
+    workers = max(1, int((cpu * share) / runs))
+    return workers, runs, cpu
+
+
+def _iter_input_paths(input_paths):
+    if isinstance(input_paths, (list, tuple)):
+        return list(input_paths)
+    return [input_paths]
 
 
 def normalize_header(value):
@@ -162,6 +362,7 @@ def split_triples(
     keep_subjects = set(s for s in seed_subjects if s)
     processed_subjects = set()
 
+    input_paths = _iter_input_paths(input_path)
     with open(out_attr_path, "w", encoding="utf-8") as attr_out, \
          open(out_rel_path, "w", encoding="utf-8") as rel_out:
         depth = 0
@@ -172,48 +373,55 @@ def split_triples(
             if not targets:
                 break
             new_subjects = set()
-            with open(input_path, "r", encoding="utf-8") as f:
-                line_count = 0
-                kept_attr = 0
-                kept_rel = 0
-                for line in f:
-                    line_count += 1
-                    if progress_every and line_count % progress_every == 0:
-                        print(
-                            f"[WDC] depth={depth} lines={line_count} "
-                            f"attr={kept_attr} rel={kept_rel}",
-                            file=sys.stderr,
-                        )
-                    parsed = parse_nq_or_nt(line)
-                    if not parsed:
-                        continue
-                    s, p, o = parsed
-                    if s not in targets:
-                        continue
-                    if exclude_props and p in exclude_props:
-                        continue
-                    if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
-                        continue
-                    if replace_map and s in replace_map:
-                        s = replace_map[s]
-                    if replace_map and (not o.startswith('"')) and o in replace_map:
-                        o = replace_map[o]
-                    s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
-                    if o.startswith('"'):
-                        o_out = clean_literal(o_out)
-                        if mask_values:
-                            lex = literal_lex(o_out)
-                            if lex in mask_values:
-                                continue
-                        attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
-                        kept_attr += 1
-                    else:
-                        rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
-                        kept_rel += 1
-                        if o.startswith("_:"):
-                            new_subjects.add(o)
-                        elif follow_iri_objects and o.startswith("<"):
-                            new_subjects.add(o)
+            line_count = 0
+            kept_attr = 0
+            kept_rel = 0
+            lock_path = os.path.join("Download", ".workers.lock")
+            n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+            total_bytes = sum(os.path.getsize(p) for p in input_paths)
+            done_bytes = 0
+            start_ts = time.time()
+            if progress_every:
+                prog = _progress_line(start_ts, done_bytes, total_bytes)
+                print(f"[WDC] depth={depth} progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+            with ProcessPoolExecutor(max_workers=n_workers) as ex:
+                futures = [
+                    ex.submit(
+                        _split_worker,
+                        (
+                            input_path,
+                            targets,
+                            lowercase_wd,
+                            mask_values,
+                            exclude_props,
+                            exclude_prop_patterns,
+                            replace_map,
+                            follow_iri_objects,
+                        ),
+                    )
+                    for input_path in input_paths
+                ]
+                for fut in as_completed(futures):
+                    tmp_attr, tmp_rel, new_subs, lines, ka, kr, fsize = fut.result()
+                    line_count += lines
+                    kept_attr += ka
+                    kept_rel += kr
+                    new_subjects.update(new_subs)
+                    done_bytes += fsize
+                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                    print(f"[WDC] depth={depth} progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+                    with open(tmp_attr, "r", encoding="utf-8") as f_attr:
+                        for line in f_attr:
+                            attr_out.write(line)
+                    with open(tmp_rel, "r", encoding="utf-8") as f_rel:
+                        for line in f_rel:
+                            rel_out.write(line)
+                    os.remove(tmp_attr)
+                    os.remove(tmp_rel)
+            if progress_every:
+                done_bytes = total_bytes
+                prog = _progress_line(start_ts, done_bytes, total_bytes)
+                print(f"[WDC] depth={depth} progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
             processed_subjects.update(targets)
             keep_subjects.update(new_subjects)
             print(
@@ -231,23 +439,31 @@ def batch_iter(items: List[str], size: int) -> Iterable[List[str]]:
 
 def count_wdc_triples(input_path, subjects, exclude_props=None, exclude_prop_patterns=None, mask_values=None):
     counts = {s: 0 for s in subjects}
-    with open(input_path, "r", encoding="utf-8") as f:
-        for line in f:
-            parsed = parse_nq_or_nt(line)
-            if not parsed:
-                continue
-            s, p, o = parsed
-            if s not in counts:
-                continue
-            if exclude_props and p in exclude_props:
-                continue
-            if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
-                continue
-            if mask_values and o.startswith('"'):
-                lex = literal_lex(o)
-                if lex in mask_values:
-                    continue
-            counts[s] += 1
+    input_paths = _iter_input_paths(input_path)
+
+    # Parallel over parts
+    lock_path = os.path.join("Download", ".workers.lock")
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    total_bytes = sum(os.path.getsize(p) for p in input_paths)
+    done_bytes = 0
+    start_ts = time.time()
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] count_triples progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        futures = [
+            ex.submit(_count_worker, (p, set(subjects), exclude_props, exclude_prop_patterns, mask_values))
+            for p in input_paths
+        ]
+        for fut in as_completed(futures):
+            local, fsize = fut.result()
+            for s, c in local.items():
+                counts[s] += c
+            done_bytes += fsize
+            prog = _progress_line(start_ts, done_bytes, total_bytes)
+            print(f"[WDC] count_triples progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    done_bytes = total_bytes
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] count_triples progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
     return counts
 
 
@@ -379,31 +595,56 @@ def collect_wikidata_uris(attr_path, rel_path):
                 if len(parts) != 3:
                     continue
                 s, p, o = parts
-                if s.startswith("http://www.wikidata.org/entity/"):
-                    uris.add(canonical_wd_entity_uri(s))
-                elif s.startswith("http://www.wikidata.org/prop/"):
-                    ent = prop_uri_to_entity(s)
+                s_norm = s.strip("<>")
+                p_norm = p.strip("<>")
+                o_norm = o.strip("<>")
+                if s_norm.startswith("http://www.wikidata.org/entity/"):
+                    uris.add(canonical_wd_entity_uri(s_norm))
+                elif s_norm.startswith("http://www.wikidata.org/prop/"):
+                    ent = prop_uri_to_entity(s_norm)
                     if ent:
                         ent = canonical_wd_entity_uri(ent)
-                        prop_uri_map[s] = ent
+                        prop_uri_map[s_norm] = ent
                         uris.add(ent)
-                if p.startswith("http://www.wikidata.org/prop/"):
-                    ent = prop_uri_to_entity(p)
+                if p_norm.startswith("http://www.wikidata.org/prop/"):
+                    ent = prop_uri_to_entity(p_norm)
                     if ent:
                         ent = canonical_wd_entity_uri(ent)
-                        prop_uri_map[p] = ent
+                        prop_uri_map[p_norm] = ent
                         uris.add(ent)
-                elif p.startswith("http://www.wikidata.org/entity/"):
-                    uris.add(canonical_wd_entity_uri(p))
-                if o.startswith("http://www.wikidata.org/entity/"):
-                    uris.add(canonical_wd_entity_uri(o))
-                elif o.startswith("http://www.wikidata.org/prop/"):
-                    ent = prop_uri_to_entity(o)
+                elif p_norm.startswith("http://www.wikidata.org/entity/"):
+                    uris.add(canonical_wd_entity_uri(p_norm))
+                if o_norm.startswith("http://www.wikidata.org/entity/"):
+                    uris.add(canonical_wd_entity_uri(o_norm))
+                elif o_norm.startswith("http://www.wikidata.org/prop/"):
+                    ent = prop_uri_to_entity(o_norm)
                     if ent:
                         ent = canonical_wd_entity_uri(ent)
-                        prop_uri_map[o] = ent
+                        prop_uri_map[o_norm] = ent
                         uris.add(ent)
     return uris, prop_uri_map
+
+
+def collect_wdc_iris(attr_path, rel_path):
+    uris = set()
+    prop_uris = set()
+    for path in (attr_path, rel_path):
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) != 3:
+                    continue
+                s, p, o = parts
+                s_norm = s.strip("<>")
+                p_norm = p.strip("<>")
+                o_norm = o.strip("<>")
+                if s_norm.startswith("http://") or s_norm.startswith("https://"):
+                    uris.add(s_norm)
+                if p_norm.startswith("http://") or p_norm.startswith("https://"):
+                    prop_uris.add(p_norm)
+                if o_norm.startswith("http://") or o_norm.startswith("https://"):
+                    uris.add(o_norm)
+    return uris, prop_uris
 
 
 def fetch_wd_labels_descriptions(uris, endpoint, language, batch_size, sleep_s, timeout, retries, backoff):
@@ -491,6 +732,50 @@ def append_labels_descriptions(
                 out.write(f"{s_prop}\t{p_prop}\t{o_prop}\n")
 
 
+def append_wdc_labels_descriptions(attr_path, rel_path, wdc_input_paths):
+    uris, prop_uris = collect_wdc_iris(attr_path, rel_path)
+    if not uris and not prop_uris:
+        return
+    target_iris = uris | prop_uris
+    label_preds = {
+        "http://www.w3.org/2000/01/rdf-schema#label",
+        "http://schema.org/description",
+        "http://www.w3.org/2004/02/skos/core#prefLabel",
+    }
+    input_paths = _iter_input_paths(wdc_input_paths)
+
+    lock_path = os.path.join("Download", ".workers.lock")
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    total_written = 0
+    total_bytes = sum(os.path.getsize(p) for p in input_paths)
+    done_bytes = 0
+    start_ts = time.time()
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        futures = [
+            ex.submit(_labels_worker, (p, target_iris, label_preds))
+            for p in input_paths
+        ]
+        with open(attr_path, "a", encoding="utf-8") as out:
+            for fut in as_completed(futures):
+                tmp, written, fsize = fut.result()
+                total_written += written
+                done_bytes += fsize
+                prog = _progress_line(start_ts, done_bytes, total_bytes)
+                print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+                if written > 0:
+                    with open(tmp, "r", encoding="utf-8") as f:
+                        for line in f:
+                            out.write(line)
+                os.remove(tmp)
+    done_bytes = total_bytes
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    if total_written == 0:
+        return
+
+
 def fetch_wd_label_desc_map(uris, endpoint, language, batch_size, sleep_s, timeout, retries, backoff):
     triples = fetch_wd_labels_descriptions(
         uris,
@@ -568,6 +853,48 @@ def write_prop_stats_simple(out_path, attr_path, rel_path):
             out.write(f"{prop}\t{count}\t{label}\t\n")
 
 
+def write_prop_stats_wdc(out_path, attr_path, rel_path, wdc_input_paths):
+    counts = count_props_in_files([attr_path, rel_path])
+    label_preds = {
+        "http://www.w3.org/2000/01/rdf-schema#label",
+        "http://schema.org/description",
+        "http://www.w3.org/2004/02/skos/core#prefLabel",
+    }
+    labels = {}
+    descs = {}
+    targets = set(counts.keys())
+
+    lock_path = os.path.join("Download", ".workers.lock")
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    total_bytes = sum(os.path.getsize(p) for p in _iter_input_paths(wdc_input_paths))
+    done_bytes = 0
+    start_ts = time.time()
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    with ProcessPoolExecutor(max_workers=n_workers) as ex:
+        futures = [
+            ex.submit(_prop_label_worker, (p, targets, label_preds))
+            for p in _iter_input_paths(wdc_input_paths)
+        ]
+        for fut in as_completed(futures):
+            local_labels, local_descs, fsize = fut.result()
+            labels.update(local_labels)
+            descs.update(local_descs)
+            done_bytes += fsize
+            prog = _progress_line(start_ts, done_bytes, total_bytes)
+            print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    done_bytes = total_bytes
+    prog = _progress_line(start_ts, done_bytes, total_bytes)
+    print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as out:
+        out.write("predicate\tcount\tlabel\tdescription\n")
+        for prop, count in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
+            label = labels.get(prop, "")
+            desc = descs.get(prop, "")
+            out.write(f"{prop}\t{count}\t{label}\t{desc}\n")
+
+
 def run_pipeline(
     args,
     wdc_entities,
@@ -607,6 +934,8 @@ def run_pipeline(
         progress_every=args.progress_every,
         follow_iri_objects=True,
     )
+    # Add labels/descriptions for WDC IRIs and properties found in WDC triples
+    append_wdc_labels_descriptions(out_attr_1, out_rel_1, args.wdc_nq)
 
     if args.wd_nq:
         wd_attr_tmp = out_attr_2
@@ -693,7 +1022,7 @@ def run_pipeline(
                 args.backoff,
                 lowercase_wd,
             )
-    write_prop_stats_simple(out_prop_stats_wdc, out_attr_1, out_rel_1)
+    write_prop_stats_wdc(out_prop_stats_wdc, out_attr_1, out_rel_1, args.wdc_nq)
     write_prop_stats(
         out_prop_stats_wd,
         out_attr_2,
@@ -841,42 +1170,84 @@ def write_wikidata_from_sparql(
 
 
 def main():
+    start_ts = time.time()
     parser = argparse.ArgumentParser(
         description="Generate BEAM-style files from N-Quads/N-Triples and a link TSV."
     )
-    parser.add_argument("--wdc-nq", required=True, help="Path to WDC N-Quads/N-Triples file.")
-    parser.add_argument("--wd-nq", help="Path to Wikidata N-Quads/N-Triples file.")
-    parser.add_argument("--links-tsv", required=True, help="Path to link TSV file.")
-    parser.add_argument("--out-dir", required=True, help="Output directory for attr/rel/link files.")
-    parser.add_argument("--sep", default="\t", help="Column separator for links file (default: tab).")
-    parser.add_argument("--wdc-col", type=int, default=0, help="0-based column index for wdc_iri.")
-    parser.add_argument("--wd-col", type=int, default=1, help="0-based column index for wikidata_uri.")
-    parser.add_argument("--wdc-value-col", type=int, help="0-based column index for wdc_value.")
-    parser.add_argument("--wd-value-col", type=int, help="0-based column index for wiki_value.")
-    parser.add_argument("--max-depth", type=int, default=1, help="Depth for following bnodes (default: 1, -1 means until no new bnodes).")
-    parser.add_argument("--dedupe-links", action="store_true", help="Remove duplicate ent_links pairs.")
-    parser.add_argument("--progress-every", type=int, default=0, help="Print progress every N lines (WDC scan).")
-    parser.add_argument("--keep-link-values", action="store_true", help="Do not mask link values in triples.")
-    parser.add_argument("--wdc-min-triples", type=int, default=0, help="Minimum triples per WDC entity.")
-    parser.add_argument("--wdc-exclude-prop", action="append", default=[], help="Exclude WDC predicate URI (repeatable).")
-    parser.add_argument("--wd-exclude-prop", action="append", default=[], help="Exclude Wikidata predicate URI (repeatable).")
+    parser.add_argument("class_name", help="Class name to use default paths (data/<class> and Download/<class>).")
     parser.add_argument("--wd-link-prop-id", action="append", default=[], help="Wikidata property id to drop (e.g., P1243).")
     parser.add_argument("--wdc-link-prop-name", action="append", default=[], help="Pattern to drop WDC predicates (e.g., isrc).")
-    parser.add_argument("--no-wd-labels", action="store_true", help="Do not add labels/descriptions for Wikidata entities/properties.")
-    parser.add_argument("--wd-prop-min-count", type=int, default=0, help="Min property frequency for Wikidata.")
-    parser.add_argument("--merge-wd-by-link-values", action="store_true", help="Merge Wikidata entities sharing wiki_value.")
-    parser.add_argument("--sparql-url", default="https://query.wikidata.org/sparql", help="Wikidata SPARQL endpoint.")
-    parser.add_argument("--lang", default="en", help="Language filter for literals with language tag.")
-    parser.add_argument("--batch-size", type=int, default=50, help="Wikidata SPARQL batch size.")
-    parser.add_argument("--sleep", type=float, default=1.0, help="Sleep between SPARQL batches in seconds.")
-    parser.add_argument("--timeout", type=int, default=60, help="SPARQL request timeout in seconds.")
-    parser.add_argument("--retries", type=int, default=3, help="SPARQL retries per batch.")
-    parser.add_argument("--backoff", type=float, default=2.0, help="Exponential backoff base (seconds).")
-    parser.add_argument("--no-lowercase-wd", action="store_true", help="Do not lowercase Wikidata URIs.")
-    parser.add_argument("--resume", action="store_true", help="Resume Wikidata SPARQL extraction.")
-    parser.add_argument("--state-file", help="Path to resume state file (default: OUT_DIR/.wd_state.json).")
+    parser.add_argument("--max-depth", type=int, default=-1, help="Depth for following bnodes (default: -1 until no new bnodes).")
+    parser.add_argument("--progress-every", type=int, default=10000000, help="Print progress every N lines (WDC scan).")
 
     args = parser.parse_args()
+
+    # Defaults from class_name
+    class_name = args.class_name
+    data_dir = os.path.join("data", class_name)
+    download_dir = os.path.join("Download", class_name)
+
+    # Defaults
+    candidates = []
+    if os.path.isdir(download_dir):
+        for name in sorted(os.listdir(download_dir)):
+            if name.startswith("part_") and (
+                name.endswith(".nq") or name.endswith(".nt") or "." not in name
+            ):
+                candidates.append(os.path.join(download_dir, name))
+        if not candidates:
+            for name in sorted(os.listdir(download_dir)):
+                if name.endswith("_full_graph.nq"):
+                    candidates.append(os.path.join(download_dir, name))
+                    break
+        if not candidates:
+            for name in sorted(os.listdir(download_dir)):
+                if name.endswith(".nq") or name.endswith(".nt"):
+                    candidates.append(os.path.join(download_dir, name))
+                    break
+
+    args.wdc_nq = candidates
+    args.links_tsv = os.path.join(download_dir, "wdc_wikidata_links.tsv")
+    base_out_dir = os.path.join(data_dir, "beam")
+    out_dir = base_out_dir
+    suffix = 1
+    while os.path.exists(out_dir):
+        out_dir = base_out_dir + str(suffix)
+        suffix += 1
+    args.out_dir = out_dir
+
+    # Fixed defaults (removed flags)
+    args.wd_nq = None
+    args.sep = "\t"
+    args.wdc_col = 0
+    args.wd_col = 1
+    args.wdc_value_col = None
+    args.wd_value_col = None
+    args.dedupe_links = False
+    args.keep_link_values = False
+    args.wdc_min_triples = 0
+    args.wdc_exclude_prop = []
+    args.wd_exclude_prop = []
+    args.no_wd_labels = False
+    args.wd_prop_min_count = 0
+    args.merge_wd_by_link_values = False
+    args.sparql_url = "https://query.wikidata.org/sparql"
+    args.lang = "en"
+    args.batch_size = 50
+    args.sleep = 1.0
+    args.timeout = 60
+    args.retries = 3
+    args.backoff = 2.0
+    args.no_lowercase_wd = False
+    args.resume = False
+    args.state_file = None
+
+    if not args.wdc_nq:
+        print(f"[ERR] No WDC files found in {download_dir}", file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(args.links_tsv):
+        print(f"[ERR] Missing links TSV: {args.links_tsv}", file=sys.stderr)
+        sys.exit(1)
 
     wdc_entities, wd_entities_raw, wdc_values, wd_values = read_links(
         args.links_tsv,
@@ -927,7 +1298,7 @@ def main():
         if replace_map:
             print(f"[WD] merge map size={len(replace_map)}", file=sys.stderr)
 
-    add_wd_labels = not args.no_wd_labels
+    add_wd_labels = True
 
     out_without = os.path.join(args.out_dir, "without_link_code")
     out_with = os.path.join(args.out_dir, "with_link_code")
@@ -964,6 +1335,14 @@ def main():
         lowercase_wd,
         add_wd_labels,
     )
+    elapsed = time.time() - start_ts
+    took = _format_eta(elapsed).replace("ETA: ", "")
+    print(f"[DONE] total time: {took}", file=sys.stderr)
+    try:
+        with open(os.path.join(out_dir, "stats.txt"), "a", encoding="utf-8") as f:
+            f.write(f"build_beam took {took}\n")
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
