@@ -19,3 +19,4 @@ tqdm
 # Web UI
 streamlit
 beautifulsoup4
+streamlit-autorefresh

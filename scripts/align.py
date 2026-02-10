@@ -43,10 +43,16 @@ def print_color(text, color):
     print(f"{color}{text}{Colors.RESET}")
 
 _EXTRA_STRIP_CHARS = set()
+_NORMALIZATION_ENABLED = True
 
 def set_extra_strip_chars(strip_chars):
     global _EXTRA_STRIP_CHARS
     _EXTRA_STRIP_CHARS = set(strip_chars or [])
+    return _EXTRA_STRIP_CHARS
+
+def set_normalization(enabled: bool):
+    global _NORMALIZATION_ENABLED
+    _NORMALIZATION_ENABLED = bool(enabled)
 
 def parse_strip_list(spec):
     if not spec:
@@ -59,6 +65,10 @@ def parse_strip_list(spec):
             continue
         if p.lower() == "spaces":
             chars.extend([" ", "\t", "\n", "\r"])
+            continue
+        if p.lower() == "special-chars":
+            # Placeholder token handled in normalize_for_matching
+            chars.append("__SPECIAL_CHARS__")
             continue
         # unescape common sequences
         p = p.replace("\\;", ";").replace("\\/", "/").replace("\\\\", "\\")
@@ -480,8 +490,14 @@ def normalize_for_matching(text):
     """
     if not text:
         return ""
+    if not _NORMALIZATION_ENABLED:
+        return text
+    special_chars = "__SPECIAL_CHARS__" in _EXTRA_STRIP_CHARS
     if _EXTRA_STRIP_CHARS:
         text = "".join(ch for ch in text if ch not in _EXTRA_STRIP_CHARS)
+    if special_chars:
+        # Strip all non-alphanumeric characters
+        text = re.sub(r"[^A-Za-z0-9]", "", text)
     # 1) Lowercase
     text = text.lower()
     # 2) Remove accents/diacritics (NFKD)
