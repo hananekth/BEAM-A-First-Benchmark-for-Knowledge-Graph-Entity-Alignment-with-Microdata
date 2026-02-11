@@ -6,7 +6,8 @@ import json
 import sys
 import time
 import fcntl
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from typing import Iterable, List
 
 import requests
@@ -342,6 +343,41 @@ def clean_literal(value):
     return f"\"{lex}\""
 
 
+def _cleanup_stale_temp_files(input_paths, stale_after_s=None):
+    """
+    Best-effort cleanup for orphaned worker temp files from interrupted runs.
+    Uses an age threshold to avoid touching temp files from actively running workers.
+    """
+    if stale_after_s is None:
+        try:
+            stale_after_s = int(os.environ.get("BEAM_TMP_CLEANUP_STALE_S", "300"))
+        except Exception:
+            stale_after_s = 300
+    now = time.time()
+    seen = set()
+    for raw in _iter_input_paths(input_paths):
+        p = Path(raw)
+        parent = p.parent
+        stem = p.name
+        for pat in (
+            f"{stem}.tmp_attr_*",
+            f"{stem}.tmp_rel_*",
+            f"{stem}.tmp_wdc_labels_*",
+        ):
+            for cand in parent.glob(pat):
+                key = str(cand.resolve())
+                if key in seen:
+                    continue
+                seen.add(key)
+                try:
+                    age = now - cand.stat().st_mtime
+                    if age < stale_after_s:
+                        continue
+                    cand.unlink(missing_ok=True)
+                except Exception:
+                    pass
+
+
 def split_triples(
     input_path,
     out_attr_path,
@@ -356,6 +392,7 @@ def split_triples(
     progress_every=0,
     follow_iri_objects=False,
 ):
+    _cleanup_stale_temp_files(input_path)
     os.makedirs(os.path.dirname(out_attr_path), exist_ok=True)
     os.makedirs(os.path.dirname(out_rel_path), exist_ok=True)
 
@@ -410,14 +447,22 @@ def split_triples(
                     done_bytes += fsize
                     prog = _progress_line(start_ts, done_bytes, total_bytes)
                     print(f"[WDC] depth={depth} progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
-                    with open(tmp_attr, "r", encoding="utf-8") as f_attr:
-                        for line in f_attr:
-                            attr_out.write(line)
-                    with open(tmp_rel, "r", encoding="utf-8") as f_rel:
-                        for line in f_rel:
-                            rel_out.write(line)
-                    os.remove(tmp_attr)
-                    os.remove(tmp_rel)
+                    try:
+                        with open(tmp_attr, "r", encoding="utf-8") as f_attr:
+                            for line in f_attr:
+                                attr_out.write(line)
+                        with open(tmp_rel, "r", encoding="utf-8") as f_rel:
+                            for line in f_rel:
+                                rel_out.write(line)
+                    finally:
+                        try:
+                            os.remove(tmp_attr)
+                        except Exception:
+                            pass
+                        try:
+                            os.remove(tmp_rel)
+                        except Exception:
+                            pass
             if progress_every:
                 done_bytes = total_bytes
                 prog = _progress_line(start_ts, done_bytes, total_bytes)
@@ -430,6 +475,7 @@ def split_triples(
                 file=sys.stderr,
             )
             depth += 1
+    _cleanup_stale_temp_files(input_path)
 
 
 def batch_iter(items: List[str], size: int) -> Iterable[List[str]]:
@@ -757,18 +803,35 @@ def append_wdc_labels_descriptions(attr_path, rel_path, wdc_input_paths):
             ex.submit(_labels_worker, (p, target_iris, label_preds))
             for p in input_paths
         ]
+        pending = set(futures)
+        total_futures = len(futures)
+        heartbeat_s = 10.0
+        last_heartbeat = time.time()
         with open(attr_path, "a", encoding="utf-8") as out:
-            for fut in as_completed(futures):
-                tmp, written, fsize = fut.result()
-                total_written += written
-                done_bytes += fsize
-                prog = _progress_line(start_ts, done_bytes, total_bytes)
-                print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
-                if written > 0:
-                    with open(tmp, "r", encoding="utf-8") as f:
-                        for line in f:
-                            out.write(line)
-                os.remove(tmp)
+            while pending:
+                done, pending = wait(pending, timeout=1.0, return_when=FIRST_COMPLETED)
+                if not done:
+                    now = time.time()
+                    if (now - last_heartbeat) >= heartbeat_s:
+                        prog = _progress_line(start_ts, done_bytes, total_bytes)
+                        finished = total_futures - len(pending)
+                        print(
+                            f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog} | workers {finished}/{total_futures}",
+                            file=sys.stderr,
+                        )
+                        last_heartbeat = now
+                    continue
+                for fut in done:
+                    tmp, written, fsize = fut.result()
+                    total_written += written
+                    done_bytes += fsize
+                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                    print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+                    if written > 0:
+                        with open(tmp, "r", encoding="utf-8") as f:
+                            for line in f:
+                                out.write(line)
+                    os.remove(tmp)
     done_bytes = total_bytes
     prog = _progress_line(start_ts, done_bytes, total_bytes)
     print(f"[WDC] labels progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
@@ -876,13 +939,30 @@ def write_prop_stats_wdc(out_path, attr_path, rel_path, wdc_input_paths):
             ex.submit(_prop_label_worker, (p, targets, label_preds))
             for p in _iter_input_paths(wdc_input_paths)
         ]
-        for fut in as_completed(futures):
-            local_labels, local_descs, fsize = fut.result()
-            labels.update(local_labels)
-            descs.update(local_descs)
-            done_bytes += fsize
-            prog = _progress_line(start_ts, done_bytes, total_bytes)
-            print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
+        pending = set(futures)
+        total_futures = len(futures)
+        heartbeat_s = 10.0
+        last_heartbeat = time.time()
+        while pending:
+            done, pending = wait(pending, timeout=1.0, return_when=FIRST_COMPLETED)
+            if not done:
+                now = time.time()
+                if (now - last_heartbeat) >= heartbeat_s:
+                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                    finished = total_futures - len(pending)
+                    print(
+                        f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog} | workers {finished}/{total_futures}",
+                        file=sys.stderr,
+                    )
+                    last_heartbeat = now
+                continue
+            for fut in done:
+                local_labels, local_descs, fsize = fut.result()
+                labels.update(local_labels)
+                descs.update(local_descs)
+                done_bytes += fsize
+                prog = _progress_line(start_ts, done_bytes, total_bytes)
+                print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)
     done_bytes = total_bytes
     prog = _progress_line(start_ts, done_bytes, total_bytes)
     print(f"[WDC] prop_stats progress {done_bytes}/{total_bytes} bytes {prog}", file=sys.stderr)

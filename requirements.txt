@@ -17,6 +17,8 @@ scikit-learn
 tqdm
 
 # Web UI
-streamlit
 beautifulsoup4
-streamlit-autorefresh
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart

@@ -44,6 +44,7 @@ def print_color(text, color):
 
 _EXTRA_STRIP_CHARS = set()
 _NORMALIZATION_ENABLED = True
+_CANCEL_CHECK = None
 
 def set_extra_strip_chars(strip_chars):
     global _EXTRA_STRIP_CHARS
@@ -53,6 +54,11 @@ def set_extra_strip_chars(strip_chars):
 def set_normalization(enabled: bool):
     global _NORMALIZATION_ENABLED
     _NORMALIZATION_ENABLED = bool(enabled)
+
+
+def set_cancel_checker(fn):
+    global _CANCEL_CHECK
+    _CANCEL_CHECK = fn
 
 def parse_strip_list(spec):
     if not spec:
@@ -697,24 +703,41 @@ def parse_parts_spec(parts_spec, available_parts=None):
 
 def download_file(url, dest_path):
     """Télécharge un fichier avec barre de progression"""
+    if _CANCEL_CHECK and _CANCEL_CHECK():
+        raise RuntimeError("Cancelled")
     response = requests.get(url, stream=True, timeout=60)
     response.raise_for_status()
     
     total_size = int(response.headers.get('content-length', 0))
     
-    with open(dest_path, 'wb') as f:
-        if total_size == 0:
-            f.write(response.content)
-        else:
-            downloaded = 0
-            chunk_size = 8192
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    percent = (downloaded / total_size) * 100
-                    print(f"\r  Téléchargement: {percent:.1f}% ({downloaded}/{total_size} bytes)", end='')
-            print()  # Newline après progression
+    try:
+        with open(dest_path, 'wb') as f:
+            if total_size == 0:
+                f.write(response.content)
+            else:
+                downloaded = 0
+                chunk_size = 8192
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if _CANCEL_CHECK and _CANCEL_CHECK():
+                        raise RuntimeError("Cancelled")
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        percent = (downloaded / total_size) * 100
+                        print(f"\r  Téléchargement: {percent:.1f}% ({downloaded}/{total_size} bytes)", end='')
+                print()  # Newline après progression
+    except Exception:
+        try:
+            if Path(dest_path).exists():
+                Path(dest_path).unlink()
+        except Exception:
+            pass
+        raise
+    finally:
+        try:
+            response.close()
+        except Exception:
+            pass
 
 def _decompress_worker(gz_path, nq_path):
     gz_path = Path(gz_path)
@@ -742,6 +765,8 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
     current_workers = None
     
     for i, part_file in enumerate(parts, 1):
+        if _CANCEL_CHECK and _CANCEL_CHECK():
+            raise RuntimeError("Cancelled")
         print(f"\n[{i}/{len(parts)}] {part_file}")
         
         gz_path = work_dir / part_file
@@ -769,6 +794,8 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
                 size = gz_path.stat().st_size / (1024**2)
                 print_color(f"  ✅ Téléchargé ({size:.1f} MB)", Colors.GREEN)
             except Exception as e:
+                if "Cancelled" in str(e):
+                    raise
                 print_color(f"  ❌ Erreur: {e}", Colors.RED)
                 continue
         else:
@@ -797,6 +824,8 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
                 print_color(f"  ✅ Décompressé ({size:.1f} MB)", Colors.GREEN)
                 decompressed_files.append(nq_path)
         except Exception as e:
+            if "Cancelled" in str(e):
+                raise
             print_color(f"  ❌ Erreur décompression: {e}", Colors.RED)
     
     if executor:
@@ -808,6 +837,8 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
                 print_color(f"  ✅ Décompressé ({nq_path.name}, {size:.1f} MB)", Colors.GREEN)
                 decompressed_files.append(nq_path)
             except Exception as e:
+                if "Cancelled" in str(e):
+                    raise
                 print_color(f"  ❌ Erreur décompression: {e}", Colors.RED)
         executor.shutdown(wait=True)
     

@@ -2,6 +2,6 @@
 set -euo pipefail
 
 pkill -f "python -m worker.run" || true
-pkill -f "streamlit run app.py" || true
+pkill -f "uvicorn webapp.main:app" || true
 
-echo "[OK] stopped worker + streamlit"
+echo "[OK] stopped worker + webapp"

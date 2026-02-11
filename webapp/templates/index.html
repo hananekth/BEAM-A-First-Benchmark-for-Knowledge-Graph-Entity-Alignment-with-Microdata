@@ -1,0 +1,749 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>BEAM Benchmark Generator</title>
+  <style>
+    :root{
+      --bg:#0e1117;
+      --card:#161b22;
+      --border:#30363d;
+      --text:#e6edf3;
+      --muted:#8b949e;
+      --primary:#2f81f7;
+      --primary-soft:#10243b;
+      --warn:#3d2b1f;
+      --warn-border:#5a3e2b;
+    }
+    *{ box-sizing:border-box; }
+    body { font-family: "IBM Plex Sans", system-ui, sans-serif; margin:0; color:var(--text); background:var(--bg); }
+    .page { max-width:1200px; margin:0 auto; padding:24px; }
+    h1 { margin:0 0 16px; font-size:28px; }
+    h2 { margin:24px 0 8px; font-size:20px; }
+    h3 { margin:0 0 8px; font-size:16px; }
+    .row { display:flex; gap:16px; flex-wrap:wrap; }
+    .col { flex:1; min-width:260px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+    label { display:block; margin-top:12px; font-weight:600; font-size:13px; color:var(--text); }
+    input, select, button { width:100%; padding:10px 12px; margin-top:6px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+    input, select {
+      background:#1f2630;
+      color:#e6edf3;
+    }
+    input::placeholder {
+      color:#9aa4b2;
+    }
+    .checkrow { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:500; }
+    .checkrow input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
+    input:focus, select:focus { outline:2px solid rgba(37,99,235,0.2); border-color:var(--primary); }
+    .info { background:var(--primary-soft); border:1px solid #cfe2ff; padding:10px; margin:10px 0; border-radius:8px; }
+    .warn { background:var(--warn); border:1px solid var(--warn-border); padding:10px; border-radius:8px; }
+    .jobs { margin-top:20px; }
+    .job { border:1px solid var(--border); padding:14px; margin:12px 0; border-radius:10px; background:var(--card); }
+    .logbox { height:200px; overflow:auto; white-space:pre-wrap; background:#0b0f17; color:#e5e7eb; padding:10px; border-radius:6px; margin-top:8px; }
+    .small { color:var(--muted); font-size:12px; }
+    .btn { margin-top:12px; padding:10px 12px; background:var(--primary); color:white; border:none; cursor:pointer; }
+    .btn.secondary { background:#2a3442; color:#dbe5f2; border:1px solid #3a4759; }
+    .btn.danger { background:#5b1f29; color:#ffd9df; border:1px solid #8f3a49; }
+    .topbar { display:flex; gap:16px; }
+    .job-header { display:flex; justify-content:space-between; align-items:center; }
+    .header-left { display:flex; align-items:center; gap:8px; }
+    .job-controls { display:flex; align-items:center; gap:8px; }
+    .btn-icon {
+      width:auto;
+      margin-top:0;
+      min-width:24px;
+      padding:2px 6px;
+      font-size:12px;
+      line-height:1.2;
+      background:#0b0f17;
+      color:var(--muted);
+      border:1px solid var(--border);
+      border-radius:6px;
+      cursor:pointer;
+    }
+    .job-body.collapsed { display:none; }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted); }
+    .pill.ok { color:#9ae6b4; border-color:#14532d; background:#0f2a1b; }
+    .pill.run { color:#93c5fd; border-color:#1d4ed8; background:#0b1f3a; }
+    .pill.err { color:#fca5a5; border-color:#7f1d1d; background:#2a0f10; }
+    .pill.cancel { color:#facc15; border-color:#a16207; background:#2b2107; }
+    .subjobs { margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .subjob { border:1px solid var(--border); border-radius:8px; padding:8px; }
+    .subjob.align { border-color:#1d4ed8; background:#0b1f3a22; }
+    .subjob.build { border-color:#14532d; background:#0f2a1b22; }
+    .subjob-title { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+    .subjob-actions { margin-top:8px; display:flex; gap:8px; }
+    .subjob-actions form { flex:1; margin:0; }
+    .subjob-actions .btn { margin-top:0; padding:8px 10px; font-size:12px; }
+    .job-actions { margin-top:12px; display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; }
+    .job-actions form { margin:0; }
+    .job-actions .btn { margin-top:0; }
+    .builds { margin-top:20px; }
+    .build { border:1px solid var(--border); border-radius:10px; background:var(--card); padding:14px 16px; margin:10px 0; }
+    .build-body.collapsed { display:none; }
+    .build-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    .build-path { margin-top:6px; font-size:13px; }
+    .build-actions { margin-top:8px; display:flex; gap:8px; }
+    .build-actions form { margin:0; }
+    .build-actions .btn { width:auto; margin-top:0; padding:6px 10px; font-size:12px; }
+    .build-tiles { margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px; }
+    .tile { border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#0b0f1722; }
+    .tile-label { font-size:13px; color:var(--muted); }
+    .tile-value { font-size:19px; font-weight:700; margin-top:2px; line-height:1.15; }
+    .build-config { margin-top:10px; border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#0b0f171a; }
+    .cfg-group + .cfg-group { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
+    .cfg-title { font-size:13px; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em; }
+    .cfg-row { display:grid; grid-template-columns:240px 1fr; gap:10px; padding:1px 0; }
+    .cfg-key { color:#93c5fd; font-size:13px; }
+    .cfg-val { color:var(--text); font-size:13px; word-break:break-word; }
+    .parts-box { margin-top:10px; border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#0b0f171a; }
+    .parts-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; }
+    .parts-list { max-height:170px; overflow:auto; border-top:1px dashed var(--border); padding-top:6px; }
+    .part-row { display:grid; grid-template-columns:1fr auto; gap:10px; padding:2px 0; font-size:12px; }
+    .part-name { color:var(--text); word-break:break-all; }
+    .part-size { color:var(--muted); }
+    .config-box { margin-top:10px; border:1px dashed var(--border); border-radius:8px; padding:8px; background:#0b0f171a; }
+    .kv-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .kv-pill { border:1px solid var(--border); border-radius:999px; padding:4px 8px; font-size:12px; color:var(--text); background:#0d1420; }
+    .kv-pill b { color:#93c5fd; }
+  </style>
+</head>
+<body>
+  <div class="page">
+  <h1>BEAM Benchmark Generator</h1>
+
+  <div class="row">
+    <div class="col card">
+      <h3>Presets</h3>
+      <select onchange="if(this.value) window.location='/?preset='+this.value;">
+        <option value="">(none)</option>
+        {% for key, p in presets.items() %}
+          <option value="{{ key }}">{{ p.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col card">
+      <h3>Recent runs</h3>
+      <select onchange="if(this.value) window.location='/?recent='+this.value;">
+        <option value="">(none)</option>
+        {% for r in recent_presets %}
+          <option value="{{ r.job_id }}">{{ r.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col card">
+      <h3>Classes</h3>
+      <button class="btn secondary" onclick="window.location='/refresh_classes'">Refresh WDC classes</button>
+    </div>
+  </div>
+
+  <form method="post" action="/jobs" class="card" style="margin-top:16px;">
+    <div class="row">
+      <div class="col">
+        <label>Class name</label>
+        <select name="class_name">
+          <option value="">(select class)</option>
+          {% for name, meta in class_meta.items() %}
+            <option value="{{ name }}" {% if form.class_name == name %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+          {% if form.class_name and form.class_name not in class_meta %}
+            <option value="{{ form.class_name }}" selected>{{ form.class_name }} (not in cached list)</option>
+          {% endif %}
+        </select>
+
+        <label>Parts spec</label>
+        <input name="parts_spec" value="{{ form.parts_spec }}" placeholder="all / 1-5 / 1,2,3" />
+
+        <label>WDC predicate pattern</label>
+        <input name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="eidr / name / telephone / isrc" />
+
+        <label>Wikidata property</label>
+        <input name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="P2704 / wdt:P2704 / rdfs:label" />
+      </div>
+      <div class="col">
+        <label>Wikidata class (QID)</label>
+        <input name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q33742" />
+
+        <label>Max depth (bnodes)</label>
+        <select name="max_depth">
+          {% for d in [-1,0,1,2,3,4,5] %}
+            <option value="{{ d }}" {% if form.max_depth == d %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+
+        <label>Normalization: extra chars to strip</label>
+        <input name="ignore_chars" value="{{ form.ignore_chars }}" placeholder="spaces;-;.;special-chars" />
+
+        <label class="checkrow">
+          <input type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
+          WDC values are Wikidata URLs
+        </label>
+        <label class="checkrow">
+          <input type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
+          Ignore align cache (force re-run align)
+        </label>
+        <label class="checkrow">
+          <input type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
+          Use local parts only (no downloads)
+        </label>
+      </div>
+    </div>
+
+    {% if form.class_name and form.class_name in class_meta %}
+      <div class="info">
+        Parts: {{ class_meta[form.class_name].num_parts or 'N/A' }} | Size: {{ class_meta[form.class_name].size_human or 'N/A' }}
+        <br/>
+        Local parts downloaded: {{ local_parts }}
+      </div>
+    {% endif %}
+
+    <button class="btn" type="submit">Generate benchmark</button>
+  </form>
+
+  <div class="jobs">
+    <h2>Builds</h2>
+    {% if builds %}
+      {% for b in builds %}
+      <div class="build" id="build-card-{{ loop.index0 }}">
+        <div class="build-head">
+          <div class="header-left">
+            <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}">-</button>
+            <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }}</span></div>
+          </div>
+        </div>
+        <div class="build-body" id="build-body-{{ loop.index0 }}">
+        <div class="small build-path">Path: {{ b.path }}</div>
+        <div class="build-actions">
+          <form method="get" action="/builds/{{ b.class_name }}/{{ b.build_name }}/download">
+            <button class="btn secondary" type="submit">Download build</button>
+          </form>
+          <form method="post" action="/builds/{{ b.class_name }}/{{ b.build_name }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
+            <button class="btn danger" type="submit">Delete build</button>
+          </form>
+        </div>
+        {% set v = b.with_link or b.without_link %}
+        {% if v %}
+        <div class="build-tiles">
+          <div class="tile">
+            <div class="tile-label">Total Size</div>
+            <div class="tile-value">{{ v.size_total_h }}</div>
+          </div>
+          <div class="tile">
+            <div class="tile-label">Entity Links</div>
+            <div class="tile-value">{{ v.links_count }}</div>
+          </div>
+          <div class="tile">
+            <div class="tile-label">WDC Properties</div>
+            <div class="tile-value">{{ v.wdc_props }}</div>
+          </div>
+          <div class="tile">
+            <div class="tile-label">WD Properties</div>
+            <div class="tile-value">{{ v.wd_props }}</div>
+          </div>
+        </div>
+        {% endif %}
+        <div class="build-config">
+          <div><b>Config</b></div>
+          {% for g in b.config_groups %}
+          <div class="cfg-group">
+            <div class="cfg-title">{{ g["title"] }}</div>
+            {% for k, val in g["items"] %}
+            <div class="cfg-row">
+              <div class="cfg-key">{{ k }}</div>
+              <div class="cfg-val">{{ val }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        {% if b.parts_manifest %}
+        <div class="parts-box">
+          <div class="parts-head">
+            <div><b>Parts Used</b> <span class="small">({{ b.parts_count }})</span></div>
+            {% if b.parts_total_size_human %}<div class="small">Total: {{ b.parts_total_size_human }}</div>{% endif %}
+          </div>
+          <div class="parts-list">
+            {% for p in b.parts_manifest %}
+            <div class="part-row">
+              <div class="part-name">{{ p.get("name", "") }}</div>
+              <div class="part-size">{{ p.get("size_human", "") }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="small">(no completed builds found)</div>
+    {% endif %}
+
+    <h2>Jobs</h2>
+  {% if jobs %}
+  {% for job in jobs %}
+      <div class="job" id="job-card-{{ job.id }}">
+        <div class="job-header">
+          <div class="header-left">
+            <button type="button" class="btn-icon js-toggle-job" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">-</button>
+            <div><b>Job {{ job.id }}</b></div>
+          </div>
+          <div class="job-controls">
+            {% set job_cancelling = job.cancel_requested and job.status in ['running', 'queued'] %}
+            {% if job_cancelling %}
+              <div class="pill cancel" id="job-pill-{{ job.id }}">cancelling{% if job.phase %} · {{ job.phase }}{% endif %}</div>
+            {% else %}
+              <div class="pill {% if job.status == 'running' %}run{% elif job.status in ['done'] %}ok{% elif job.status in ['error','interrupted','cancelled'] %}err{% endif %}" id="job-pill-{{ job.id }}">
+                {{ job.status }}{% if job.phase %} · {{ job.phase }}{% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="job-body" id="job-body-{{ job.id }}">
+        <div class="small">Created: {{ jobs_times[job.id].created or (job.created_at | int) }}</div>
+        {% if jobs_times[job.id].started %}<div class="small">Started: {{ jobs_times[job.id].started }}</div>{% endif %}
+        {% if jobs_times[job.id].ended %}<div class="small">Ended: {{ jobs_times[job.id].ended }}</div>{% endif %}
+        <div class="config-box">
+          <div><b>Config</b></div>
+          <div class="kv-pills">
+            {% for k, val in jobs_params[job.id].items() %}
+              <span class="kv-pill"><b>{{ k }}</b>: {{ val }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="warn" id="job-error-{{ job.id }}" {% if not job.error_message %}style="display:none"{% endif %}>{{ job.error_message or '' }}</div>
+        <div class="small" id="job-result-{{ job.id }}" {% if not job.result_path %}style="display:none"{% endif %}>
+          Result: {{ job.result_path or '' }}
+        </div>
+        <div class="small" id="job-align-dir-{{ job.id }}" {% if not job.align_dir %}style="display:none"{% endif %}>
+          Align dir: {{ job.align_dir or '' }}{% if job.reused_align %} (cached){% endif %}
+        </div>
+        {% set out = jobs_outputs[job.id] %}
+        <div id="job-build-output-{{ job.id }}">
+          {% if out.build_done %}
+            <div class="info">
+              Build completed. Files saved in:
+              {% if out.build_out_with %}<br/>- {{ out.build_out_with }}{% endif %}
+              {% if out.build_out_without %}<br/>- {{ out.build_out_without }}{% endif %}
+            </div>
+          {% elif job.status in ['done'] and job.result_path %}
+            <div class="warn">Job is done but BUILD_DONE marker not found at: {{ out.build_done_file or 'N/A' }}</div>
+          {% endif %}
+        </div>
+
+        <div class="subjobs">
+          {% set subs = jobs_subjobs[job.id] %}
+          {% for sj in subs %}
+          <div class="subjob {{ sj.type }}">
+            <div class="subjob-title">
+                <span>{{ sj.type | upper }}</span>
+              {% set sj_cancelling = sj.cancel_requested and sj.status in ['queued','running'] %}
+              {% if sj_cancelling %}
+                <span class="pill cancel" id="subjob-pill-{{ job.id }}-{{ sj.type }}">cancelling</span>
+              {% elif sj.status == 'done' %}
+                <span class="pill ok" id="subjob-pill-{{ job.id }}-{{ sj.type }}">done</span>
+              {% elif sj.status == 'running' %}
+                <span class="pill run" id="subjob-pill-{{ job.id }}-{{ sj.type }}">running</span>
+              {% elif sj.status in ['error','cancelled','interrupted'] %}
+                <span class="pill err" id="subjob-pill-{{ job.id }}-{{ sj.type }}">{{ sj.status }}</span>
+              {% else %}
+                <span class="pill" id="subjob-pill-{{ job.id }}-{{ sj.type }}">pending</span>
+              {% endif %}
+            </div>
+            <div class="small" id="subjob-progress-{{ job.id }}-{{ sj.type }}">Progress: {{ sj.progress_text or '—' }}</div>
+            <div class="small" id="subjob-step-{{ job.id }}-{{ sj.type }}">{% if sj.current_step %}Step: {{ sj.current_step }}{% endif %}</div>
+            <div class="small" id="subjob-file-{{ job.id }}-{{ sj.type }}">{% if sj.current_file %}File: {{ sj.current_file }}{% endif %}</div>
+            <div class="subjob-actions" id="subjob-cancel-wrap-{{ job.id }}-{{ sj.type }}" {% if not (job.status in ["running", "queued"] and sj.status in ["queued","running"]) %}style="display:none"{% endif %}>
+              <form method="post" action="/jobs/{{ job.id }}/cancel_subjob/{{ sj.type }}" class="js-async-form" data-job-id="{{ job.id }}">
+                <button class="btn secondary" type="submit">Cancel {{ sj.type }}</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <details style="margin-top:8px;" open>
+          <summary class="small">ALIGN logs</summary>
+          <div class="logbox" id="log-align-{{ job.id }}"></div>
+        </details>
+        <details style="margin-top:8px;">
+          <summary class="small">BUILD logs</summary>
+          <div class="logbox" id="log-build-{{ job.id }}"></div>
+        </details>
+        <div id="job-cancel-wrap-{{ job.id }}" {% if not (job.status in ["running", "queued"]) %}style="display:none"{% endif %}>
+          <form method="post" action="/jobs/{{ job.id }}/cancel" class="js-async-form" data-job-id="{{ job.id }}">
+            <button class="btn" type="submit">Cancel job</button>
+          </form>
+        </div>
+        <div class="job-actions">
+          <form method="post" action="/jobs/{{ job.id }}/rerun" class="js-async-form" data-job-id="{{ job.id }}">
+            <button class="btn secondary" type="submit">Rerun</button>
+          </form>
+          <form method="post" action="/jobs/{{ job.id }}/rerun_nocache" class="js-async-form" data-job-id="{{ job.id }}">
+            <button class="btn secondary" type="submit">Rerun no cache</button>
+          </form>
+          <form method="post" action="/jobs/{{ job.id }}/rerun_align" class="js-async-form" data-job-id="{{ job.id }}">
+            <button class="btn secondary" type="submit">Rerun align</button>
+          </form>
+          <form method="post" action="/jobs/{{ job.id }}/rerun_build" class="js-async-form" data-job-id="{{ job.id }}">
+            <button class="btn secondary" type="submit">Rerun build</button>
+          </form>
+          {% if job.status not in ["running", "queued"] %}
+          <form method="post" action="/jobs/{{ job.id }}/delete" class="js-async-form" data-delete-target="job-card-{{ job.id }}">
+            <button class="btn danger" type="submit">Delete job</button>
+          </form>
+          {% endif %}
+        </div>
+        </div>
+      </div>
+    {% endfor %}
+    {% else %}
+      <div class="small">(no jobs to show; successful jobs are hidden and tracked in Builds)</div>
+    {% endif %}
+  </div>
+
+<script>
+const activeLogSockets = {};
+const logReconnectTimers = {};
+const logPingTimers = {};
+const logRetryAttempts = {};
+const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
+const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
+
+function getMinimizedJobs() {
+  try {
+    const raw = localStorage.getItem(JOB_COLLAPSE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveMinimizedJobs(map) {
+  try {
+    localStorage.setItem(JOB_COLLAPSE_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function getMinimizedBuilds() {
+  try {
+    const raw = localStorage.getItem(BUILD_COLLAPSE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveMinimizedBuilds(map) {
+  try {
+    localStorage.setItem(BUILD_COLLAPSE_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function updateJobArtifacts(jobId, payload) {
+  const resultEl = document.getElementById('job-result-' + jobId);
+  if (resultEl) {
+    if (payload.result_path) {
+      resultEl.style.display = '';
+      resultEl.textContent = `Result: ${payload.result_path}`;
+    } else {
+      resultEl.style.display = 'none';
+      resultEl.textContent = '';
+    }
+  }
+
+  const alignEl = document.getElementById('job-align-dir-' + jobId);
+  if (alignEl) {
+    if (payload.align_dir) {
+      alignEl.style.display = '';
+      alignEl.textContent = `Align dir: ${payload.align_dir}${payload.reused_align ? ' (cached)' : ''}`;
+    } else {
+      alignEl.style.display = 'none';
+      alignEl.textContent = '';
+    }
+  }
+
+  const outBox = document.getElementById('job-build-output-' + jobId);
+  if (outBox) {
+    const out = payload.outputs || {};
+    if (out.build_done) {
+      let html = '<div class="info">Build completed. Files saved in:';
+      if (out.build_out_with) html += `<br/>- ${escapeHtml(out.build_out_with)}`;
+      if (out.build_out_without) html += `<br/>- ${escapeHtml(out.build_out_without)}`;
+      html += '</div>';
+      outBox.innerHTML = html;
+    } else if (payload.status === 'done' && payload.result_path) {
+      outBox.innerHTML = `<div class="warn">Job is done but BUILD_DONE marker not found at: ${escapeHtml(out.build_done_file || 'N/A')}</div>`;
+    } else {
+      outBox.innerHTML = '';
+    }
+  }
+}
+
+function setJobCollapsed(jobId, collapsed) {
+  const body = document.getElementById('job-body-' + jobId);
+  const btn = document.querySelector(`.js-toggle-job[data-job-id="${jobId}"]`);
+  if (!body || !btn) return;
+  body.classList.toggle('collapsed', !!collapsed);
+  btn.textContent = collapsed ? '+' : '-';
+}
+
+function bindJobMinimize() {
+  const minimized = getMinimizedJobs();
+  document.querySelectorAll('.js-toggle-job').forEach((btn) => {
+    const jobId = btn.dataset.jobId;
+    const initialCollapsed = minimized[jobId] !== 0;
+    setJobCollapsed(jobId, initialCollapsed);
+    btn.addEventListener('click', () => {
+      const body = document.getElementById('job-body-' + jobId);
+      if (!body) return;
+      const next = !body.classList.contains('collapsed');
+      setJobCollapsed(jobId, next);
+      const state = getMinimizedJobs();
+      state[jobId] = next ? 1 : 0;
+      saveMinimizedJobs(state);
+    });
+  });
+}
+
+function setBuildCollapsed(buildId, collapsed) {
+  const body = document.getElementById('build-body-' + buildId);
+  const btn = document.querySelector(`.js-toggle-build[data-build-id="${buildId}"]`);
+  if (!body || !btn) return;
+  body.classList.toggle('collapsed', !!collapsed);
+  btn.textContent = collapsed ? '+' : '-';
+}
+
+function bindBuildMinimize() {
+  const minimized = getMinimizedBuilds();
+  document.querySelectorAll('.js-toggle-build').forEach((btn) => {
+    const buildId = btn.dataset.buildId;
+    const initialCollapsed = minimized[buildId] !== 0;
+    setBuildCollapsed(buildId, initialCollapsed);
+    btn.addEventListener('click', () => {
+      const body = document.getElementById('build-body-' + buildId);
+      if (!body) return;
+      const next = !body.classList.contains('collapsed');
+      setBuildCollapsed(buildId, next);
+      const state = getMinimizedBuilds();
+      state[buildId] = next ? 1 : 0;
+      saveMinimizedBuilds(state);
+    });
+  });
+}
+
+function startLogs(jobId) {
+  if (logReconnectTimers[jobId]) {
+    clearTimeout(logReconnectTimers[jobId]);
+    delete logReconnectTimers[jobId];
+  }
+  if (activeLogSockets[jobId] && activeLogSockets[jobId].readyState <= 1) return;
+  const alignBox = document.getElementById('log-align-' + jobId);
+  const buildBox = document.getElementById('log-build-' + jobId);
+  if (!alignBox && !buildBox) return;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws/logs/${jobId}`);
+  activeLogSockets[jobId] = ws;
+  ws.onopen = () => {
+    logRetryAttempts[jobId] = 0;
+    ws.send('ping');
+    if (logPingTimers[jobId]) clearInterval(logPingTimers[jobId]);
+    logPingTimers[jobId] = setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 1000);
+  };
+  ws.onmessage = (ev) => {
+    let payload = null;
+    try { payload = JSON.parse(ev.data); } catch(e) {}
+    if (payload && payload.type === 'progress') {
+      const ptext = payload.progress_text || '';
+      const pct = (payload.progress_pct !== null && payload.progress_pct !== undefined) ? payload.progress_pct.toFixed(1) : '';
+      const phase = payload.phase || '';
+      const statusRaw = payload.status || '';
+      const status = (payload.cancel_requested && (statusRaw === 'running' || statusRaw === 'queued')) ? 'cancelling' : statusRaw;
+      if (statusRaw === 'done') {
+        const card = document.getElementById('job-card-' + jobId);
+        if (card) card.remove();
+        if (logPingTimers[jobId]) {
+          clearInterval(logPingTimers[jobId]);
+          delete logPingTimers[jobId];
+        }
+        if (activeLogSockets[jobId]) {
+          try { activeLogSockets[jobId].close(); } catch (_) {}
+          delete activeLogSockets[jobId];
+        }
+        return;
+      }
+      const jobPill = document.getElementById('job-pill-' + jobId);
+      if (jobPill) {
+        const cls = (status === 'running') ? 'pill run'
+          : (status === 'done') ? 'pill ok'
+          : (status === 'cancelling') ? 'pill cancel'
+          : (status === 'error' || status === 'cancelled' || status === 'interrupted') ? 'pill err'
+          : 'pill';
+        jobPill.className = cls;
+        jobPill.textContent = `${status}${phase ? ' · ' + phase : ''}`;
+      }
+      const err = document.getElementById('job-error-' + jobId);
+      if (err) {
+        const em = payload.error_message || '';
+        if (em) {
+          err.style.display = '';
+          err.textContent = em;
+        } else {
+          err.style.display = 'none';
+          err.textContent = '';
+        }
+      }
+      updateJobArtifacts(jobId, payload);
+      const jobCancelWrap = document.getElementById('job-cancel-wrap-' + jobId);
+      if (jobCancelWrap) {
+        jobCancelWrap.style.display = (statusRaw === 'running' || statusRaw === 'queued') ? '' : 'none';
+      }
+      if (Array.isArray(payload.subjobs)) {
+        payload.subjobs.forEach((sj) => {
+          const t = sj.type;
+          const cancelling = !!sj.cancel_requested && (sj.status === 'running' || sj.status === 'queued');
+          const shownStatus = cancelling ? 'cancelling' : (sj.status || 'pending');
+          const pill = document.getElementById(`subjob-pill-${jobId}-${t}`);
+          if (pill) {
+            const cls = (shownStatus === 'running') ? 'pill run'
+              : (shownStatus === 'done') ? 'pill ok'
+              : (shownStatus === 'cancelling') ? 'pill cancel'
+              : (shownStatus === 'error' || shownStatus === 'cancelled' || shownStatus === 'interrupted') ? 'pill err'
+              : 'pill';
+            pill.className = cls;
+            pill.textContent = shownStatus;
+          }
+          const p = document.getElementById(`subjob-progress-${jobId}-${t}`);
+          const s = document.getElementById(`subjob-step-${jobId}-${t}`);
+          const f = document.getElementById(`subjob-file-${jobId}-${t}`);
+          if (p) p.textContent = `Progress: ${sj.progress_text || '—'}`;
+          if (s) s.textContent = sj.current_step ? `Step: ${sj.current_step}` : '';
+          if (f) f.textContent = sj.current_file ? `File: ${sj.current_file}` : '';
+          const cancelWrap = document.getElementById(`subjob-cancel-wrap-${jobId}-${t}`);
+          if (cancelWrap) {
+            const canCancelJob = statusRaw === 'running' || statusRaw === 'queued';
+            const canCancelSub = sj.status === 'running' || sj.status === 'queued';
+            cancelWrap.style.display = (canCancelJob && canCancelSub) ? '' : 'none';
+          }
+        });
+      }
+      return;
+    }
+    const msg = payload?.message || '';
+    const clean = msg.replace(/\u001b\[[0-9;]*m/g, '').replace(/\r/g, '');
+    if (!clean) return;
+
+    const appendLog = (box, line) => {
+      if (!box || !line) return;
+      const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 5;
+      box.textContent += line + '\n';
+      const logLines = box.textContent.split('\n');
+      if (logLines.length > 220) {
+        box.textContent = logLines.slice(-220).join('\n');
+      }
+      if (atBottom) box.scrollTop = box.scrollHeight;
+    };
+
+    if (clean.startsWith('ALIGN | ')) {
+      appendLog(alignBox, clean.slice('ALIGN | '.length));
+      return;
+    }
+    if (clean.startsWith('BUILD | ')) {
+      appendLog(buildBox, clean.slice('BUILD | '.length));
+      return;
+    }
+    // Legacy untagged lines: route by content so BUILD logs don't pollute ALIGN.
+    const isLikelyBuild = /^\[(WDC|WD)\]/.test(clean) ||
+      clean.includes('depth=') ||
+      clean.includes('batch ') ||
+      clean.includes('prop_stats');
+    const isLikelyAlign = clean.includes('Download') ||
+      clean.includes('Direct extraction') ||
+      clean.includes('Téléchargement') ||
+      clean.includes('Extraction directe') ||
+      clean.includes('Linking WDC') ||
+      clean.includes('Fetching Wikidata values') ||
+      clean.includes('Exporting results') ||
+      clean.includes('Récupération des valeurs Wikidata') ||
+      clean.includes('Export des résultats');
+
+    if (isLikelyBuild && !isLikelyAlign) {
+      appendLog(buildBox, clean);
+      return;
+    }
+    if (isLikelyAlign && !isLikelyBuild) {
+      appendLog(alignBox, clean);
+      return;
+    }
+
+    // System/unknown lines default to BUILD pane to keep ALIGN focused.
+    appendLog(buildBox, clean);
+  };
+  ws.onclose = () => {
+    if (logPingTimers[jobId]) {
+      clearInterval(logPingTimers[jobId]);
+      delete logPingTimers[jobId];
+    }
+    if (activeLogSockets[jobId] === ws) delete activeLogSockets[jobId];
+    const attempts = (logRetryAttempts[jobId] || 0) + 1;
+    logRetryAttempts[jobId] = attempts;
+    const delayMs = Math.min(10000, 500 * (2 ** Math.min(attempts, 5)));
+    logReconnectTimers[jobId] = setTimeout(() => startLogs(jobId), delayMs);
+  };
+  ws.onerror = () => {
+    try { ws.close(); } catch (_) {}
+  };
+}
+
+function setupAsyncForms() {
+  const forms = document.querySelectorAll('form.js-async-form');
+  forms.forEach((form) => {
+    if (form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          credentials: 'same-origin',
+          redirect: 'follow',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const targetId = form.dataset.deleteTarget;
+        if (targetId) {
+          const el = document.getElementById(targetId);
+          if (el) el.remove();
+        }
+      } catch (_) {
+        if (btn) btn.disabled = false;
+      }
+    });
+  });
+}
+
+// Auto-start live logs for all jobs with log boxes
+document.addEventListener('DOMContentLoaded', () => {
+      const ids = [{% for job in jobs %}{{ job.id }},{% endfor %}];
+  bindBuildMinimize();
+  bindJobMinimize();
+  ids.forEach(id => startLogs(id));
+  setupAsyncForms();
+});
+</script>
+</div>
+</body>
+</html>
