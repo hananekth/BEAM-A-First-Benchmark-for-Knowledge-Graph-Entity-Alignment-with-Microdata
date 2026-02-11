@@ -1906,7 +1906,7 @@ def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_di
     # Valeurs WDC non alignées
     export_unmatched_values(wdc_values_matched, wdc_map, output_dir, key_name=key_name)
     
-    print_color(f"\n✅ Export terminé!", Colors.GREEN)
+    print_color(f"\n✅ Alignnement done.", Colors.GREEN)
 
 def _sum_file_sizes(paths):
     total = 0
