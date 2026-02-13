@@ -1,0 +1,50 @@
+[
+  {
+    "preset_key": "testclass_large_benchmark",
+    "class_name": "TestClassLarge",
+    "status": "ok",
+    "out_dir": "data/TestClassLarge/beam_20260213_145737",
+    "build_skipped": null,
+    "duration_s": 179.35
+  },
+  {
+    "preset_key": "testclass_label",
+    "class_name": "TestClassLabel",
+    "status": "ok",
+    "out_dir": "data/TestClassLabel/beam_20260213_150036",
+    "build_skipped": null,
+    "duration_s": 54.51
+  },
+  {
+    "preset_key": "testclass_wikidata_url",
+    "class_name": "TestClassWikidataUrl",
+    "status": "ok",
+    "out_dir": "data/TestClassWikidataUrl/beam_20260213_150131",
+    "build_skipped": null,
+    "duration_s": 104.53
+  },
+  {
+    "preset_key": "testclass_wikidata_sameas",
+    "class_name": "TestClassWikidataSameAs",
+    "status": "ok",
+    "out_dir": "data/TestClassWikidataSameAs/beam_20260213_150315",
+    "build_skipped": null,
+    "duration_s": 183.19
+  },
+  {
+    "preset_key": "property_movie",
+    "class_name": "Movie",
+    "status": "ok",
+    "out_dir": "data/Movie/beam_20260213_150619",
+    "build_skipped": null,
+    "duration_s": 14.36
+  },
+  {
+    "preset_key": "label_language",
+    "class_name": "Language",
+    "status": "ok",
+    "out_dir": "data/Language/beam_20260213_150633",
+    "build_skipped": null,
+    "duration_s": 35.25
+  }
+]

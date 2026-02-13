@@ -48,6 +48,13 @@ def _format_eta(seconds):
     return f"ETA: {s}s"
 
 
+def _normalize_prop_token(value):
+    token = value.strip("<>")
+    if token.startswith("http://www.wikidata.org/"):
+        return token.lower()
+    return token
+
+
 def _eta_update(start_ts, done_bytes, total_bytes):
     if done_bytes <= 0:
         return "ETA: N/A"
@@ -81,6 +88,7 @@ def _split_worker(args):
     line_count = 0
     kept_attr = 0
     kept_rel = 0
+    exclude_props_norm = {_normalize_prop_token(p) for p in exclude_props} if exclude_props else None
     with open(input_path, "r", encoding="utf-8") as f, \
          open(tmp_attr, "w", encoding="utf-8") as attr_out, \
          open(tmp_rel, "w", encoding="utf-8") as rel_out:
@@ -90,16 +98,21 @@ def _split_worker(args):
             if not parsed:
                 continue
             s, p, o = parsed
+            p_norm = _normalize_prop_token(p)
             if s not in targets:
                 continue
-            if exclude_props and p in exclude_props:
+            if exclude_props_norm and p_norm in exclude_props_norm:
                 continue
-            if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
+            if exclude_prop_patterns and any(pat in p_norm.lower() for pat in exclude_prop_patterns):
                 continue
-            if replace_map and s in replace_map:
-                s = replace_map[s]
-            if replace_map and (not o.startswith('"')) and o in replace_map:
-                o = replace_map[o]
+            if replace_map:
+                s_key = s.strip("<>")
+                if s_key in replace_map:
+                    s = replace_map[s_key]
+            if replace_map and (not o.startswith('"')):
+                o_key = o.strip("<>")
+                if o_key in replace_map:
+                    o = replace_map[o_key]
             s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
             if o.startswith('"'):
                 o_out = clean_literal(o_out)
@@ -123,17 +136,19 @@ def _split_worker(args):
 def _count_worker(args):
     path, subjects, exclude_props, exclude_prop_patterns, mask_values = args
     local = {}
+    exclude_props_norm = {_normalize_prop_token(p) for p in exclude_props} if exclude_props else None
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             parsed = parse_nq_or_nt(line)
             if not parsed:
                 continue
             s, p, o = parsed
+            p_norm = _normalize_prop_token(p)
             if s not in subjects:
                 continue
-            if exclude_props and p in exclude_props:
+            if exclude_props_norm and p_norm in exclude_props_norm:
                 continue
-            if exclude_prop_patterns and any(pat in p.lower() for pat in exclude_prop_patterns):
+            if exclude_prop_patterns and any(pat in p_norm.lower() for pat in exclude_prop_patterns):
                 continue
             if mask_values and o.startswith('"'):
                 lex = literal_lex(o)
@@ -154,10 +169,14 @@ def _labels_worker(args):
             if not parsed:
                 continue
             s, p, o = parsed
-            if s not in target_iris:
+            s_norm = s.strip("<>")
+            p_norm = p.strip("<>")
+            if s_norm not in target_iris:
                 continue
-            if p not in label_preds:
+            if p_norm not in label_preds:
                 continue
+            if o.startswith('"'):
+                o = clean_literal(o)
             out.write(f"{s}\t{p}\t{o}\n")
             written += 1
     size = os.path.getsize(path)
@@ -174,15 +193,17 @@ def _prop_label_worker(args):
             if not parsed:
                 continue
             s, p, o = parsed
-            if s not in targets:
+            s_norm = s.strip("<>")
+            p_norm = p.strip("<>")
+            if s_norm not in targets:
                 continue
-            if p not in label_preds:
+            if p_norm not in label_preds:
                 continue
             lex = literal_lex(o) or o.strip('"')
-            if p.endswith("#label") or p.endswith("prefLabel"):
+            if p_norm.endswith("#label") or p_norm.endswith("prefLabel"):
                 if s not in local_labels:
                     local_labels[s] = lex
-            elif p.endswith("description"):
+            elif p_norm.endswith("description"):
                 if s not in local_descs:
                     local_descs[s] = lex
     size = os.path.getsize(path)
@@ -282,17 +303,19 @@ def read_links(path, sep, wdc_col, wd_col, wdc_value_col, wd_value_col):
 
 
 def normalize_wd_uri(value, lowercase):
+    # Normalize URI token shape first so all downstream files use a stable form.
+    if value.startswith("<") and value.endswith(">"):
+        value = value[1:-1]
     if lowercase and value.startswith("http://www.wikidata.org/"):
         return value.lower()
     return value
 
 
 def transform_triple(s, p, o, lowercase):
-    if lowercase:
-        s = normalize_wd_uri(s, lowercase)
-        p = normalize_wd_uri(p, lowercase)
-        if not o.startswith('"'):
-            o = normalize_wd_uri(o, lowercase)
+    s = normalize_wd_uri(s, lowercase)
+    p = normalize_wd_uri(p, lowercase)
+    if not o.startswith('"'):
+        o = normalize_wd_uri(o, lowercase)
     return s, p, o
 
 
@@ -616,6 +639,7 @@ def normalize_wd_prop_id(value):
 
 
 def prop_uri_to_entity(uri):
+    uri = uri.strip("<>")
     if "wikidata.org/prop/" not in uri:
         return None
     tail = uri.rstrip("/").split("/")[-1]
@@ -625,7 +649,7 @@ def prop_uri_to_entity(uri):
 
 
 def canonical_wd_entity_uri(uri):
-    match = re.match(r"^http://www\\.wikidata\\.org/entity/([pqPQ]\\d+)$", uri)
+    match = re.match(r"^http://www\.wikidata\.org/entity/([pqPQ]\d+)$", uri)
     if not match:
         return uri
     return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
@@ -703,11 +727,18 @@ def fetch_wd_labels_descriptions(uris, endpoint, language, batch_size, sleep_s, 
     for batch_idx, batch in enumerate(batch_iter(uris, batch_size), start=1):
         values = " ".join(f"<{uri}>" for uri in batch)
         query = (
-            "SELECT ?s ?label ?desc WHERE { "
+            "SELECT ?s "
+            "(SAMPLE(?labelPref) AS ?label_pref) "
+            "(SAMPLE(?labelAny) AS ?label_any) "
+            "(SAMPLE(?descPref) AS ?desc_pref) "
+            "(SAMPLE(?descAny) AS ?desc_any) "
+            "WHERE { "
             f"VALUES ?s {{ {values} }} "
-            "OPTIONAL { ?s rdfs:label ?label FILTER(LANG(?label) = \"" + language + "\") } "
-            "OPTIONAL { ?s schema:description ?desc FILTER(LANG(?desc) = \"" + language + "\") } "
-            "}"
+            "OPTIONAL { ?s rdfs:label ?labelPref FILTER(LANG(?labelPref) = \"" + language + "\" || LANG(?labelPref) = \"\") } "
+            "OPTIONAL { ?s rdfs:label ?labelAny } "
+            "OPTIONAL { ?s schema:description ?descPref FILTER(LANG(?descPref) = \"" + language + "\" || LANG(?descPref) = \"\") } "
+            "OPTIONAL { ?s schema:description ?descAny } "
+            "} GROUP BY ?s"
         )
         attempt = 0
         while True:
@@ -722,10 +753,22 @@ def fetch_wd_labels_descriptions(uris, endpoint, language, batch_size, sleep_s, 
                 data = resp.json()
                 for row in data.get("results", {}).get("bindings", []):
                     s = row["s"]["value"]
-                    if "label" in row:
-                        results.append((s, "http://www.w3.org/2000/01/rdf-schema#label", f"\"{row['label']['value']}\""))
-                    if "desc" in row:
-                        results.append((s, "http://schema.org/description", f"\"{row['desc']['value']}\""))
+                    label_val = (
+                        row.get("label_pref", {}).get("value")
+                        or row.get("label_any", {}).get("value")
+                    )
+                    desc_val = (
+                        row.get("desc_pref", {}).get("value")
+                        or row.get("desc_any", {}).get("value")
+                    )
+                    if label_val and not desc_val:
+                        desc_val = label_val
+                    if desc_val and not label_val:
+                        label_val = desc_val
+                    if label_val:
+                        results.append((s, "http://www.w3.org/2000/01/rdf-schema#label", f"\"{label_val}\""))
+                    if desc_val:
+                        results.append((s, "http://schema.org/description", f"\"{desc_val}\""))
                 break
             except requests.RequestException as exc:
                 attempt += 1
@@ -767,15 +810,34 @@ def append_labels_descriptions(
         retries,
         backoff,
     )
+    label_pred = "http://www.w3.org/2000/01/rdf-schema#label"
+    desc_pred = "http://schema.org/description"
+    by_subject = {}
+    for s, p, o in triples:
+        row = by_subject.setdefault(s, {"label": None, "desc": None})
+        if p == label_pred and row["label"] is None:
+            row["label"] = o
+        elif p == desc_pred and row["desc"] is None:
+            row["desc"] = o
+
+    for uri in uris:
+        row = by_subject.setdefault(uri, {"label": None, "desc": None})
+        fallback = f"\"{uri.rstrip('/').split('/')[-1]}\""
+        if row["label"] is None:
+            row["label"] = fallback
+        if row["desc"] is None:
+            row["desc"] = row["label"]
+
     with open(attr_path, "a", encoding="utf-8") as out:
-        for s, p, o in triples:
-            s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
-            o_out = clean_literal(o_out)
-            out.write(f"{s_out}\t{p_out}\t{o_out}\n")
-            for prop_uri in ent_to_prop.get(s, []):
-                s_prop, p_prop, o_prop = transform_triple(prop_uri, p, o, lowercase_wd)
-                o_prop = clean_literal(o_prop)
-                out.write(f"{s_prop}\t{p_prop}\t{o_prop}\n")
+        for s, row in by_subject.items():
+            for p, o in ((label_pred, row["label"]), (desc_pred, row["desc"])):
+                s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
+                o_out = clean_literal(o_out)
+                out.write(f"{s_out}\t{p_out}\t{o_out}\n")
+                for prop_uri in ent_to_prop.get(s, []):
+                    s_prop, p_prop, o_prop = transform_triple(prop_uri, p, o, lowercase_wd)
+                    o_prop = clean_literal(o_prop)
+                    out.write(f"{s_prop}\t{p_prop}\t{o_prop}\n")
 
 
 def append_wdc_labels_descriptions(attr_path, rel_path, wdc_input_paths):
@@ -857,6 +919,14 @@ def fetch_wd_label_desc_map(uris, endpoint, language, batch_size, sleep_s, timeo
             entry["label"] = literal_lex(o) or o.strip('"')
         elif p.endswith("description"):
             entry["desc"] = literal_lex(o) or o.strip('"')
+    # Ensure map is complete even when Wikidata has sparse metadata.
+    for uri in uris:
+        entry = labels.setdefault(uri, {"label": "", "desc": ""})
+        fallback = uri.rstrip("/").split("/")[-1]
+        if not entry["label"]:
+            entry["label"] = fallback
+        if not entry["desc"]:
+            entry["desc"] = entry["label"]
     return labels
 
 
@@ -875,8 +945,9 @@ def write_prop_stats(
     counts = count_props_in_files([attr_path, rel_path])
     prop_entity_map = {}
     for prop in counts.keys():
-        if prop.startswith("http://www.wikidata.org/prop/"):
-            ent = prop_uri_to_entity(prop)
+        prop_norm = prop.strip("<>")
+        if prop_norm.startswith("http://www.wikidata.org/prop/"):
+            ent = prop_uri_to_entity(prop_norm)
             if ent:
                 prop_entity_map[prop] = canonical_wd_entity_uri(ent)
 
@@ -925,7 +996,7 @@ def write_prop_stats_wdc(out_path, attr_path, rel_path, wdc_input_paths):
     }
     labels = {}
     descs = {}
-    targets = set(counts.keys())
+    targets = {p.strip("<>") for p in counts.keys()}
 
     lock_path = os.path.join("Download", ".workers.lock")
     n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
@@ -1206,6 +1277,7 @@ def write_wikidata_from_sparql(
 
     attr_mode = "a" if resume else "w"
     rel_mode = "a" if resume else "w"
+    exclude_props_norm = {_normalize_prop_token(p) for p in exclude_props} if exclude_props else None
     with open(out_attr_path, attr_mode, encoding="utf-8") as attr_out, \
          open(out_rel_path, rel_mode, encoding="utf-8") as rel_out:
         kept_attr = 0
@@ -1228,12 +1300,17 @@ def write_wikidata_from_sparql(
                         json.dump(state, f, indent=2)
                 continue
             s, p, o = item
-            if exclude_props and p in exclude_props:
+            p_norm = _normalize_prop_token(p)
+            if exclude_props_norm and p_norm in exclude_props_norm:
                 continue
-            if replace_map and s in replace_map:
-                s = replace_map[s]
-            if replace_map and (not o.startswith('"')) and o in replace_map:
-                o = replace_map[o]
+            if replace_map:
+                s_key = s.strip("<>")
+                if s_key in replace_map:
+                    s = replace_map[s_key]
+            if replace_map and (not o.startswith('"')):
+                o_key = o.strip("<>")
+                if o_key in replace_map:
+                    o = replace_map[o_key]
             s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
             if o.startswith('"'):
                 o_out = clean_literal(o_out)

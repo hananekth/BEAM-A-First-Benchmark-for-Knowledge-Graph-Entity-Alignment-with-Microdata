@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import time
 import zipfile
+import asyncio
 from pathlib import Path
 from typing import Optional
 
@@ -22,13 +23,86 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 
 PRESETS = {
+    "testclass_large_benchmark": {
+        "label": "Bigger local benchmark (TestClassLarge / language label)",
+        "class_name": "TestClassLarge",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": False,
+        "max_depth": 0,
+        "force_align": True,
+        "use_local_only": True,
+    },
+    "testclass_quick": {
+        "label": "Quick local test (TestClass / language label)",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": False,
+        "max_depth": 0,
+        "use_local_only": True,
+    },
+    "testclass_label": {
+        "label": "TestClass label matching (name -> rdfs:label)",
+        "class_name": "TestClassLabel",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": False,
+        "max_depth": 0,
+        "use_local_only": True,
+    },
+    "testclass_identifier": {
+        "label": "TestClass identifier matching (eidr -> P2704)",
+        "class_name": "TestClassIdentifier",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "eidr",
+        "wikidata_property": "wdt:P2704",
+        "wkd_class": "Q11424",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": False,
+        "max_depth": 0,
+        "use_local_only": True,
+    },
+    "testclass_wikidata_url": {
+        "label": "TestClass Wikidata links (url -> P31 city)",
+        "class_name": "TestClassWikidataUrl",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "url",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": True,
+        "max_depth": 0,
+        "use_local_only": True,
+    },
+    "testclass_wikidata_sameas": {
+        "label": "TestClass Wikidata links (sameAs -> P31 country)",
+        "class_name": "TestClassWikidataSameAs",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameas",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q6256",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": True,
+        "max_depth": 0,
+        "use_local_only": True,
+    },
     "property_movie": {
         "label": "Match with property (Movie / EIDR)",
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
         "wikidata_property": "wdt:P2704",
-        "wkd_class": "",
+        "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": -1,
@@ -39,7 +113,18 @@ PRESETS = {
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
-        "wkd_class": "Q33742",
+        "wkd_class": "Q34770",
+        "ignore_chars": "spaces;-;.",
+        "wdc_value_is_wikidata": False,
+        "max_depth": -1,
+    },
+    "property_country_iso2": {
+        "label": "Match with property (Country / ISO 3166-1 alpha-2)",
+        "class_name": "Country",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "iso",
+        "wikidata_property": "wdt:P297",
+        "wkd_class": "Q6256",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": -1,
@@ -49,8 +134,8 @@ PRESETS = {
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
-        "wikidata_property": "",
-        "wkd_class": "Q7930989",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q515",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
         "max_depth": -1,
@@ -71,6 +156,10 @@ def _default_form():
         "force_align": False,
         "use_local_only": False,
     }
+
+
+def _clean_text(value: Optional[str]) -> str:
+    return (value or "").strip()
 
 
 def _get_recent_presets(limit=50):
@@ -136,6 +225,47 @@ def _count_lines(path: Path) -> int:
         for _ in f:
             c += 1
     return c
+
+
+def _discover_local_class_rows(download_root: str = "Download"):
+    root = Path(download_root)
+    if not root.exists() or not root.is_dir():
+        return []
+
+    rows = []
+    for class_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        parts = []
+        full_graph = []
+        try:
+            for fp in class_dir.iterdir():
+                if not fp.is_file():
+                    continue
+                name = fp.name
+                if name.startswith("part_") and (name.endswith(".nq") or name.endswith(".nt") or "." not in name):
+                    parts.append(fp)
+                elif name.endswith("_full_graph.nq"):
+                    full_graph.append(fp)
+        except Exception:
+            continue
+
+        files = parts if parts else full_graph
+        if not files:
+            continue
+
+        total_size = 0
+        for fp in files:
+            try:
+                total_size += fp.stat().st_size
+            except Exception:
+                pass
+        rows.append(
+            {
+                "class_name": class_dir.name,
+                "num_parts": len(parts) if parts else len(full_graph),
+                "size_human": _fmt_size(total_size),
+            }
+        )
+    return rows
 
 
 def _variant_stats(base: Path, variant: str):
@@ -220,9 +350,9 @@ def _build_config_groups(cfg: dict):
     if not isinstance(cfg, dict):
         return []
     ordered = [
-        ("Input", ["class_name", "parts_spec"]),
+        ("Input", ["class_name"]),
         ("Matching", ["wdc_predicate_pattern", "wikidata_property", "wkd_class", "wdc_value_is_wikidata", "ignore_chars"]),
-        ("Build", ["max_depth", "force_align", "use_local_only", "build_name", "result_path", "parts_count", "parts_total_size_human"]),
+        ("Build", ["max_depth", "force_align", "use_local_only", "build_name", "result_path"]),
     ]
     used = set()
     groups = []
@@ -234,7 +364,13 @@ def _build_config_groups(cfg: dict):
                 used.add(k)
         if items:
             groups.append({"title": title, "items": items})
-    ignored = {"parts_manifest", "parts_total_size_bytes"}
+    ignored = {
+        "parts_spec",
+        "parts_count",
+        "parts_total_size_human",
+        "parts_total_size_bytes",
+        "parts_manifest",
+    }
     other = [(k, v) for k, v in cfg.items() if (k not in used and k not in ignored)]
     if other:
         groups.append({"title": "Other", "items": other})
@@ -290,6 +426,12 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
             rows = fetch_wdc_classes()
             if rows:
                 db.upsert_wdc_classes(rows)
+        except Exception:
+            pass
+    local_rows = _discover_local_class_rows("Download")
+    if local_rows:
+        try:
+            db.upsert_wdc_classes(local_rows)
         except Exception:
             pass
 
@@ -355,9 +497,9 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
         }
 
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "form": form,
             "presets": PRESETS,
             "recent_presets": recent_presets,
@@ -508,12 +650,12 @@ def create_job(
     use_local_only: Optional[str] = Form(None),
 ):
     params = {
-        "class_name": class_name,
-        "parts_spec": parts_spec,
-        "wdc_predicate_pattern": wdc_predicate_pattern,
-        "wikidata_property": wikidata_property,
-        "wkd_class": wkd_class,
-        "ignore_chars": ignore_chars,
+        "class_name": _clean_text(class_name),
+        "parts_spec": _clean_text(parts_spec),
+        "wdc_predicate_pattern": _clean_text(wdc_predicate_pattern),
+        "wikidata_property": _clean_text(wikidata_property),
+        "wkd_class": _clean_text(wkd_class),
+        "ignore_chars": _clean_text(ignore_chars),
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
         "max_depth": int(max_depth),
         "force_align": bool(force_align),
@@ -575,14 +717,37 @@ async def ws_logs(websocket: WebSocket, job_id: int):
             await websocket.close()
             return
         last_id = 0
+        def _event_payload(row):
+            meta = None
+            try:
+                if row["meta_json"]:
+                    meta = json.loads(row["meta_json"])
+            except Exception:
+                meta = None
+            return {
+                "type": "event",
+                "id": row["id"],
+                "ts": row["ts"],
+                "level": row["level"],
+                "message": row["message"],
+                "phase": row["phase"],
+                "kind": row["kind"],
+                "step": row["step"],
+                "worker": row["worker"],
+                "progress_pct": row["progress_pct"],
+                "meta": meta,
+            }
         # send recent history
         rows = db.list_events(job_id, since_id=None, limit=200)
         for r in rows:
-            payload = {"type": "event", "id": r["id"], "level": r["level"], "message": r["message"]}
-            await websocket.send_text(json.dumps(payload))
+            await websocket.send_text(json.dumps(_event_payload(r)))
             last_id = r["id"]
         while True:
-            await websocket.receive_text()  # ping/poll from client
+            # Push updates at a fixed cadence even if client pings stall.
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=0.5)
+            except asyncio.TimeoutError:
+                pass
             job = db.get_job(job_id)
             if job:
                 payload = {
@@ -605,8 +770,7 @@ async def ws_logs(websocket: WebSocket, job_id: int):
             rows = db.list_events(job_id, since_id=last_id, limit=200)
             if rows:
                 for r in rows:
-                    payload = {"type": "event", "id": r["id"], "level": r["level"], "message": r["message"]}
-                    await websocket.send_text(json.dumps(payload))
+                    await websocket.send_text(json.dumps(_event_payload(r)))
                     last_id = r["id"]
     except WebSocketDisconnect:
         return

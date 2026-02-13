@@ -73,9 +73,59 @@ A visualization and navigation tool for exploring the datasets:
 │   └── books/                      # Results for books dataset
 │
 ├── requirements.txt                # Python dependencies
+├── requirements-dev.txt            # Test dependencies (pytest)
+├── tests/                          # Unit/integration tests
+├── docs/wikidata_reference.md      # Verified Wikidata class/property IDs for presets
 ├── Article_BEAM_ACM_SAC26.pdf      # Research paper
 └── README.md                       # This file
 ```
+
+## ✅ Test Commands
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+## ⚡ Quick Local Class For Fast Build Tests
+
+Create a tiny local class (`TestClass`, 3 parts) linked to real Wikidata city entities:
+
+```bash
+python scripts/create_testclass_data.py
+```
+
+Then in the web UI use preset:
+- `Quick local test (TestClass / language label)`
+
+For a bigger local run (targeting roughly 2–5 minutes depending network/API speed):
+
+```bash
+python scripts/create_testclass_large_data.py
+```
+
+Then in the web UI use preset:
+- `Bigger local benchmark (TestClassLarge / language label)`
+
+Note: this preset enables `force_align=true` so each run recomputes alignment (avoids instant cache-only runs).
+
+If it is still too fast on your machine, increase generated volume:
+
+```bash
+python scripts/create_testclass_large_data.py --force --parts 30 --noise-lines-per-part 20000
+```
+
+Create multiple local matching-pattern classes (label, identifier, URL, sameAs):
+
+```bash
+python scripts/create_matching_test_classes.py --force
+```
+
+Then in the web UI use one of:
+- `TestClass label matching (name -> rdfs:label)`
+- `TestClass identifier matching (eidr -> P2704)`
+- `TestClass Wikidata links (url -> P31 city)`
+- `TestClass Wikidata links (sameAs -> P31 country)`
 
 ---
 
@@ -433,4 +483,3 @@ This work is part of and supported by the *mekano* project.
 ## 📧 Contact
 
 For questions, issues, or contributions, please open an issue on GitHub or contact the maintainers.
-

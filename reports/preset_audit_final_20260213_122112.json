@@ -1,0 +1,12 @@
+{
+  "summary": {
+    "generated_at": "2026-02-13 12:21:12",
+    "preset_count": 10,
+    "completed_count": 0,
+    "ok_count": 0,
+    "error_count": 0,
+    "audit_fail_count": 0
+  },
+  "runs": [],
+  "notes": "For Movie/Language/Country/City presets, use local fixture part_999 with use_local_only=true for deterministic quick validation."
+}

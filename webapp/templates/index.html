@@ -41,6 +41,9 @@
     .jobs { margin-top:20px; }
     .job { border:1px solid var(--border); padding:14px; margin:12px 0; border-radius:10px; background:var(--card); }
     .logbox { height:200px; overflow:auto; white-space:pre-wrap; background:#0b0f17; color:#e5e7eb; padding:10px; border-radius:6px; margin-top:8px; }
+    .lane-head { margin-top:8px; display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+    .lane-head b { color:var(--text); font-weight:600; }
+    .stale { color:#facc15; }
     .small { color:var(--muted); font-size:12px; }
     .btn { margin-top:12px; padding:10px 12px; background:var(--primary); color:white; border:none; cursor:pointer; }
     .btn.secondary { background:#2a3442; color:#dbe5f2; border:1px solid #3a4759; }
@@ -107,6 +110,12 @@
     .kv-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .kv-pill { border:1px solid var(--border); border-radius:999px; padding:4px 8px; font-size:12px; color:var(--text); background:#0d1420; }
     .kv-pill b { color:#93c5fd; }
+    @media (max-width: 820px) {
+      .cfg-row { grid-template-columns:1fr; gap:4px; }
+      .build-actions { flex-wrap:wrap; }
+      .build-actions .btn { width:100%; }
+      .subjobs { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
@@ -364,10 +373,20 @@
         </div>
         <details style="margin-top:8px;" open>
           <summary class="small">ALIGN logs</summary>
+          <div class="lane-head" id="lane-head-align-{{ job.id }}">
+            <span><b>Status:</b> <span id="lane-status-align-{{ job.id }}">pending</span></span>
+            <span><b>Step:</b> <span id="lane-step-align-{{ job.id }}">—</span></span>
+            <span><b>Last update:</b> <span id="lane-last-align-{{ job.id }}">—</span></span>
+          </div>
           <div class="logbox" id="log-align-{{ job.id }}"></div>
         </details>
         <details style="margin-top:8px;">
           <summary class="small">BUILD logs</summary>
+          <div class="lane-head" id="lane-head-build-{{ job.id }}">
+            <span><b>Status:</b> <span id="lane-status-build-{{ job.id }}">pending</span></span>
+            <span><b>Step:</b> <span id="lane-step-build-{{ job.id }}">—</span></span>
+            <span><b>Last update:</b> <span id="lane-last-build-{{ job.id }}">—</span></span>
+          </div>
           <div class="logbox" id="log-build-{{ job.id }}"></div>
         </details>
         <div id="job-cancel-wrap-{{ job.id }}" {% if not (job.status in ["running", "queued"]) %}style="display:none"{% endif %}>
@@ -388,11 +407,16 @@
           <form method="post" action="/jobs/{{ job.id }}/rerun_build" class="js-async-form" data-job-id="{{ job.id }}">
             <button class="btn secondary" type="submit">Rerun build</button>
           </form>
-          {% if job.status not in ["running", "queued"] %}
-          <form method="post" action="/jobs/{{ job.id }}/delete" class="js-async-form" data-delete-target="job-card-{{ job.id }}">
+          <form
+            method="post"
+            action="/jobs/{{ job.id }}/delete"
+            class="js-async-form"
+            data-delete-target="job-card-{{ job.id }}"
+            id="job-delete-wrap-{{ job.id }}"
+            {% if job.status in ["running", "queued"] %}style="display:none"{% endif %}
+          >
             <button class="btn danger" type="submit">Delete job</button>
           </form>
-          {% endif %}
         </div>
         </div>
       </div>
@@ -406,7 +430,12 @@
 const activeLogSockets = {};
 const logReconnectTimers = {};
 const logPingTimers = {};
+const logWatchdogTimers = {};
 const logRetryAttempts = {};
+const logLastMessageTs = {};
+const stopReconnectByJob = {};
+const seenEventIdsByJob = {};
+const laneStateByJob = {};
 const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
 const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
 
@@ -449,6 +478,56 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function ensureLaneState(jobId) {
+  if (!laneStateByJob[jobId]) {
+    laneStateByJob[jobId] = {
+      align: { lastTsMs: 0, step: '—', status: 'pending' },
+      build: { lastTsMs: 0, step: '—', status: 'pending' },
+    };
+  }
+  return laneStateByJob[jobId];
+}
+
+function updateLaneMeta(jobId, lane, patch) {
+  const state = ensureLaneState(jobId)[lane];
+  if (!state) return;
+  if (patch.status) state.status = patch.status;
+  if (patch.step) state.step = patch.step;
+  if (patch.tsMs) state.lastTsMs = patch.tsMs;
+
+  const statusEl = document.getElementById(`lane-status-${lane}-${jobId}`);
+  const stepEl = document.getElementById(`lane-step-${lane}-${jobId}`);
+  const lastEl = document.getElementById(`lane-last-${lane}-${jobId}`);
+  if (statusEl) statusEl.textContent = state.status || 'pending';
+  if (stepEl) stepEl.textContent = state.step || '—';
+  if (lastEl) {
+    if (!state.lastTsMs) {
+      lastEl.textContent = '—';
+      lastEl.classList.remove('stale');
+    } else {
+      const ageMs = Date.now() - state.lastTsMs;
+      lastEl.textContent = `${new Date(state.lastTsMs).toLocaleTimeString()} (${Math.max(0, Math.floor(ageMs / 1000))}s ago)`;
+      lastEl.classList.toggle('stale', ageMs > 2000);
+    }
+  }
+}
+
+function appendLogLine(box, line) {
+  if (!box || !line) return;
+  const existing = box.textContent || '';
+  const trimmedExisting = existing.replace(/\n+$/g, '');
+  const lastNl = trimmedExisting.lastIndexOf('\n');
+  const lastLine = lastNl >= 0 ? trimmedExisting.slice(lastNl + 1) : trimmedExisting;
+  if (lastLine === line) return;
+  const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 5;
+  box.textContent += line + '\n';
+  const logLines = box.textContent.split('\n');
+  if (logLines.length > 220) {
+    box.textContent = logLines.slice(-220).join('\n');
+  }
+  if (atBottom) box.scrollTop = box.scrollHeight;
 }
 
 function updateJobArtifacts(jobId, payload) {
@@ -544,6 +623,7 @@ function bindBuildMinimize() {
 }
 
 function startLogs(jobId) {
+  if (stopReconnectByJob[jobId]) return;
   if (logReconnectTimers[jobId]) {
     clearTimeout(logReconnectTimers[jobId]);
     delete logReconnectTimers[jobId];
@@ -557,25 +637,37 @@ function startLogs(jobId) {
   activeLogSockets[jobId] = ws;
   ws.onopen = () => {
     logRetryAttempts[jobId] = 0;
+    logLastMessageTs[jobId] = Date.now();
     ws.send('ping');
     if (logPingTimers[jobId]) clearInterval(logPingTimers[jobId]);
-    logPingTimers[jobId] = setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 1000);
+    logPingTimers[jobId] = setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 500);
+    if (logWatchdogTimers[jobId]) clearInterval(logWatchdogTimers[jobId]);
+    logWatchdogTimers[jobId] = setInterval(() => {
+      const last = logLastMessageTs[jobId] || 0;
+      if (ws.readyState === 1 && (Date.now() - last) > 5000) {
+        try { ws.close(); } catch (_) {}
+      }
+    }, 2000);
   };
   ws.onmessage = (ev) => {
+    logLastMessageTs[jobId] = Date.now();
     let payload = null;
     try { payload = JSON.parse(ev.data); } catch(e) {}
     if (payload && payload.type === 'progress') {
-      const ptext = payload.progress_text || '';
-      const pct = (payload.progress_pct !== null && payload.progress_pct !== undefined) ? payload.progress_pct.toFixed(1) : '';
       const phase = payload.phase || '';
       const statusRaw = payload.status || '';
       const status = (payload.cancel_requested && (statusRaw === 'running' || statusRaw === 'queued')) ? 'cancelling' : statusRaw;
       if (statusRaw === 'done') {
-        const card = document.getElementById('job-card-' + jobId);
-        if (card) card.remove();
+        stopReconnectByJob[jobId] = true;
+        updateLaneMeta(jobId, 'align', { status: 'done' });
+        updateLaneMeta(jobId, 'build', { status: 'done' });
         if (logPingTimers[jobId]) {
           clearInterval(logPingTimers[jobId]);
           delete logPingTimers[jobId];
+        }
+        if (logWatchdogTimers[jobId]) {
+          clearInterval(logWatchdogTimers[jobId]);
+          delete logWatchdogTimers[jobId];
         }
         if (activeLogSockets[jobId]) {
           try { activeLogSockets[jobId].close(); } catch (_) {}
@@ -609,6 +701,10 @@ function startLogs(jobId) {
       if (jobCancelWrap) {
         jobCancelWrap.style.display = (statusRaw === 'running' || statusRaw === 'queued') ? '' : 'none';
       }
+      const jobDeleteWrap = document.getElementById('job-delete-wrap-' + jobId);
+      if (jobDeleteWrap) {
+        jobDeleteWrap.style.display = (statusRaw === 'running' || statusRaw === 'queued') ? 'none' : '';
+      }
       if (Array.isArray(payload.subjobs)) {
         payload.subjobs.forEach((sj) => {
           const t = sj.type;
@@ -630,6 +726,10 @@ function startLogs(jobId) {
           if (p) p.textContent = `Progress: ${sj.progress_text || '—'}`;
           if (s) s.textContent = sj.current_step ? `Step: ${sj.current_step}` : '';
           if (f) f.textContent = sj.current_file ? `File: ${sj.current_file}` : '';
+          updateLaneMeta(jobId, t, {
+            status: shownStatus,
+            step: sj.current_step || undefined,
+          });
           const cancelWrap = document.getElementById(`subjob-cancel-wrap-${jobId}-${t}`);
           if (cancelWrap) {
             const canCancelJob = statusRaw === 'running' || statusRaw === 'queued';
@@ -638,64 +738,60 @@ function startLogs(jobId) {
           }
         });
       }
-      return;
-    }
-    const msg = payload?.message || '';
-    const clean = msg.replace(/\u001b\[[0-9;]*m/g, '').replace(/\r/g, '');
-    if (!clean) return;
-
-    const appendLog = (box, line) => {
-      if (!box || !line) return;
-      const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 5;
-      box.textContent += line + '\n';
-      const logLines = box.textContent.split('\n');
-      if (logLines.length > 220) {
-        box.textContent = logLines.slice(-220).join('\n');
+      if (statusRaw === 'error' || statusRaw === 'cancelled' || statusRaw === 'interrupted') {
+        stopReconnectByJob[jobId] = true;
+        if (logPingTimers[jobId]) {
+          clearInterval(logPingTimers[jobId]);
+          delete logPingTimers[jobId];
+        }
+        if (logWatchdogTimers[jobId]) {
+          clearInterval(logWatchdogTimers[jobId]);
+          delete logWatchdogTimers[jobId];
+        }
+        if (activeLogSockets[jobId]) {
+          try { activeLogSockets[jobId].close(); } catch (_) {}
+          delete activeLogSockets[jobId];
+        }
       }
-      if (atBottom) box.scrollTop = box.scrollHeight;
-    };
+      return;
+    }
+    if (!payload || payload.type !== 'event') return;
+    const evId = Number(payload.id || 0);
+    if (!seenEventIdsByJob[jobId]) seenEventIdsByJob[jobId] = new Set();
+    if (evId && seenEventIdsByJob[jobId].has(evId)) return;
+    if (evId) seenEventIdsByJob[jobId].add(evId);
+    const tsMs = payload.ts ? Math.round(Number(payload.ts) * 1000) : Date.now();
+    const msg = String(payload.message || '').replace(/\u001b\[[0-9;]*m/g, '').replace(/\r/g, '');
+    if (!msg) return;
 
-    if (clean.startsWith('ALIGN | ')) {
-      appendLog(alignBox, clean.slice('ALIGN | '.length));
-      return;
-    }
-    if (clean.startsWith('BUILD | ')) {
-      appendLog(buildBox, clean.slice('BUILD | '.length));
-      return;
-    }
-    // Legacy untagged lines: route by content so BUILD logs don't pollute ALIGN.
-    const isLikelyBuild = /^\[(WDC|WD)\]/.test(clean) ||
-      clean.includes('depth=') ||
-      clean.includes('batch ') ||
-      clean.includes('prop_stats');
-    const isLikelyAlign = clean.includes('Download') ||
-      clean.includes('Direct extraction') ||
-      clean.includes('Téléchargement') ||
-      clean.includes('Extraction directe') ||
-      clean.includes('Linking WDC') ||
-      clean.includes('Fetching Wikidata values') ||
-      clean.includes('Exporting results') ||
-      clean.includes('Récupération des valeurs Wikidata') ||
-      clean.includes('Export des résultats');
+    let lane = '';
+    if (payload.phase === 'align' || payload.worker === 'align') lane = 'align';
+    if (payload.phase === 'build' || payload.worker === 'build') lane = 'build';
+    if (!lane && msg.startsWith('ALIGN | ')) lane = 'align';
+    if (!lane && msg.startsWith('BUILD | ')) lane = 'build';
+    if (!lane) lane = 'build';
 
-    if (isLikelyBuild && !isLikelyAlign) {
-      appendLog(buildBox, clean);
-      return;
-    }
-    if (isLikelyAlign && !isLikelyBuild) {
-      appendLog(alignBox, clean);
-      return;
-    }
-
-    // System/unknown lines default to BUILD pane to keep ALIGN focused.
-    appendLog(buildBox, clean);
+    const trimmed = msg.startsWith('ALIGN | ') ? msg.slice('ALIGN | '.length)
+      : msg.startsWith('BUILD | ') ? msg.slice('BUILD | '.length)
+      : msg;
+    const box = lane === 'align' ? alignBox : buildBox;
+    appendLogLine(box, `[${new Date(tsMs).toLocaleTimeString()}] ${trimmed}`);
+    updateLaneMeta(jobId, lane, {
+      step: payload.step || undefined,
+      tsMs,
+    });
   };
   ws.onclose = () => {
     if (logPingTimers[jobId]) {
       clearInterval(logPingTimers[jobId]);
       delete logPingTimers[jobId];
     }
+    if (logWatchdogTimers[jobId]) {
+      clearInterval(logWatchdogTimers[jobId]);
+      delete logWatchdogTimers[jobId];
+    }
     if (activeLogSockets[jobId] === ws) delete activeLogSockets[jobId];
+    if (stopReconnectByJob[jobId]) return;
     const attempts = (logRetryAttempts[jobId] || 0) + 1;
     logRetryAttempts[jobId] = attempts;
     const delayMs = Math.min(10000, 500 * (2 ** Math.min(attempts, 5)));
@@ -742,6 +838,12 @@ document.addEventListener('DOMContentLoaded', () => {
   bindJobMinimize();
   ids.forEach(id => startLogs(id));
   setupAsyncForms();
+  setInterval(() => {
+    ids.forEach((id) => {
+      updateLaneMeta(id, 'align', {});
+      updateLaneMeta(id, 'build', {});
+    });
+  }, 1000);
 });
 </script>
 </div>

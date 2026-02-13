@@ -14,12 +14,14 @@ from beam.pipeline import generate_benchmark, PipelineError, _config_hash
 
 MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "2"))
 POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "2"))
+MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", "8"))
 
 
 def _cpu_workers_for(job_count):
     cpu = os.cpu_count() or 1
     active = max(1, job_count)
-    return max(1, int((cpu * 0.8) / active))
+    workers = max(1, int((cpu * 0.8) / active))
+    return max(1, min(workers, MAX_WORKERS_PER_JOB))
 
 
 def _terminate_process_tree(proc, grace_s=0.5):
@@ -192,6 +194,19 @@ def _recover_stale_running_jobs():
                 db.insert_event(job_id, "system", "Recovered stale running state after restart (auto-requeued: full)")
 
 
+def _reconcile_terminal_subjobs():
+    """Ensure terminal job states are reflected on subjobs after restarts/code upgrades."""
+    terminal_statuses = ("error", "cancelled", "interrupted")
+    now = time.time()
+    for status in terminal_statuses:
+        rows = db.list_jobs_by_status(status)
+        for job in rows:
+            job_id = job["id"]
+            for sj in db.list_subjobs(job_id):
+                if sj["status"] in ("queued", "running"):
+                    db.update_subjob(sj["id"], status=status, ended_at=now)
+
+
 def _run_job(job_id, workers):
     # Make this process a new process group so we can kill the whole tree
     try:
@@ -265,6 +280,9 @@ def _run_job(job_id, workers):
                 self._phase_started_at = time.time()
                 self._current_step = None
                 self._current_file = None
+                self._last_step_key = None
+                self._last_scan_pct_logged = None
+                self._last_scan_log_ts = 0.0
                 self._translations = (
                     ("Téléchargement/Décompression", "Download/Decompress"),
                     ("Téléchargement depuis", "Downloading from"),
@@ -292,6 +310,23 @@ def _run_job(job_id, workers):
                     out = out.replace(src, dst)
                 return out
 
+            def _emit_event(self, msg, kind="log", step=None, pct=None, worker=None, meta=None):
+                try:
+                    db.insert_event(
+                        self.jid,
+                        "log",
+                        msg,
+                        phase=self._phase,
+                        kind=kind,
+                        step=step,
+                        worker=worker or self._phase,
+                        progress_pct=pct,
+                        meta=meta,
+                    )
+                except Exception:
+                    # Logging must never break the running pipeline.
+                    pass
+
             def write(self, data):
                 if not data:
                     return
@@ -311,23 +346,42 @@ def _run_job(job_id, workers):
                     return
                 msg = self._to_english(msg)
                 self._last_emit_ts = time.time()
-                phase_tag = "ALIGN" if self._phase == "align" else "BUILD"
                 m = re.search(r"(\\d{1,3}\\.\\d)%", msg)
                 pct = float(m.group(1)) if m else None
+                kind = "progress" if (m or ("Progress:" in msg) or ("ETA:" in msg) or ("Lines read" in msg)) else "log"
+                # Throttle very chatty scanner lines to reduce DB pressure.
+                should_emit = True
+                if msg.startswith("Lines read:"):
+                    now = time.time()
+                    if self._last_scan_pct_logged is not None and pct is not None:
+                        pct_delta = pct - self._last_scan_pct_logged
+                    else:
+                        pct_delta = None
+                    if (pct_delta is not None and pct_delta < 0.2) and (now - self._last_scan_log_ts) < 1.0:
+                        should_emit = False
+                    else:
+                        if pct is not None:
+                            self._last_scan_pct_logged = pct
+                        self._last_scan_log_ts = now
                 # Keep raw logs cleaner: throttle very chatty download progress lines.
                 if msg.startswith("Download:") and pct is not None:
                     if self._last_download_pct_logged is not None and (pct - self._last_download_pct_logged) < 0.5:
                         pass
                     else:
-                        db.insert_event(self.jid, "log", f"{phase_tag} | {msg}")
+                        if should_emit:
+                            self._emit_event(msg, kind=kind, pct=pct)
                         self._last_download_pct_logged = pct
                 elif msg != self._last_logged_msg:
-                    db.insert_event(self.jid, "log", f"{phase_tag} | {msg}")
+                    if should_emit:
+                        self._emit_event(msg, kind=kind, pct=pct)
                 self._last_logged_msg = msg
                 # update progress if line looks like progress
-                if m or ("Progress:" in msg) or ("ETA:" in msg) or ("Lines read" in msg):
-                    db.update_job(self.jid, progress_text=msg, progress_pct=pct)
-                    db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
+                if kind == "progress":
+                    try:
+                        db.update_job(self.jid, progress_text=msg, progress_pct=pct)
+                        db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
+                    except Exception:
+                        pass
                 # step detection
                 step = None
                 current_file = None
@@ -355,8 +409,21 @@ def _run_job(job_id, workers):
                         self._current_step = step
                     if current_file:
                         self._current_file = current_file
-                    db.update_job(self.jid, current_step=step, current_file=current_file)
-                    db.update_subjob_by_type(self.jid, self._phase, current_step=step, current_file=current_file)
+                    try:
+                        db.update_job(self.jid, current_step=step, current_file=current_file)
+                        db.update_subjob_by_type(self.jid, self._phase, current_step=step, current_file=current_file)
+                    except Exception:
+                        pass
+                    step_key = (self._phase, self._current_step, self._current_file)
+                    if step_key != self._last_step_key:
+                        self._emit_event(
+                            msg,
+                            kind="step",
+                            step=self._current_step,
+                            pct=pct,
+                            meta={"current_file": self._current_file} if self._current_file else None,
+                        )
+                        self._last_step_key = step_key
 
         writer = DbWriter(job_id)
         with redirect_stdout(writer), redirect_stderr(writer):
@@ -378,9 +445,20 @@ def _run_job(job_id, workers):
                     phase_elapsed = int(now - writer._phase_started_at)
                     step = writer._current_step or "build"
                     msg = f"[HB] build active | step={step} | phase_elapsed={phase_elapsed}s | quiet={quiet_s}s"
-                    db.insert_event(writer.jid, "log", f"BUILD | {msg}")
-                    db.update_job(writer.jid, progress_text=msg)
-                    db.update_subjob_by_type(writer.jid, "build", progress_text=msg)
+                    try:
+                        db.insert_event(
+                            writer.jid,
+                            "log",
+                            msg,
+                            phase="build",
+                            kind="heartbeat",
+                            step=step,
+                            worker="build",
+                        )
+                        db.update_job(writer.jid, progress_text=msg)
+                        db.update_subjob_by_type(writer.jid, "build", progress_text=msg)
+                    except Exception:
+                        pass
                     writer._last_heartbeat_ts = now
 
             hb_thread = threading.Thread(target=heartbeat_loop, daemon=True)
@@ -402,7 +480,11 @@ def _run_job(job_id, workers):
                 writer._phase = phase
                 writer._phase_started_at = time.time()
                 writer._last_heartbeat_ts = 0.0
-                db.update_job(job_id, phase=phase)
+                try:
+                    db.update_job(job_id, phase=phase)
+                    db.insert_event(job_id, "system", f"Phase switched to {phase}", phase=phase, kind="phase", step=phase, worker=phase)
+                except Exception:
+                    pass
                 if phase == "align":
                     db.update_subjob_by_type(job_id, "align", status="running", started_at=time.time())
                 if phase == "build":
@@ -426,6 +508,28 @@ def _run_job(job_id, workers):
         align_row = db.get_subjob(job_id, "align")
         if align_row and align_row["status"] != "done":
             db.update_subjob(align_row["id"], status="done", ended_at=time.time())
+        if result.get("build_skipped"):
+            reason = result.get("build_skip_reason") or "Build skipped."
+            db.insert_event(job_id, "system", reason, phase="build", kind="skip", step="build", worker="build")
+            db.update_job(
+                job_id,
+                status="done",
+                ended_at=time.time(),
+                result_path=None,
+                align_dir=result.get("align_dir"),
+                reused_align=1 if result.get("reused_align") else 0,
+                progress_text=reason,
+                phase="build",
+            )
+            db.update_subjob_by_type(
+                job_id,
+                "build",
+                status="done",
+                ended_at=time.time(),
+                progress_text=reason,
+                current_step="skipped",
+            )
+            return
         if result.get("build_cancelled"):
             _cancel_if_active(job_id, "build")
             db.update_job(
@@ -481,11 +585,14 @@ def _run_job(job_id, workers):
             ended_at=time.time(),
             error_message=f"Unexpected error: {e}",
         )
+        db.update_subjob_by_type(job_id, "align", status="error", ended_at=time.time())
+        db.update_subjob_by_type(job_id, "build", status="error", ended_at=time.time())
         raise
 
 
 def main():
     db.init_db()
+    _reconcile_terminal_subjobs()
     _recover_stale_running_jobs()
     running = {}
 

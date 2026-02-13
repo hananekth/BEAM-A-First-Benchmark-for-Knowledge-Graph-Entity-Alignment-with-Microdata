@@ -1,0 +1,511 @@
+{
+  "summary": {
+    "generated_at": "2026-02-13 15:56:41",
+    "preset_count": 10,
+    "ok_count": 10,
+    "failed_count": 0,
+    "no_build_count": 0
+  },
+  "runs": [
+    {
+      "preset_key": "testclass_large_benchmark",
+      "class_name": "TestClassLarge",
+      "build_dir": "data/TestClassLarge/beam_20260213_151445",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 468,
+            "item_refs": 669,
+            "prop_refs": 207,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 651,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 25
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 470,
+            "item_refs": 669,
+            "prop_refs": 209,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 651,
+            "wdc_link_predicate_hits": 22,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 25
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "testclass_quick",
+      "class_name": "TestClass",
+      "build_dir": "data/TestClass/beam_20260213_151724",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 305,
+            "item_refs": 163,
+            "prop_refs": 132,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 307,
+            "item_refs": 163,
+            "prop_refs": 134,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "testclass_label",
+      "class_name": "TestClassLabel",
+      "build_dir": "data/TestClassLabel/beam_20260213_151819",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 305,
+            "item_refs": 163,
+            "prop_refs": 132,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 307,
+            "item_refs": 163,
+            "prop_refs": 134,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "testclass_identifier",
+      "class_name": "TestClassIdentifier",
+      "build_dir": "data/TestClassIdentifier/beam_20260213_153459",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 122,
+            "item_refs": 27,
+            "prop_refs": 56,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 24,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 124,
+            "item_refs": 27,
+            "prop_refs": 57,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 24,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 6,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "testclass_wikidata_url",
+      "class_name": "TestClassWikidataUrl",
+      "build_dir": "data/TestClassWikidataUrl/beam_20260213_153512",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 896,
+            "item_refs": 486,
+            "prop_refs": 415,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 485,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 898,
+            "item_refs": 505,
+            "prop_refs": 416,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 504,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 63,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "testclass_wikidata_sameas",
+      "class_name": "TestClassWikidataSameAs",
+      "build_dir": "data/TestClassWikidataSameAs/beam_20260213_153705",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 1108,
+            "item_refs": 762,
+            "prop_refs": 519,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 762,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 1110,
+            "item_refs": 765,
+            "prop_refs": 520,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 765,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 21,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "property_movie",
+      "class_name": "Movie",
+      "build_dir": "data/Movie/beam_20260213_154234",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 122,
+            "item_refs": 27,
+            "prop_refs": 56,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 24,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 124,
+            "item_refs": 27,
+            "prop_refs": 57,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 24,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 6,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "label_language",
+      "class_name": "Language",
+      "build_dir": "data/Language/beam_20260213_152444",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 305,
+            "item_refs": 163,
+            "prop_refs": 132,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 307,
+            "item_refs": 163,
+            "prop_refs": 134,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 161,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "property_country_iso2",
+      "class_name": "Country",
+      "build_dir": "data/Country/beam_20260213_155430",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 1106,
+            "item_refs": 765,
+            "prop_refs": 516,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 765,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 1110,
+            "item_refs": 765,
+            "prop_refs": 520,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 765,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 6,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    },
+    {
+      "preset_key": "wikidata_link_city",
+      "class_name": "City",
+      "build_dir": "data/City/beam_20260213_155430",
+      "variants": {
+        "without_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 898,
+            "item_refs": 505,
+            "prop_refs": 415,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 485,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "with_link_code": {
+          "ok": true,
+          "issues": [],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "language_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 898,
+            "item_refs": 505,
+            "prop_refs": 416,
+            "missing_item_label": 0,
+            "missing_item_desc": 0,
+            "missing_prop_label": 0,
+            "missing_prop_desc": 0,
+            "wd_object_revisited_as_subject": 504,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 63,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "ok"
+    }
+  ]
+}

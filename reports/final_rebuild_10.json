@@ -1,0 +1,72 @@
+[
+  {
+    "preset_key": "testclass_large_benchmark",
+    "class_name": "TestClassLarge",
+    "status": "ok",
+    "out_dir": "data/TestClassLarge/beam_20260213_151445",
+    "duration_s": 158.48
+  },
+  {
+    "preset_key": "testclass_quick",
+    "class_name": "TestClass",
+    "status": "ok",
+    "out_dir": "data/TestClass/beam_20260213_151724",
+    "duration_s": 54.81
+  },
+  {
+    "preset_key": "testclass_label",
+    "class_name": "TestClassLabel",
+    "status": "ok",
+    "out_dir": "data/TestClassLabel/beam_20260213_151819",
+    "duration_s": 41.82
+  },
+  {
+    "preset_key": "testclass_identifier",
+    "class_name": "TestClassIdentifier",
+    "status": "ok",
+    "out_dir": "data/TestClassIdentifier/beam_20260213_151900",
+    "duration_s": 12.99
+  },
+  {
+    "preset_key": "testclass_wikidata_url",
+    "class_name": "TestClassWikidataUrl",
+    "status": "ok",
+    "out_dir": "data/TestClassWikidataUrl/beam_20260213_151913",
+    "duration_s": 126.9
+  },
+  {
+    "preset_key": "testclass_wikidata_sameas",
+    "class_name": "TestClassWikidataSameAs",
+    "status": "ok",
+    "out_dir": "data/TestClassWikidataSameAs/beam_20260213_152120",
+    "duration_s": 192.35
+  },
+  {
+    "preset_key": "property_movie",
+    "class_name": "Movie",
+    "status": "ok",
+    "out_dir": "data/Movie/beam_20260213_152433",
+    "duration_s": 11.44
+  },
+  {
+    "preset_key": "label_language",
+    "class_name": "Language",
+    "status": "ok",
+    "out_dir": "data/Language/beam_20260213_152444",
+    "duration_s": 36.0
+  },
+  {
+    "preset_key": "property_country_iso2",
+    "class_name": "Country",
+    "status": "ok",
+    "out_dir": "data/Country/beam_20260213_152520",
+    "duration_s": 234.95
+  },
+  {
+    "preset_key": "wikidata_link_city",
+    "class_name": "City",
+    "status": "ok",
+    "out_dir": "data/City/beam_20260213_152915",
+    "duration_s": 117.71
+  }
+]

@@ -1,0 +1,577 @@
+{
+  "summary": {
+    "generated_at": "2026-02-13 12:32:01",
+    "preset_count": 10,
+    "ok_count": 0,
+    "audit_fail_count": 9,
+    "no_complete_build_count": 1
+  },
+  "runs": [
+    {
+      "preset_key": "testclass_large_benchmark",
+      "class_name": "TestClassLarge",
+      "build_dir": "data/TestClassLarge/beam_20260213_115433",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClassLarge/beam_20260213_115433/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:3796",
+            "missing_wd_entity_descriptions:3796",
+            "missing_wd_prop_labels:462",
+            "missing_wd_prop_descriptions:462"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 472,
+            "wd_entity_ref_count": 3803,
+            "wd_prop_ref_count": 462,
+            "missing_entity_label_count": 3796,
+            "missing_entity_description_count": 3796,
+            "missing_prop_label_count": 462,
+            "missing_prop_description_count": 462,
+            "wd_object_revisited_as_subject_count": 7,
+            "wdc_link_predicate_hits": 22,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 25
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClassLarge/beam_20260213_115433/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:3800",
+            "missing_wd_entity_descriptions:3796",
+            "missing_wd_prop_labels:460",
+            "missing_wd_prop_descriptions:460"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 470,
+            "wd_entity_ref_count": 3803,
+            "wd_prop_ref_count": 460,
+            "missing_entity_label_count": 3800,
+            "missing_entity_description_count": 3796,
+            "missing_prop_label_count": 460,
+            "missing_prop_description_count": 460,
+            "wd_object_revisited_as_subject_count": 7,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 25
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "testclass_quick",
+      "class_name": "TestClass",
+      "build_dir": "data/TestClass/beam_20260213_115845",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClass/beam_20260213_115845/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:633",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:299",
+            "missing_wd_prop_descriptions:299"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 309,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 299,
+            "missing_entity_label_count": 633,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 299,
+            "missing_prop_description_count": 299,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClass/beam_20260213_115845/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:634",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:297",
+            "missing_wd_prop_descriptions:297"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 306,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 297,
+            "missing_entity_label_count": 634,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 297,
+            "missing_prop_description_count": 297,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "testclass_label",
+      "class_name": "TestClassLabel",
+      "build_dir": "data/TestClassLabel/beam_20260213_120052",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClassLabel/beam_20260213_120052/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:633",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:299",
+            "missing_wd_prop_descriptions:299"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 309,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 299,
+            "missing_entity_label_count": 633,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 299,
+            "missing_prop_description_count": 299,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClassLabel/beam_20260213_120052/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:634",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:297",
+            "missing_wd_prop_descriptions:297"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 306,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 297,
+            "missing_entity_label_count": 634,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 297,
+            "missing_prop_description_count": 297,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "testclass_identifier",
+      "class_name": "TestClassIdentifier",
+      "build_dir": "data/TestClassIdentifier/beam_20260213_120232",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClassIdentifier/beam_20260213_120232/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:149",
+            "missing_wd_entity_descriptions:149",
+            "missing_wd_prop_labels:116",
+            "missing_wd_prop_descriptions:116"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 126,
+            "wd_entity_ref_count": 149,
+            "wd_prop_ref_count": 116,
+            "missing_entity_label_count": 149,
+            "missing_entity_description_count": 149,
+            "missing_prop_label_count": 116,
+            "missing_prop_description_count": 116,
+            "wd_object_revisited_as_subject_count": 0,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClassIdentifier/beam_20260213_120232/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:149",
+            "missing_wd_entity_descriptions:149",
+            "missing_wd_prop_labels:115",
+            "missing_wd_prop_descriptions:115"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 125,
+            "wd_entity_ref_count": 149,
+            "wd_prop_ref_count": 115,
+            "missing_entity_label_count": 149,
+            "missing_entity_description_count": 149,
+            "missing_prop_label_count": 115,
+            "missing_prop_description_count": 115,
+            "wd_object_revisited_as_subject_count": 0,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "testclass_wikidata_url",
+      "class_name": "TestClassWikidataUrl",
+      "build_dir": "data/TestClassWikidataUrl/beam_20260213_120257",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClassWikidataUrl/beam_20260213_120257/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:2252",
+            "missing_wd_entity_descriptions:2252",
+            "missing_wd_prop_labels:890",
+            "missing_wd_prop_descriptions:890"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 900,
+            "wd_entity_ref_count": 2254,
+            "wd_prop_ref_count": 890,
+            "missing_entity_label_count": 2252,
+            "missing_entity_description_count": 2252,
+            "missing_prop_label_count": 890,
+            "missing_prop_description_count": 890,
+            "wd_object_revisited_as_subject_count": 2,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClassWikidataUrl/beam_20260213_120257/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:2252",
+            "missing_wd_entity_descriptions:2252",
+            "missing_wd_prop_labels:890",
+            "missing_wd_prop_descriptions:890"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 900,
+            "wd_entity_ref_count": 2254,
+            "wd_prop_ref_count": 890,
+            "missing_entity_label_count": 2252,
+            "missing_entity_description_count": 2252,
+            "missing_prop_label_count": 890,
+            "missing_prop_description_count": 890,
+            "wd_object_revisited_as_subject_count": 2,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "testclass_wikidata_sameas",
+      "class_name": "TestClassWikidataSameAs",
+      "build_dir": "data/TestClassWikidataSameAs/beam_20260213_120540",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/TestClassWikidataSameAs/beam_20260213_120540/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:4323",
+            "missing_wd_entity_descriptions:4323",
+            "missing_wd_prop_labels:1102",
+            "missing_wd_prop_descriptions:1102"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 1112,
+            "wd_entity_ref_count": 4326,
+            "wd_prop_ref_count": 1102,
+            "missing_entity_label_count": 4323,
+            "missing_entity_description_count": 4323,
+            "missing_prop_label_count": 1102,
+            "missing_prop_description_count": 1102,
+            "wd_object_revisited_as_subject_count": 3,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/TestClassWikidataSameAs/beam_20260213_120540/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:4323",
+            "missing_wd_entity_descriptions:4323",
+            "missing_wd_prop_labels:1102",
+            "missing_wd_prop_descriptions:1102"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 1112,
+            "wd_entity_ref_count": 4326,
+            "wd_prop_ref_count": 1102,
+            "missing_entity_label_count": 4323,
+            "missing_entity_description_count": 4323,
+            "missing_prop_label_count": 1102,
+            "missing_prop_description_count": 1102,
+            "wd_object_revisited_as_subject_count": 3,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "property_movie",
+      "class_name": "Movie",
+      "build_dir": "data/Movie/beam_20260213_122449",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/Movie/beam_20260213_122449/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:149",
+            "missing_wd_entity_descriptions:149",
+            "missing_wd_prop_labels:116",
+            "missing_wd_prop_descriptions:116"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 126,
+            "wd_entity_ref_count": 149,
+            "wd_prop_ref_count": 116,
+            "missing_entity_label_count": 149,
+            "missing_entity_description_count": 149,
+            "missing_prop_label_count": 116,
+            "missing_prop_description_count": 116,
+            "wd_object_revisited_as_subject_count": 0,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/Movie/beam_20260213_122449/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:149",
+            "missing_wd_entity_descriptions:149",
+            "missing_wd_prop_labels:115",
+            "missing_wd_prop_descriptions:115"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 125,
+            "wd_entity_ref_count": 149,
+            "wd_prop_ref_count": 115,
+            "missing_entity_label_count": 149,
+            "missing_entity_description_count": 149,
+            "missing_prop_label_count": 115,
+            "missing_prop_description_count": 115,
+            "wd_object_revisited_as_subject_count": 0,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "label_language",
+      "class_name": "Language",
+      "build_dir": "data/Language/beam_20260213_122517",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/Language/beam_20260213_122517/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:633",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:299",
+            "missing_wd_prop_descriptions:299"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 309,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 299,
+            "missing_entity_label_count": 633,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 299,
+            "missing_prop_description_count": 299,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/Language/beam_20260213_122517/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:634",
+            "missing_wd_entity_descriptions:633",
+            "missing_wd_prop_labels:297",
+            "missing_wd_prop_descriptions:297"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 306,
+            "wd_entity_ref_count": 634,
+            "wd_prop_ref_count": 297,
+            "missing_entity_label_count": 634,
+            "missing_entity_description_count": 633,
+            "missing_prop_label_count": 297,
+            "missing_prop_description_count": 297,
+            "wd_object_revisited_as_subject_count": 1,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    },
+    {
+      "preset_key": "property_country_iso2",
+      "class_name": "Country",
+      "status": "no_complete_build",
+      "latest_build_dir": "data/Country/beam",
+      "latest_align_stats": "Download/Country/align_cache/2be7abdca2ab5cc0/stats.txt",
+      "latest_align_pairs": 0
+    },
+    {
+      "preset_key": "wikidata_link_city",
+      "class_name": "City",
+      "build_dir": "data/City/beam_20260213_122729",
+      "audits": {
+        "with_link_code": {
+          "variant_dir": "data/City/beam_20260213_122729/with_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:2252",
+            "missing_wd_entity_descriptions:2252",
+            "missing_wd_prop_labels:890",
+            "missing_wd_prop_descriptions:890"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 3,
+            "prop_stats_wd.tsv_rows": 900,
+            "wd_entity_ref_count": 2254,
+            "wd_prop_ref_count": 890,
+            "missing_entity_label_count": 2252,
+            "missing_entity_description_count": 2252,
+            "missing_prop_label_count": 890,
+            "missing_prop_description_count": 890,
+            "wd_object_revisited_as_subject_count": 2,
+            "wdc_link_predicate_hits": 3,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        },
+        "without_link_code": {
+          "variant_dir": "data/City/beam_20260213_122729/without_link_code",
+          "ok": false,
+          "issues": [
+            "missing_wd_entity_labels:2252",
+            "missing_wd_entity_descriptions:2252",
+            "missing_wd_prop_labels:890",
+            "missing_wd_prop_descriptions:890"
+          ],
+          "metrics": {
+            "datatype_suffix_hits": 0,
+            "lang_suffix_hits": 0,
+            "prop_stats_wdc.tsv_rows": 2,
+            "prop_stats_wd.tsv_rows": 900,
+            "wd_entity_ref_count": 2254,
+            "wd_prop_ref_count": 890,
+            "missing_entity_label_count": 2252,
+            "missing_entity_description_count": 2252,
+            "missing_prop_label_count": 890,
+            "missing_prop_description_count": 890,
+            "wd_object_revisited_as_subject_count": 2,
+            "wdc_link_predicate_hits": 0,
+            "wd_link_predicate_hits": 0,
+            "isrc_hits": 0,
+            "ent_links_count": 3
+          }
+        }
+      },
+      "status": "audit_failed"
+    }
+  ]
+}

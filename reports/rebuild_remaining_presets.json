@@ -1,0 +1,30 @@
+[
+  {
+    "preset_key": "testclass_quick",
+    "class_name": "TestClass",
+    "status": "ok",
+    "out_dir": "data/TestClass/beam_20260213_150755",
+    "duration_s": 54.1
+  },
+  {
+    "preset_key": "testclass_identifier",
+    "class_name": "TestClassIdentifier",
+    "status": "ok",
+    "out_dir": "data/TestClassIdentifier/beam_20260213_150849",
+    "duration_s": 12.22
+  },
+  {
+    "preset_key": "property_country_iso2",
+    "class_name": "Country",
+    "status": "ok",
+    "out_dir": "data/Country/beam_20260213_150901",
+    "duration_s": 180.0
+  },
+  {
+    "preset_key": "wikidata_link_city",
+    "class_name": "City",
+    "status": "ok",
+    "out_dir": "data/City/beam_20260213_151201",
+    "duration_s": 95.26
+  }
+]

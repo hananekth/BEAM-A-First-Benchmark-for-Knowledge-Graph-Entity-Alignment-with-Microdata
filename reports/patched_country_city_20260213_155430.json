@@ -1,0 +1,16 @@
+[
+  {
+    "class_name": "Country",
+    "status": "ok",
+    "source": "data/Country/beam_20260213_152520",
+    "out_dir": "data/Country/beam_20260213_155430",
+    "removed_lines": 3
+  },
+  {
+    "class_name": "City",
+    "status": "ok",
+    "source": "data/City/beam_20260213_152915",
+    "out_dir": "data/City/beam_20260213_155430",
+    "removed_lines": 63
+  }
+]

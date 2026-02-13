@@ -18,6 +18,48 @@ db.init_db()
 
 st.title("BEAM Benchmark Generator")
 
+
+def _fmt_size(num_bytes: int) -> str:
+    units = ["B", "KB", "MB", "GB", "TB"]
+    n = float(max(0, num_bytes))
+    for unit in units:
+        if n < 1024.0 or unit == units[-1]:
+            if unit == "B":
+                return f"{int(n)} {unit}"
+            return f"{n:.1f} {unit}"
+        n /= 1024.0
+    return f"{num_bytes} B"
+
+
+def _discover_local_class_rows(download_root: str = "Download"):
+    root = Path(download_root)
+    if not root.exists() or not root.is_dir():
+        return []
+    rows = []
+    for class_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        parts = []
+        full_graph = []
+        for fp in class_dir.iterdir():
+            if not fp.is_file():
+                continue
+            name = fp.name
+            if name.startswith("part_") and (name.endswith(".nq") or name.endswith(".nt") or "." not in name):
+                parts.append(fp)
+            elif name.endswith("_full_graph.nq"):
+                full_graph.append(fp)
+        files = parts if parts else full_graph
+        if not files:
+            continue
+        total_size = sum(fp.stat().st_size for fp in files if fp.exists())
+        rows.append(
+            {
+                "class_name": class_dir.name,
+                "num_parts": len(parts) if parts else len(full_graph),
+                "size_human": _fmt_size(total_size),
+            }
+        )
+    return rows
+
 # Live refresh controls
 with st.sidebar:
     st.header("Live Refresh")
@@ -48,16 +90,74 @@ if not wdc_classes:
         if rows:
             db.upsert_wdc_classes(rows)
             wdc_classes = db.list_wdc_classes()
+local_rows = _discover_local_class_rows("Download")
+if local_rows:
+    db.upsert_wdc_classes(local_rows)
+    wdc_classes = db.list_wdc_classes()
 class_options = [r["class_name"] for r in wdc_classes]
 class_meta = {r["class_name"]: dict(r) for r in wdc_classes}
 
 presets = {
+    "Bigger local benchmark (TestClassLarge / language label)": {
+        "class_name": "TestClassLarge",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": False,
+    },
+    "Quick local test (TestClass / language label)": {
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": False,
+    },
+    "TestClass label matching (name -> rdfs:label)": {
+        "class_name": "TestClassLabel",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q34770",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": False,
+    },
+    "TestClass identifier matching (eidr -> P2704)": {
+        "class_name": "TestClassIdentifier",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "eidr",
+        "wikidata_property": "wdt:P2704",
+        "wkd_class": "Q11424",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": False,
+    },
+    "TestClass Wikidata links (url -> P31 city)": {
+        "class_name": "TestClassWikidataUrl",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "url",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q515",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": True,
+    },
+    "TestClass Wikidata links (sameAs -> P31 country)": {
+        "class_name": "TestClassWikidataSameAs",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameas",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q6256",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": True,
+    },
     "Match with property (Movie / EIDR)": {
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
         "wikidata_property": "wdt:P2704",
-        "wkd_class": "",
+        "wkd_class": "Q11424",
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
@@ -66,7 +166,16 @@ presets = {
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
-        "wkd_class": "Q33742",
+        "wkd_class": "Q34770",
+        "ignore_chars": "",
+        "wdc_value_is_wikidata": False,
+    },
+    "Match with property (Country / ISO 3166-1 alpha-2)": {
+        "class_name": "Country",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "iso",
+        "wikidata_property": "wdt:P297",
+        "wkd_class": "Q6256",
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
@@ -74,8 +183,8 @@ presets = {
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
-        "wikidata_property": "",
-        "wkd_class": "Q7930989",
+        "wikidata_property": "wdt:P31",
+        "wkd_class": "Q515",
         "ignore_chars": "",
         "wdc_value_is_wikidata": True,
     },

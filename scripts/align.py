@@ -29,6 +29,7 @@ from bs4 import BeautifulSoup
 # Configuration
 WDC_BASE_URL = "https://data.dws.informatik.uni-mannheim.de/structureddata/2024-12/quads/classspecific/"
 WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql"
+MAX_PARALLEL_WORKERS = int(os.environ.get("ALIGN_MAX_WORKERS", "8"))
 
 # Colors
 class Colors:
@@ -483,8 +484,9 @@ def compute_shared_workers(lock_path, share=0.8):
 
 def get_shared_workers(lock_path, share=0.8, override=None):
     if override:
-        return override, None, None
-    return compute_shared_workers(lock_path, share=share)
+        return min(max(1, int(override)), MAX_PARALLEL_WORKERS), None, None
+    workers, runs, cpu = compute_shared_workers(lock_path, share=share)
+    return max(1, min(workers, MAX_PARALLEL_WORKERS)), runs, cpu
 
 def normalize_for_matching(text):
     """
@@ -1149,13 +1151,11 @@ def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=2
     
     return value_map
 
-def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, n_workers,
-                            value_map, all_raw_values, all_iris, country_code_changes, predicates_found):
-    with ProcessPoolExecutor(max_workers=n_workers) as ex:
-        futures = [ex.submit(_extract_batch_with_pattern, (b, pattern_normalized, pattern_raw, collect_top_props)) for b in window_batches]
-        for fut in as_completed(futures):
-            vmap, raw_vals, iris, cc_changes, lines, matched, preds = fut.result()
-            yield vmap, raw_vals, iris, cc_changes, lines, matched, preds
+def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, executor):
+    futures = [executor.submit(_extract_batch_with_pattern, (b, pattern_normalized, pattern_raw, collect_top_props)) for b in window_batches]
+    for fut in as_completed(futures):
+        vmap, raw_vals, iris, cc_changes, lines, matched, preds = fut.result()
+        yield vmap, raw_vals, iris, cc_changes, lines, matched, preds
 
 def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False):
     """
@@ -1186,37 +1186,53 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     if parallel:
         buffer = []
         window_batches = []
-        n_workers = workers or 1
-        lines_since_workers_update = 0
+        if lock_path:
+            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+        else:
+            n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
+        window_size = max(1, n_workers * 6)
         bytes_read = 0
-        with open(graph_file, 'r', encoding='utf-8', errors='ignore') as f:
-            for line in f:
-                bytes_read += len(line)
-                total_lines += 1
-                lines_since_workers_update += 1
-                buffer.append(line)
-                if len(buffer) >= batch_size:
+        with ProcessPoolExecutor(max_workers=n_workers) as ex:
+            with open(graph_file, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    bytes_read += len(line)
+                    total_lines += 1
+                    buffer.append(line)
+                    if len(buffer) >= batch_size:
+                        window_batches.append(buffer)
+                        buffer = []
+
+                    if progress_every and total_lines % progress_every == 0:
+                        done_bytes = bytes_read
+                        prog = _progress_line(start_ts, done_bytes, total_bytes)
+                        print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
+
+                    if len(window_batches) >= window_size:
+                        for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
+                            window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                        ):
+                            matched_lines += matched
+                            all_raw_values.update(raw_vals)
+                            all_iris.update(iris)
+                            for k, v in cc_changes.items():
+                                country_code_changes[k] += v
+                            for norm, entries in vmap.items():
+                                value_map[norm].extend(entries)
+                            if collect_top_props and predicates_found is not None:
+                                for pred, cnt in preds.items():
+                                    predicates_found[pred] += cnt
+                            if progress_every and total_lines % progress_every == 0:
+                                done_bytes = bytes_read
+                                prog = _progress_line(start_ts, done_bytes, total_bytes)
+                                print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
+                        window_batches = []
+
+                # Reste
+                if buffer:
                     window_batches.append(buffer)
-                    buffer = []
-                
-                # Recalcule les workers périodiquement (évite lock à chaque ligne)
-                if lines_since_workers_update >= 10000:
-                    if lock_path:
-                        n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
-                    else:
-                        n_workers = workers or 1
-                    lines_since_workers_update = 0
-                window_size = max(1, n_workers * 6)
-                
-                if progress_every and total_lines % progress_every == 0:
-                    done_bytes = bytes_read
-                    prog = _progress_line(start_ts, done_bytes, total_bytes)
-                    print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
-                
-                if len(window_batches) >= window_size:
+                if window_batches:
                     for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                        window_batches, pattern_normalized, pattern_raw, collect_top_props, n_workers,
-                        value_map, all_raw_values, all_iris, country_code_changes, predicates_found
+                        window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
                     ):
                         matched_lines += matched
                         all_raw_values.update(raw_vals)
@@ -1232,34 +1248,6 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                             done_bytes = bytes_read
                             prog = _progress_line(start_ts, done_bytes, total_bytes)
                             print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
-                    window_batches = []
-            
-            # Reste
-            if buffer:
-                window_batches.append(buffer)
-            if window_batches:
-                if lock_path:
-                    n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
-                else:
-                    n_workers = workers or 1
-                for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                    window_batches, pattern_normalized, pattern_raw, collect_top_props, n_workers,
-                    value_map, all_raw_values, all_iris, country_code_changes, predicates_found
-                ):
-                    matched_lines += matched
-                    all_raw_values.update(raw_vals)
-                    all_iris.update(iris)
-                    for k, v in cc_changes.items():
-                        country_code_changes[k] += v
-                    for norm, entries in vmap.items():
-                        value_map[norm].extend(entries)
-                    if collect_top_props and predicates_found is not None:
-                        for pred, cnt in preds.items():
-                            predicates_found[pred] += cnt
-                    if progress_every and total_lines % progress_every == 0:
-                        done_bytes = bytes_read
-                        prog = _progress_line(start_ts, done_bytes, total_bytes)
-                        print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
     else:
         bytes_read = 0
         with open(graph_file, 'r', encoding='utf-8', errors='ignore') as f:
@@ -1385,91 +1373,78 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
     if parallel:
         buffer = []
         window_batches = []
-        n_workers = workers or 1
-        lines_since_workers_update = 0
-        for file_path in files:
-            file_base = done_bytes
-            bytes_read = 0
-            print(f"\n  📄 Scan: {file_path.name}")
-            if progress_every:
-                prog = _progress_line(start_ts, done_bytes, total_bytes)
-                print(f"  ⏳ Progress: Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", flush=True)
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                for line in f:
-                    bytes_read += len(line)
-                    total_lines += 1
-                    lines_since_workers_update += 1
-                    buffer.append(line)
-                    if len(buffer) >= batch_size:
-                        window_batches.append(buffer)
-                        buffer = []
+        if lock_path:
+            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+        else:
+            n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
+        window_size = max(1, n_workers * 6)
+        with ProcessPoolExecutor(max_workers=n_workers) as ex:
+            for file_path in files:
+                file_base = done_bytes
+                bytes_read = 0
+                print(f"\n  📄 Scan: {file_path.name}")
+                if progress_every:
+                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                    print(f"  ⏳ Progress: Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", flush=True)
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        bytes_read += len(line)
+                        total_lines += 1
+                        buffer.append(line)
+                        if len(buffer) >= batch_size:
+                            window_batches.append(buffer)
+                            buffer = []
 
-                    # Recalcule les workers périodiquement (évite lock à chaque ligne)
-                    if lines_since_workers_update >= 10000:
-                        if lock_path:
-                            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
-                        else:
-                            n_workers = workers or 1
-                        lines_since_workers_update = 0
+                        if progress_every and total_lines % progress_every == 0:
+                            done_bytes = file_base + bytes_read
+                            prog = _progress_line(start_ts, done_bytes, total_bytes)
+                            print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
 
-                    window_size = max(1, n_workers * 6)
-                    
-                    if progress_every and total_lines % progress_every == 0:
-                        done_bytes = file_base + bytes_read
-                        prog = _progress_line(start_ts, done_bytes, total_bytes)
-                        print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
-                    
-                    if len(window_batches) >= window_size:
-                        for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                            window_batches, pattern_normalized, pattern_raw, collect_top_props, n_workers,
-                            value_map, all_raw_values, all_iris, country_code_changes, predicates_found
-                        ):
-                            matched_lines += matched
-                            all_raw_values.update(raw_vals)
-                            all_iris.update(iris)
-                            for k, v in cc_changes.items():
-                                country_code_changes[k] += v
-                            for norm, entries in vmap.items():
-                                value_map[norm].extend(entries)
-                            if collect_top_props and predicates_found is not None:
-                                for pred, cnt in preds.items():
-                                    predicates_found[pred] += cnt
-                            if progress_every and total_lines % progress_every == 0:
-                                done_bytes = file_base + bytes_read
-                                prog = _progress_line(start_ts, done_bytes, total_bytes)
-                                print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
-                        window_batches = []
-            if collect_top_props and predicates_found is not None:
-                print_top_props(
-                    predicates_found,
-                    top_n=top_n,
-                    title=f"\n  📋 Top {top_n} prédicats (après {file_path.name}):",
-                    output_file=top_props_file,
-                )
-        
-        if buffer:
-            window_batches.append(buffer)
-        if window_batches:
-            if lock_path:
-                n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
-            else:
-                n_workers = workers or 1
-            for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                window_batches, pattern_normalized, pattern_raw, collect_top_props, n_workers,
-                value_map, all_raw_values, all_iris, country_code_changes, predicates_found
-            ):
-                matched_lines += matched
-                all_raw_values.update(raw_vals)
-                all_iris.update(iris)
-                for k, v in cc_changes.items():
-                    country_code_changes[k] += v
-                for norm, entries in vmap.items():
-                    value_map[norm].extend(entries)
+                        if len(window_batches) >= window_size:
+                            for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
+                                window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                            ):
+                                matched_lines += matched
+                                all_raw_values.update(raw_vals)
+                                all_iris.update(iris)
+                                for k, v in cc_changes.items():
+                                    country_code_changes[k] += v
+                                for norm, entries in vmap.items():
+                                    value_map[norm].extend(entries)
+                                if collect_top_props and predicates_found is not None:
+                                    for pred, cnt in preds.items():
+                                        predicates_found[pred] += cnt
+                                if progress_every and total_lines % progress_every == 0:
+                                    done_bytes = file_base + bytes_read
+                                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                                    print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)} | {prog}", end='', flush=True)
+                            window_batches = []
                 if collect_top_props and predicates_found is not None:
-                    for pred, cnt in preds.items():
-                        predicates_found[pred] += cnt
-                if progress_every and total_lines % progress_every == 0:
-                    print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)}", end='', flush=True)
+                    print_top_props(
+                        predicates_found,
+                        top_n=top_n,
+                        title=f"\n  📋 Top {top_n} prédicats (après {file_path.name}):",
+                        output_file=top_props_file,
+                    )
+
+            if buffer:
+                window_batches.append(buffer)
+            if window_batches:
+                for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
+                    window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                ):
+                    matched_lines += matched
+                    all_raw_values.update(raw_vals)
+                    all_iris.update(iris)
+                    for k, v in cc_changes.items():
+                        country_code_changes[k] += v
+                    for norm, entries in vmap.items():
+                        value_map[norm].extend(entries)
+                    if collect_top_props and predicates_found is not None:
+                        for pred, cnt in preds.items():
+                            predicates_found[pred] += cnt
+                    if progress_every and total_lines % progress_every == 0:
+                        print(f"\r  Lignes lues: {total_lines:,} | Matches: {matched_lines:,} | Valeurs distinctes: {len(all_raw_values)}", end='', flush=True)
     else:
         for file_path in files:
             file_base = done_bytes
@@ -1566,6 +1541,29 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
     
     return value_map, matched_lines
 
+
+def _is_rate_limited_error(exc: Exception) -> bool:
+    msg = str(exc)
+    return "429" in msg or "Too Many Requests" in msg
+
+
+def _is_retryable_query_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    retry_tokens = (
+        "incompleteread",
+        "remote disconnected",
+        "connection reset",
+        "connection aborted",
+        "temporarily unavailable",
+        "timed out",
+        "timeout",
+        "bad gateway",
+        "service unavailable",
+        "gateway timeout",
+    )
+    return any(tok in msg for tok in retry_tokens)
+
+
 def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None, entity_iris=None):
     """Récupère les valeurs depuis Wikidata pour une propriété donnée, avec filtre de classe optionnel"""
     print_color(f"\n🌐 Récupération des valeurs Wikidata ({wikidata_property})...", Colors.BLUE)
@@ -1628,7 +1626,25 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     sparql.setQuery(query)
     
     try:
-        results = sparql.query().convert()
+        max_attempts = max(1, int(os.environ.get("WIKIDATA_QUERY_MAX_RETRIES", "4")))
+        base_delay = max(0.1, float(os.environ.get("WIKIDATA_QUERY_RETRY_DELAY", "2.0")))
+        results = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                results = sparql.query().convert()
+                break
+            except Exception as e:
+                if (_is_rate_limited_error(e) or _is_retryable_query_error(e)) and attempt < max_attempts:
+                    delay_s = (base_delay * (2 ** (attempt - 1))) + random.uniform(0, 0.5)
+                    print_color(
+                        f"⚠️ Wikidata query retry {attempt}/{max_attempts} in {delay_s:.1f}s ({type(e).__name__})...",
+                        Colors.YELLOW,
+                    )
+                    time.sleep(delay_s)
+                    continue
+                raise
+        if results is None:
+            return {}
         
         # {value_normalized: [(original_value, wikidata_uri), ...]}
         value_map = defaultdict(list)
@@ -1711,19 +1727,17 @@ def _fuzzy_worker(args):
                         wdc_values_matched.add(wdc_orig)
     return fuzzy_matches, wdc_values_matched
 
-def _process_exact_window(chunks, wikidata_map, min_length, n_workers):
-    with ProcessPoolExecutor(max_workers=n_workers) as ex:
-        futures = [ex.submit(_exact_worker, (chunk, wikidata_map, min_length)) for chunk in chunks]
-        for fut in as_completed(futures):
-            yield fut.result()
+def _process_exact_window(chunks, wikidata_map, min_length, executor):
+    futures = [executor.submit(_exact_worker, (chunk, wikidata_map, min_length)) for chunk in chunks]
+    for fut in as_completed(futures):
+        yield fut.result()
 
-def _process_fuzzy_window(chunks, wikidata_map, wikidata_norms, min_length, n_workers):
-    with ProcessPoolExecutor(max_workers=n_workers) as ex:
-        futures = [ex.submit(_fuzzy_worker, (chunk, wikidata_map, wikidata_norms, min_length)) for chunk in chunks]
-        for fut in as_completed(futures):
-            yield fut.result()
+def _process_fuzzy_window(chunks, wikidata_map, wikidata_norms, min_length, executor):
+    futures = [executor.submit(_fuzzy_worker, (chunk, wikidata_map, wikidata_norms, min_length)) for chunk in chunks]
+    for fut in as_completed(futures):
+        yield fut.result()
 
-def fuzzy_link(wdc_map, wikidata_map, parallel=True, workers=None, lock_path=None):
+def fuzzy_link(wdc_map, wikidata_map, parallel=True, workers=None, lock_path=None, min_length=1):
     """
     Lie les entités WDC et Wikidata via fuzzy matching
     Compare sur la longueur du plus court des deux
@@ -1732,7 +1746,9 @@ def fuzzy_link(wdc_map, wikidata_map, parallel=True, workers=None, lock_path=Non
     print("   Stratégie: Matching exact")
     # Fuzzy min-len removed permanently
     
-    MIN_LENGTH = 8  # ISRC standard = 12 chars, on tolère jusqu'à 8
+    # Fuzzy phase is disabled; keep exact matching available for short identifiers too
+    # (e.g. ISO-2 country codes).
+    MIN_LENGTH = max(1, int(min_length))
     
     exact_matches = []
     fuzzy_matches = []
@@ -1749,21 +1765,18 @@ def fuzzy_link(wdc_map, wikidata_map, parallel=True, workers=None, lock_path=Non
         if lock_path:
             n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
         else:
-            n_workers = workers or 1
+            n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
         chunk_size = max(1, len(wdc_items) // max(1, n_workers))
         chunks = [wdc_items[i:i+chunk_size] for i in range(0, len(wdc_items), chunk_size)]
-        idx = 0
-        while idx < len(chunks):
-            if lock_path:
-                n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
-            else:
-                n_workers = workers or 1
-            window_size = max(1, n_workers * 2)
-            window = chunks[idx:idx+window_size]
-            for matches_part, wdc_matched_part in _process_exact_window(window, wikidata_map, MIN_LENGTH, n_workers):
-                exact_matches.extend(matches_part)
-                wdc_values_matched.update(wdc_matched_part)
-            idx += window_size
+        window_size = max(1, n_workers * 2)
+        with ProcessPoolExecutor(max_workers=n_workers) as ex:
+            idx = 0
+            while idx < len(chunks):
+                window = chunks[idx:idx+window_size]
+                for matches_part, wdc_matched_part in _process_exact_window(window, wikidata_map, MIN_LENGTH, ex):
+                    exact_matches.extend(matches_part)
+                    wdc_values_matched.update(wdc_matched_part)
+                idx += window_size
     else:
         matches_part, wdc_matched_part = _exact_worker((wdc_items, wikidata_map, MIN_LENGTH))
         exact_matches.extend(matches_part)

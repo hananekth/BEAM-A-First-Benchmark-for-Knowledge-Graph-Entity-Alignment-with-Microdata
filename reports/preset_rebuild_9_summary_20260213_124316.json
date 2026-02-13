@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "generated_at": "2026-02-13 12:43:16",
+    "preset_count": 9,
+    "completed_count": 0,
+    "ok_count": 0,
+    "error_count": 0,
+    "skipped_count": 0
+  },
+  "runs": [],
+  "skipped_presets": [
+    "testclass_large_benchmark"
+  ]
+}

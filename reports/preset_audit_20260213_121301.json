@@ -1,0 +1,5 @@
+{
+  "summary": {},
+  "runs": [],
+  "notes": "For non-TestClass presets, used local-only smallest part smoke mode to keep runtime bounded while validating build semantics."
+}
