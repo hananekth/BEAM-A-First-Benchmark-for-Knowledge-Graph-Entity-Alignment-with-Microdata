@@ -413,6 +413,72 @@ def _job_outputs(job):
     return out
 
 
+def _safe_json_loads(raw: Optional[str]):
+    try:
+        return json.loads(raw or "{}")
+    except Exception:
+        return {}
+
+
+def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
+    all_jobs = [dict(j) for j in db.list_jobs(limit=job_limit)]
+    active_jobs = [j for j in all_jobs if j["status"] != "done"]
+    builds = _scan_builds(limit=build_limit)
+
+    build_params = {}
+    for j in all_jobs:
+        rp = j.get("result_path")
+        if not rp or rp in build_params:
+            continue
+        params = _safe_json_loads(j.get("params_json"))
+        if params:
+            build_params[rp] = params
+
+    for b in builds:
+        params = b.get("build_config") or build_params.get(b["path"])
+        if params:
+            b["config"] = params
+        else:
+            b["config"] = {
+                "class_name": b["class_name"],
+                "build_name": b["build_name"],
+                "result_path": b["path"],
+                "config_source": "inferred",
+            }
+        parts = b["config"].get("parts_manifest")
+        if not isinstance(parts, list):
+            parts = []
+        b["parts_manifest"] = parts
+        b["parts_count"] = b["config"].get("parts_count", len(parts))
+        b["parts_total_size_human"] = b["config"].get("parts_total_size_human")
+        b["config_groups"] = _build_config_groups(b["config"])
+
+    jobs_outputs = {}
+    jobs_times = {}
+    jobs_params = {}
+    jobs_subjobs = {}
+    for j in all_jobs:
+        jid = j["id"]
+        jobs_outputs[jid] = _job_outputs(j)
+        jobs_times[jid] = {
+            "created": _fmt_ts(j.get("created_at")),
+            "started": _fmt_ts(j.get("started_at")),
+            "ended": _fmt_ts(j.get("ended_at")),
+        }
+        jobs_params[jid] = _safe_json_loads(j.get("params_json"))
+        jobs_subjobs[jid] = [dict(s) for s in db.list_subjobs(jid)]
+
+    return {
+        "all_jobs": all_jobs,
+        "active_jobs": active_jobs,
+        "builds": builds,
+        "jobs_outputs": jobs_outputs,
+        "jobs_times": jobs_times,
+        "jobs_params": jobs_params,
+        "jobs_subjobs": jobs_subjobs,
+    }
+
+
 @app.on_event("startup")
 def _init_db():
     db.init_db()
@@ -456,45 +522,13 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
         local_parts = _count_local_parts(str(Path("Download") / form["class_name"]))
 
     recent_presets = _get_recent_presets()
-    all_jobs = db.list_jobs(limit=50)
-    jobs = [j for j in all_jobs if j["status"] != "done"]
-    builds = _scan_builds(limit=40)
-    build_params = {}
-    for j in all_jobs:
-        rp = j["result_path"]
-        if not rp or rp in build_params:
-            continue
-        try:
-            build_params[rp] = json.loads(j["params_json"] or "{}")
-        except Exception:
-            continue
-    for b in builds:
-        params = b.get("build_config") or build_params.get(b["path"])
-        if params:
-            b["config"] = params
-        else:
-            b["config"] = {
-                "class_name": b["class_name"],
-                "build_name": b["build_name"],
-                "result_path": b["path"],
-                "config_source": "inferred",
-            }
-        parts = b["config"].get("parts_manifest")
-        if not isinstance(parts, list):
-            parts = []
-        b["parts_manifest"] = parts
-        b["parts_count"] = b["config"].get("parts_count", len(parts))
-        b["parts_total_size_human"] = b["config"].get("parts_total_size_human")
-        b["config_groups"] = _build_config_groups(b["config"])
-    jobs_outputs = {}
-    jobs_times = {}
-    for j in jobs:
-        jobs_outputs[j["id"]] = _job_outputs(j)
-        jobs_times[j["id"]] = {
-            "created": _fmt_ts(j["created_at"]),
-            "started": _fmt_ts(j["started_at"]),
-            "ended": _fmt_ts(j["ended_at"]),
-        }
+    dashboard = _build_dashboard_state(job_limit=50, build_limit=40)
+    jobs = dashboard["active_jobs"]
+    builds = dashboard["builds"]
+    jobs_outputs = {j["id"]: dashboard["jobs_outputs"][j["id"]] for j in jobs}
+    jobs_times = {j["id"]: dashboard["jobs_times"][j["id"]] for j in jobs}
+    jobs_params = {j["id"]: dashboard["jobs_params"][j["id"]] for j in jobs}
+    jobs_subjobs = {j["id"]: dashboard["jobs_subjobs"][j["id"]] for j in jobs}
 
     return templates.TemplateResponse(
         request,
@@ -506,13 +540,57 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
             "jobs": jobs,
             "jobs_outputs": jobs_outputs,
             "jobs_times": jobs_times,
-            "jobs_params": {j["id"]: json.loads(j["params_json"]) for j in jobs},
-            "jobs_subjobs": {j["id"]: [dict(s) for s in db.list_subjobs(j["id"])] for j in jobs},
+            "jobs_params": jobs_params,
+            "jobs_subjobs": jobs_subjobs,
             "builds": builds,
             "class_meta": class_meta,
             "local_parts": local_parts,
         },
     )
+
+
+@app.get("/api/dashboard")
+def dashboard_api(job_limit: int = 80, build_limit: int = 40):
+    job_limit = max(1, min(int(job_limit), 200))
+    build_limit = max(1, min(int(build_limit), 200))
+    dashboard = _build_dashboard_state(job_limit=job_limit, build_limit=build_limit)
+
+    jobs = []
+    for j in dashboard["all_jobs"]:
+        jid = j["id"]
+        jobs.append(
+            {
+                **j,
+                "times": dashboard["jobs_times"].get(jid, {}),
+                "params": dashboard["jobs_params"].get(jid, {}),
+                "outputs": dashboard["jobs_outputs"].get(jid, {}),
+                "subjobs": dashboard["jobs_subjobs"].get(jid, []),
+            }
+        )
+
+    builds = []
+    for b in dashboard["builds"]:
+        builds.append(
+            {
+                "class_name": b.get("class_name"),
+                "build_name": b.get("build_name"),
+                "path": b.get("path"),
+                "done_at": b.get("done_at"),
+                "with_link": b.get("with_link"),
+                "without_link": b.get("without_link"),
+                "variants_same": b.get("variants_same"),
+            }
+        )
+
+    return {
+        "server_ts": time.time(),
+        "job_count": len(jobs),
+        "active_job_count": len(dashboard["active_jobs"]),
+        "build_count": len(builds),
+        "active_job_ids": [j["id"] for j in dashboard["active_jobs"]],
+        "jobs": jobs,
+        "builds": builds,
+    }
 
 
 @app.post("/jobs/{job_id}/cancel")

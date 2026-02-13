@@ -173,3 +173,47 @@ def test_delete_build_removes_directory_and_job_rows(monkeypatch, test_wdc_class
     assert resp.status_code == 303
     assert not build_root.exists()
     assert web_main.db.get_job(job_id) is None
+
+
+def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120777"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+
+    running_job_id = web_main.db.insert_job({"class_name": "TestClass", "parts_spec": "all"})
+    web_main.db.update_job(
+        running_job_id,
+        status="running",
+        phase="build",
+        progress_text="building...",
+        progress_pct=55.0,
+    )
+    web_main.db.update_subjob_by_type(
+        running_job_id,
+        "build",
+        status="running",
+        progress_text="build step",
+        current_step="build_wd",
+    )
+
+    done_job_id = web_main.db.insert_job({"class_name": "TestClass"})
+    web_main.db.update_job(done_job_id, status="done", result_path=str(build_root.resolve()))
+
+    with client:
+        resp = client.get("/api/dashboard")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["build_count"] >= 1
+    assert any(b["build_name"] == build_name for b in payload["builds"])
+    assert payload["job_count"] >= 2
+    assert running_job_id in payload["active_job_ids"]
+    assert done_job_id not in payload["active_job_ids"]
+
+    jobs = {j["id"]: j for j in payload["jobs"]}
+    assert jobs[running_job_id]["status"] == "running"
+    assert jobs[running_job_id]["outputs"]["build_done"] is False
+    assert isinstance(jobs[running_job_id]["subjobs"], list)
+    assert jobs[done_job_id]["status"] == "done"
+    assert jobs[done_job_id]["outputs"]["build_done"] is True
