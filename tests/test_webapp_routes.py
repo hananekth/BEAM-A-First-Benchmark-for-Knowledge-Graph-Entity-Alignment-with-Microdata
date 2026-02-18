@@ -265,6 +265,39 @@ def test_dashboard_api_keeps_failed_job_visible_when_no_build_output(monkeypatch
     assert done_with_build_job_id not in payload["visible_job_ids"]
 
 
+def test_dashboard_api_normalizes_legacy_done_skipped_build_to_error(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+
+    reason = "No alignments found (0); build skipped."
+    job_id = web_main.db.insert_job({"class_name": "City", "parts_spec": "1"})
+    web_main.db.update_job(
+        job_id,
+        status="done",
+        phase="build",
+        progress_text=reason,
+        error_message=None,
+        result_path=None,
+    )
+    web_main.db.update_subjob_by_type(job_id, "align", status="done")
+    web_main.db.update_subjob_by_type(
+        job_id,
+        "build",
+        status="done",
+        current_step="skipped",
+        progress_text=reason,
+    )
+
+    with client:
+        resp = client.get("/api/dashboard")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert job_id in payload["visible_job_ids"]
+    row = next(j for j in payload["jobs"] if j["id"] == job_id)
+    assert row["status"] == "error"
+    assert "no alignments found" in (row.get("error_message") or "").lower()
+
+
 def test_class_parts_api_reports_downloaded_and_missing(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     class_dir = Path("Download") / "TestClass"

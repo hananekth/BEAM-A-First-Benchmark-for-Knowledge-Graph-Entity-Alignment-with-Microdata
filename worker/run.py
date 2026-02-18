@@ -17,6 +17,23 @@ POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "1"))
 MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", "8"))
 
 
+def _normalize_eta_hint(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    compact = re.sub(r"\s+", "", raw.lower())
+    if compact in {"n/a", "na", "-", "—"}:
+        return None
+
+    digits = re.findall(r"\d", compact)
+    # Treat purely-zero ETA hints (0s, 0m0s, 0h00m00s, 00:00, etc.) as unknown.
+    if digits and all(d == "0" for d in digits):
+        tail = re.sub(r"[0-9:\.]", "", compact)
+        if not tail or re.fullmatch(r"[hms]+", tail):
+            return None
+    return raw
+
+
 def _cpu_workers_for(job_count):
     cpu = os.cpu_count() or 1
     active = max(1, job_count)
@@ -509,14 +526,12 @@ def _run_job(job_id, workers):
                         pass
                 eta_match = re.search(r"ETA:\s*([^|]+)", msg, flags=re.IGNORECASE)
                 if eta_match:
-                    eta_txt = str(eta_match.group(1) or "").strip()
-                    eta_compact = re.sub(r"\s+", "", eta_txt.lower())
-                    is_zero_eta = eta_compact in {"0s", "0m0s", "0m00s", "0h0m0s", "0h00m00s"}
-                    if eta_txt and eta_txt.lower() not in {"n/a", "-", "—"} and not is_zero_eta:
-                        self._eta_by_phase[self._phase] = eta_txt
+                    eta_txt = _normalize_eta_hint(eta_match.group(1))
+                    if eta_txt:
+                        self._eta_by_phase[self._phase] = str(eta_txt)
                         self._eta_ts_by_phase[self._phase] = time.time()
-                    elif is_zero_eta:
-                        # Avoid stale "ETA: 0s" repeating when the phase continues for a long time.
+                    else:
+                        # Avoid stale/meaningless ETA values while the phase continues.
                         self._eta_by_phase[self._phase] = None
                         self._eta_ts_by_phase[self._phase] = 0.0
                 # step detection
@@ -638,7 +653,7 @@ def _run_job(job_id, workers):
                         continue
                     phase_elapsed = int(now - writer._phase_started_at)
                     step = writer._current_step or "build"
-                    eta_hint = writer._eta_by_phase.get("build")
+                    eta_hint = _normalize_eta_hint(writer._eta_by_phase.get("build"))
                     eta_ts = float(writer._eta_ts_by_phase.get("build") or 0.0)
                     eta_age_ok = eta_ts > 0 and (now - eta_ts) <= 45.0
                     eta_suffix = f" | ETA: {eta_hint}" if (eta_hint and eta_age_ok) else ""

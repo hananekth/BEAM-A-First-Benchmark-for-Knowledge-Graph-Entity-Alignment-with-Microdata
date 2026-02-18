@@ -561,6 +561,7 @@ let dashboardPollBusy = false;
 let dashboardReloadQueued = false;
 let lastKnownBuildCount = Number({{ builds|length }});
 let nextBuildDomId = Number({{ builds|length }});
+let lastReloadQueuedBuildCount = lastKnownBuildCount;
 
 function getMinimizedJobs() {
   try {
@@ -774,9 +775,12 @@ function showPendingToastFromStorage() {
   } catch (_) {}
 }
 
-function queueReloadWithToast(message, kind = 'success') {
+function queueReloadWithToast(message, kind = 'success', buildCount = null) {
   if (dashboardReloadQueued) return;
   dashboardReloadQueued = true;
+  if (Number.isFinite(Number(buildCount))) {
+    lastReloadQueuedBuildCount = Math.max(lastReloadQueuedBuildCount, Number(buildCount));
+  }
   const toastId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   try {
     sessionStorage.setItem(PENDING_TOAST_KEY, JSON.stringify({ id: toastId, message, kind, ts: Date.now() }));
@@ -847,13 +851,23 @@ function formatEtaSeconds(totalSeconds) {
   return `${sec}s`;
 }
 
+function isZeroEtaText(value) {
+  const compact = String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+  if (!compact) return false;
+  const digits = compact.match(/\d/g) || [];
+  if (digits.length === 0) return false;
+  if (!digits.every((d) => d === '0')) return false;
+  const tail = compact.replace(/[0-9:\.]/g, '');
+  return !tail || /^[hms]+$/.test(tail);
+}
+
 function extractEtaText(progressText) {
   const txt = String(progressText || '');
   if (!txt) return null;
   const m = txt.match(/ETA:\s*([^|]+)/i);
   if (!m) return null;
   const eta = String(m[1] || '').trim();
-  if (!eta || /^n\/a$/i.test(eta)) return null;
+  if (!eta || /^n\/a$/i.test(eta) || /^na$/i.test(eta) || /^[-—]$/.test(eta) || isZeroEtaText(eta)) return null;
   return eta;
 }
 
@@ -861,12 +875,13 @@ function estimateEtaFromPct(pct, startedAtSec) {
   const p = Number(pct);
   const startedMs = Number(startedAtSec) * 1000;
   if (!Number.isFinite(p) || p <= 0 || p >= 100) return null;
+  if (p >= 99.5) return null;
   if (!Number.isFinite(startedMs) || startedMs <= 0) return null;
   const elapsedSec = (Date.now() - startedMs) / 1000;
   if (!Number.isFinite(elapsedSec) || elapsedSec <= 0) return null;
   const totalSec = elapsedSec / (p / 100.0);
   const remSec = totalSec - elapsedSec;
-  if (!Number.isFinite(remSec) || remSec < 0) return null;
+  if (!Number.isFinite(remSec) || remSec <= 1) return null;
   return formatEtaSeconds(remSec);
 }
 
@@ -1461,9 +1476,16 @@ async function pollDashboardOnce() {
     if (insertedBuilds > 0) {
       const msg = insertedBuilds === 1 ? 'Build is ready to download' : `${insertedBuilds} builds are ready to download`;
       showToast(msg, 'success', 2400);
-    } else if (Number.isFinite(nextBuildCount) && nextBuildCount > Number(lastKnownBuildCount || 0)) {
+      if (Number.isFinite(nextBuildCount)) {
+        lastReloadQueuedBuildCount = Math.max(lastReloadQueuedBuildCount, nextBuildCount);
+      }
+    } else if (
+      Number.isFinite(nextBuildCount)
+      && nextBuildCount > Number(lastKnownBuildCount || 0)
+      && nextBuildCount > Number(lastReloadQueuedBuildCount || 0)
+    ) {
       // Fallback: backend saw new build but current DOM did not reconcile for any reason.
-      queueReloadWithToast('Build list updated', 'success');
+      queueReloadWithToast('Build list updated', 'success', nextBuildCount);
     }
     if (Number.isFinite(nextBuildCount) && nextBuildCount >= 0) {
       lastKnownBuildCount = nextBuildCount;

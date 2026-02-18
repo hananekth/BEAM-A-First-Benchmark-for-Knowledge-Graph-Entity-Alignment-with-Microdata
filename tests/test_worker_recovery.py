@@ -6,6 +6,17 @@ from beam import db
 import worker.run as worker_run
 
 
+def test_normalize_eta_hint_rejects_zero_like_values():
+    assert worker_run._normalize_eta_hint("0s") is None
+    assert worker_run._normalize_eta_hint("0m0s") is None
+    assert worker_run._normalize_eta_hint("0h00m00s") is None
+    assert worker_run._normalize_eta_hint("00:00") is None
+    assert worker_run._normalize_eta_hint("N/A") is None
+    assert worker_run._normalize_eta_hint("—") is None
+    assert worker_run._normalize_eta_hint("12s") == "12s"
+    assert worker_run._normalize_eta_hint("1m 03s") == "1m 03s"
+
+
 def test_recover_stale_running_build_requeues_with_resume(monkeypatch):
     class_name = "TestClassRecover"
     out_dir = Path("data") / class_name / "beam_resume_target"

@@ -600,6 +600,13 @@ def _safe_json_loads(raw: Optional[str]):
         return {}
 
 
+def _looks_like_skipped_build_reason(text: Optional[str]) -> bool:
+    msg = str(text or "").strip().lower()
+    if not msg:
+        return False
+    return ("build skipped" in msg) or ("no alignments found" in msg)
+
+
 def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
     all_jobs = [dict(j) for j in db.list_jobs(limit=job_limit)]
     jobs_by_id = {j["id"]: j for j in all_jobs}
@@ -655,6 +662,32 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
         }
         jobs_params[jid] = _safe_json_loads(j.get("params_json"))
         jobs_subjobs[jid] = [dict(s) for s in db.list_subjobs(jid)]
+
+    # Legacy safety: some old rows can be persisted as "done" even when build was skipped
+    # due to 0 alignments. Normalize the state in dashboard payload to avoid misleading UI.
+    for j in all_jobs:
+        if j.get("status") != "done":
+            continue
+        jid = j["id"]
+        if jobs_outputs.get(jid, {}).get("build_done"):
+            continue
+        build_row = next((s for s in jobs_subjobs.get(jid, []) if s.get("type") == "build"), None)
+        build_step = str((build_row or {}).get("current_step") or "").strip().lower()
+        build_msg = str((build_row or {}).get("progress_text") or "").strip()
+        job_msg = str(j.get("progress_text") or "").strip()
+        err_msg = str(j.get("error_message") or "").strip()
+        skipped = (
+            build_step == "skipped"
+            or _looks_like_skipped_build_reason(build_msg)
+            or _looks_like_skipped_build_reason(job_msg)
+            or _looks_like_skipped_build_reason(err_msg)
+        )
+        if not skipped:
+            continue
+        reason = build_msg or job_msg or err_msg or "No alignments found (0); build skipped."
+        j["status"] = "error"
+        j["phase"] = j.get("phase") or "build"
+        j["error_message"] = reason
 
     # Keep done jobs visible when there is no downloadable build output.
     jobs_for_panel = [
