@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
@@ -14,10 +15,14 @@ env/
 
 # Runtime logs/state
 logs/
+*.log
 worker.log
 jobs.db
 jobs.db-shm
 jobs.db-wal
+jobs.db-*
+*.sqlite
+*.sqlite3
 
 # Generated data/artifacts
 Download/
@@ -25,6 +30,7 @@ data/
 reports/
 test-results/
 jobs/
+x
 
 # Local helper files
 sync.sh
