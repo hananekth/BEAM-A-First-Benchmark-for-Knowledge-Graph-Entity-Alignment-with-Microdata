@@ -108,3 +108,61 @@ def test_extract_unique_iris_literal_mode_ignores_iri_objects(tmp_path):
     assert matched_count == 2
     all_values = {v for entries in value_map.values() for (v, _s) in entries}
     assert all_values == {"Alpha"}
+
+
+def test_extract_wd_entity_iri_accepts_wiki_variants():
+    assert (
+        align.extract_wd_entity_iri("https://www.wikidata.org/wiki/Q174224")
+        == "http://www.wikidata.org/entity/Q174224"
+    )
+    assert (
+        align.extract_wd_entity_iri("https://www.wikidata.org/wiki/Special:EntityPage/Q64")
+        == "http://www.wikidata.org/entity/Q64"
+    )
+    assert (
+        align.extract_wd_entity_iri("https://m.wikidata.org/wiki/Q90?uselang=en")
+        == "http://www.wikidata.org/entity/Q90"
+    )
+    assert (
+        align.extract_wd_entity_iri("wd:Q42")
+        == "http://www.wikidata.org/entity/Q42"
+    )
+    assert align.extract_wd_entity_iri("https://en.wikipedia.org/wiki/Q90") is None
+
+
+def test_fetch_wikidata_values_uses_persistent_cache(monkeypatch, tmp_path):
+    cache_dir = tmp_path / "wd_cache"
+    monkeypatch.setenv("WIKIDATA_CACHE_DIR", str(cache_dir))
+    monkeypatch.setenv("WIKIDATA_CACHE_TTL_S", "3600")
+    monkeypatch.setenv("WIKIDATA_CACHE_DISABLED", "0")
+
+    payload = (
+        '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q1"},'
+        '"value":{"value":"Alpha"}}]}}'
+    )
+
+    class _Resp:
+        text = payload
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    calls = {"n": 0}
+
+    def _fake_post(*args, **kwargs):
+        calls["n"] += 1
+        return _Resp()
+
+    monkeypatch.setattr(align.requests, "post", _fake_post)
+    first = align.fetch_wikidata_values("rdfs:label", "Q5", None)
+    assert first
+    assert calls["n"] == 1
+
+    def _fail_post(*args, **kwargs):
+        raise RuntimeError("network down")
+
+    monkeypatch.setattr(align.requests, "post", _fail_post)
+    second = align.fetch_wikidata_values("rdfs:label", "Q5", None)
+    assert second
+    assert second == first

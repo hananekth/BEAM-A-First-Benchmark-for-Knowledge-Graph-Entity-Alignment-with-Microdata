@@ -66,6 +66,9 @@
     .btn { margin-top:12px; padding:10px 12px; background:var(--primary); color:white; border:none; cursor:pointer; }
     .btn.secondary { background:#2a3442; color:#dbe5f2; border:1px solid #3a4759; }
     .btn.danger { background:#5b1f29; color:#ffd9df; border:1px solid #8f3a49; }
+    .form-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .form-actions .btn { width:auto; margin-top:0; }
+    .form-actions .btn.primary { min-width:220px; }
     .topbar { display:flex; gap:16px; }
     .job-header { display:flex; justify-content:space-between; align-items:center; }
     .header-left { display:flex; align-items:center; gap:8px; }
@@ -128,6 +131,12 @@
     .part-row { display:grid; grid-template-columns:1fr auto; gap:10px; padding:2px 0; font-size:12px; }
     .part-name { color:var(--text); word-break:break-all; }
     .part-size { color:var(--muted); }
+    .qa-box { margin-top:10px; border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#0b0f171a; }
+    .qa-block { margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; }
+    .qa-warning { color:#ffd6d6; }
+    .qa-kv { display:grid; grid-template-columns:1fr auto; gap:8px; font-size:12px; padding:1px 0; }
+    .qa-left { color:var(--text); word-break:break-word; }
+    .qa-right { color:var(--muted); }
     .config-box { margin-top:10px; border:1px dashed var(--border); border-radius:8px; padding:8px; background:#0b0f171a; }
     .kv-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .kv-pill { border:1px solid var(--border); border-radius:999px; padding:4px 8px; font-size:12px; color:var(--text); background:#0d1420; }
@@ -155,6 +164,7 @@
       .cfg-row { grid-template-columns:1fr; gap:4px; }
       .build-actions { flex-wrap:wrap; }
       .build-actions .btn { width:100%; }
+      .form-actions .btn { width:100%; }
       .subjobs { grid-template-columns:1fr; }
     }
   </style>
@@ -194,7 +204,7 @@
     </div>
   </div>
 
-  <form method="post" action="/jobs" class="card" style="margin-top:16px;">
+  <form id="generate-form" method="post" action="/jobs" class="card" style="margin-top:16px;">
     <div class="row">
       <div class="col">
         <label>
@@ -203,7 +213,7 @@
             <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language). Use Refresh WDC classes if it is missing.">?</span>
           </span>
         </label>
-        <select name="class_name">
+        <select id="class-name-select" name="class_name">
           <option value="">(select class)</option>
           {% for name, meta in class_meta.items() %}
             <option value="{{ name }}" {% if form.class_name == name %}selected{% endif %}>{{ name }}</option>
@@ -219,7 +229,7 @@
             <span class="help-tip" tabindex="0" title="Choose which parts to scan. Use all, a list like 1,2,4, or a range like 1-10.">?</span>
           </span>
         </label>
-        <input name="parts_spec" value="{{ form.parts_spec }}" placeholder="all or 1,2,4 or 1-10" />
+        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all or 1,2,4 or 1-10" />
 
         <label>
           <span class="label-help">
@@ -227,7 +237,7 @@
             <span class="help-tip" tabindex="0" title="Predicate keyword used to extract WDC values (for example name, eidr, telephone, sameAs, url).">?</span>
           </span>
         </label>
-        <input name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="eidr / name / telephone / isrc" />
+        <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="eidr / name / telephone / isrc" />
 
         <label>
           <span class="label-help">
@@ -235,7 +245,7 @@
             <span class="help-tip" tabindex="0" title="Property used to fetch comparison values from Wikidata (for example P2704, wdt:P2704, rdfs:label). Leave empty when WDC values are already Wikidata URLs.">?</span>
           </span>
         </label>
-        <input name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="P2704 / wdt:P2704 / rdfs:label" />
+        <input id="wikidata-property-input" name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="P2704 / wdt:P2704 / rdfs:label" />
       </div>
       <div class="col">
         <label>
@@ -244,7 +254,7 @@
             <span class="help-tip" tabindex="0" title="Usually used when linking by label or existing links (for example sameAs/url) and you want to filter Wikidata to a target class. Example: Q486972 for City.">?</span>
           </span>
         </label>
-        <input name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q33742" />
+        <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q33742" />
 
         <label>
           <span class="label-help">
@@ -252,7 +262,7 @@
             <span class="help-tip" tabindex="0" title="Traversal depth from seed entities during graph extraction. 0 means direct triples only; higher values include neighbors; -1 means no explicit limit.">?</span>
           </span>
         </label>
-        <select name="max_depth">
+        <select id="max-depth-select" name="max_depth">
           {% for d in [-1,0,1,2,3,4,5] %}
             <option value="{{ d }}" {% if form.max_depth == d %}selected{% endif %}>{{ d }}</option>
           {% endfor %}
@@ -264,25 +274,27 @@
             <span class="help-tip" tabindex="0" title="Characters removed before matching values. Default spaces;-;. helps normalize formatting differences.">?</span>
           </span>
         </label>
-        <input name="ignore_chars" value="{{ form.ignore_chars }}" placeholder="spaces;-;.;special-chars" />
+        <input id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" placeholder="spaces;-;.;special-chars" />
 
         <label class="checkrow">
-          <input type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
+          <input id="wdc-value-is-wikidata-checkbox" type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
           WDC values are Wikidata URLs
           <span class="help-tip" tabindex="0" title="Enable this when WDC values are Wikidata entity URLs (often in sameAs or url). Matching is then done directly on Wikidata entities.">?</span>
         </label>
         <label class="checkrow">
-          <input type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
+          <input id="force-align-checkbox" type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
           Ignore align cache (force re-run align)
           <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
         </label>
         <label class="checkrow">
-          <input type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
+          <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
           Use local parts only (no downloads)
           <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
         </label>
       </div>
     </div>
+    <div id="matching-guidance" class="info small" style="display:none"></div>
+    <div id="form-error-box" class="warn" {% if not form_error %}style="display:none"{% endif %}>{{ form_error or "" }}</div>
 
     <div
       id="class-parts-info"
@@ -297,8 +309,16 @@
       <div class="small" id="class-parts-online-error" style="display:none"></div>
       <div class="small" id="class-parts-local-only" style="display:none"></div>
     </div>
-
-    <button class="btn" type="submit">Generate benchmark</button>
+    <div id="preflight-box" class="info" style="display:none"></div>
+    <label class="checkrow" style="margin-top:6px;">
+      <input id="allow-high-risk-checkbox" type="checkbox" name="allow_high_risk">
+      Allow high-risk run
+      <span class="help-tip" tabindex="0" title="Only use this if preflight reports high risk and you still want to run.">?</span>
+    </label>
+    <div class="form-actions">
+      <button id="preflight-btn" class="btn secondary" type="button">Run preflight check</button>
+      <button class="btn primary" type="submit">Generate benchmark</button>
+    </div>
   </form>
 
   <div class="jobs">
@@ -313,7 +333,7 @@
             <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }}</span></div>
           </div>
           <div class="head-actions">
-            <form method="post" action="/builds/{{ b.class_name }}/{{ b.build_name }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
+            <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
               <button class="btn-icon danger" type="submit" title="Delete build" aria-label="Delete build">&#128465;</button>
             </form>
           </div>
@@ -321,10 +341,13 @@
         <div class="build-body" id="build-body-{{ loop.index0 }}">
         <div class="small build-path">Path: {{ b.path }}</div>
         <div class="build-actions">
-          <form method="get" action="/builds/{{ b.class_name }}/{{ b.build_name }}/download">
+          <form method="get" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/download">
             <button class="btn secondary" type="submit">Download build</button>
           </form>
-          <form method="post" action="/builds/{{ b.class_name }}/{{ b.build_name }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
+          <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/rerun" class="js-async-form">
+            <button class="btn secondary" type="submit">Rerun same config</button>
+          </form>
+          <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
             <button class="btn danger" type="submit">Delete build</button>
           </form>
         </div>
@@ -347,6 +370,47 @@
             <div class="tile-label">WD Properties</div>
             <div class="tile-value">{{ v.wd_props }}</div>
           </div>
+        </div>
+        <div class="qa-box">
+          <div><b>Result QA</b></div>
+          {% if v.qa_warnings %}
+            <div class="small qa-warning">{{ v.qa_warnings | join("; ") }}</div>
+          {% else %}
+            <div class="small">No major issues detected.</div>
+          {% endif %}
+          {% if v.sample_links %}
+          <div class="qa-block">
+            <div class="small"><b>Sample entity links</b></div>
+            {% for row in v.sample_links %}
+            <div class="qa-kv">
+              <div class="qa-left">{{ row.wdc_iri }}</div>
+              <div class="qa-right">{{ row.wikidata_uri }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if v.top_wdc_props or v.top_wd_props %}
+          <div class="qa-block">
+            {% if v.top_wdc_props %}
+              <div class="small"><b>Top WDC properties</b></div>
+              {% for row in v.top_wdc_props %}
+              <div class="qa-kv">
+                <div class="qa-left">{{ row.property }}</div>
+                <div class="qa-right">{{ row.count }}</div>
+              </div>
+              {% endfor %}
+            {% endif %}
+            {% if v.top_wd_props %}
+              <div class="small" style="margin-top:6px;"><b>Top Wikidata properties</b></div>
+              {% for row in v.top_wd_props %}
+              <div class="qa-kv">
+                <div class="qa-left">{{ row.property }}</div>
+                <div class="qa-right">{{ row.count }}</div>
+              </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          {% endif %}
         </div>
         {% endif %}
         <div class="build-config">
@@ -745,6 +809,225 @@ async function refreshClassPartsInfo(className) {
   }
 }
 
+function showFormError(message) {
+  const box = document.getElementById('form-error-box');
+  if (!box) return;
+  const txt = String(message || '').trim();
+  if (!txt) {
+    box.style.display = 'none';
+    box.textContent = '';
+    return;
+  }
+  box.style.display = '';
+  box.textContent = txt;
+}
+
+function normalizeFormText(value) {
+  return String(value || '').trim();
+}
+
+function syncWikidataPropertyState() {
+  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
+  const propInput = document.getElementById('wikidata-property-input');
+  if (!propInput) return;
+  if (isWikidata) {
+    if (!propInput.disabled) {
+      propInput.dataset.cachedValue = propInput.value || '';
+    }
+    propInput.value = '';
+    propInput.disabled = true;
+    propInput.placeholder = 'Disabled when WDC values are Wikidata URLs';
+  } else {
+    propInput.disabled = false;
+    if (!propInput.value && propInput.dataset.cachedValue) {
+      propInput.value = propInput.dataset.cachedValue;
+    }
+    propInput.placeholder = 'P2704 / wdt:P2704 / rdfs:label';
+  }
+}
+
+function updateMatchingGuidance() {
+  const box = document.getElementById('matching-guidance');
+  if (!box) return;
+  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
+  const tips = [];
+
+  if (!pattern) {
+    tips.push('Set a WDC predicate pattern first (example: name, sameAs, url, telephone).');
+  }
+
+  if (isWikidata) {
+    tips.push('Mode: direct matching from WDC Wikidata URLs (Wikidata property is ignored).');
+    if (!wkdClass) {
+      tips.push('Set Wikidata class (QID) to restrict candidates and improve precision.');
+    }
+    if (pattern && !/(sameas|url)/i.test(pattern)) {
+      tips.push('Tip: with URL mode, use a predicate like sameAs or url.');
+    }
+  } else {
+    tips.push('Mode: value matching against a Wikidata property.');
+    if (!wikidataProperty) {
+      tips.push('Set Wikidata property (example: rdfs:label, P1329, P2704).');
+    }
+    if (pattern && /(sameas|url)/i.test(pattern)) {
+      tips.push('Tip: if values are Wikidata links, enable "WDC values are Wikidata URLs".');
+    }
+    if (wkdClass) {
+      tips.push('Wikidata class filter is active and will narrow matching.');
+    }
+  }
+
+  if (!tips.length) {
+    box.style.display = 'none';
+    box.textContent = '';
+    return;
+  }
+  box.style.display = '';
+  box.innerHTML = tips.map((tip) => `<div>${escapeHtml(tip)}</div>`).join('');
+}
+
+function validateGenerateForm(opts = {}) {
+  const requireWikidataInputs = opts.requireWikidataInputs !== false;
+  const enforcePreflightRisk = opts.enforcePreflightRisk !== false;
+  const className = normalizeFormText(document.getElementById('class-name-select')?.value);
+  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
+  const preflightBox = document.getElementById('preflight-box');
+  const preflightRisk = String(preflightBox?.dataset?.risk || '').toLowerCase();
+  const allowHighRisk = !!document.getElementById('allow-high-risk-checkbox')?.checked;
+
+  if (!className) return 'Class name is required.';
+  if (!pattern) return 'WDC predicate pattern is required.';
+  if (!requireWikidataInputs) return '';
+  if (isWikidata) {
+    if (!wkdClass) return 'Wikidata class (QID) is required when WDC values are Wikidata URLs.';
+    if (enforcePreflightRisk && preflightRisk === 'high' && !allowHighRisk) {
+      return 'Preflight risk is high. Tick "Allow high-risk run" to continue.';
+    }
+    return '';
+  }
+  if (!wikidataProperty) return 'Wikidata property is required when WDC values are not Wikidata URLs.';
+  if (enforcePreflightRisk && preflightRisk === 'high' && !allowHighRisk) {
+    return 'Preflight risk is high. Tick "Allow high-risk run" to continue.';
+  }
+  return '';
+}
+
+function renderPreflightReport(report) {
+  const box = document.getElementById('preflight-box');
+  if (!box) return;
+  if (!report || typeof report !== 'object') {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    box.dataset.risk = '';
+    return;
+  }
+  const warnings = Array.isArray(report.warnings) ? report.warnings : [];
+  const samples = Array.isArray(report.sample_values) ? report.sample_values : [];
+  const files = Array.isArray(report.selected_files) ? report.selected_files : [];
+  const topUnmatched = Array.isArray(report.top_unmatched_wdc_values) ? report.top_unmatched_wdc_values : [];
+  const closeExamples = Array.isArray(report.close_wikidata_examples) ? report.close_wikidata_examples : [];
+  const topPredicates = Array.isArray(report.top_predicates) ? report.top_predicates : [];
+  const invalidWikidata = Array.isArray(report.invalid_wikidata_samples) ? report.invalid_wikidata_samples : [];
+  const risk = String(report.risk || 'high');
+  box.style.display = '';
+  box.className = risk === 'high' ? 'warn' : 'info';
+  box.dataset.risk = risk;
+  const warningsHtml = warnings.length
+    ? `<div class="small" style="margin-top:6px;"><b>Warnings:</b> ${escapeHtml(warnings.join(' | '))}</div>`
+    : '';
+  const samplesHtml = samples.length
+    ? `<div class="small" style="margin-top:6px;"><b>Sample values:</b> ${escapeHtml(samples.join(' | '))}</div>`
+    : '';
+  const filesHtml = files.length
+    ? `<div class="small" style="margin-top:6px;"><b>Sampled files:</b> ${escapeHtml(files.join(', '))}</div>`
+    : '';
+  const topUnmatchedHtml = topUnmatched.length
+    ? `<div class="small" style="margin-top:6px;"><b>Top WDC values (likely unmatched):</b> ${topUnmatched.map((row) => `${escapeHtml(String(row.value || ''))} (${escapeHtml(String(row.count || 0))})`).join(' | ')}</div>`
+    : '';
+  const closeExamplesHtml = closeExamples.length
+    ? `<div class="small" style="margin-top:6px;"><b>Closest Wikidata examples:</b> ${closeExamples.map((row) => `${escapeHtml(String(row.wdc_value || ''))} -> ${escapeHtml((Array.isArray(row.wikidata_candidates) ? row.wikidata_candidates.join(', ') : ''))}`).join(' | ')}</div>`
+    : '';
+  const topPredicatesHtml = topPredicates.length
+    ? `<div class="small" style="margin-top:6px;"><b>Most frequent predicates in sampled data:</b> ${topPredicates.map((row) => `${escapeHtml(String(row.predicate || ''))} (${escapeHtml(String(row.count || 0))})`).join(' | ')}</div>`
+    : '';
+  const invalidWikidataHtml = invalidWikidata.length
+    ? `<div class="small" style="margin-top:6px;"><b>Non-Wikidata URL samples:</b> ${escapeHtml(invalidWikidata.join(' | '))}</div>`
+    : '';
+  box.innerHTML = `
+    <div><b>Preflight</b> · ${escapeHtml(String(report.summary || ''))}</div>
+    <div class="small">Risk: ${escapeHtml(risk)} | Confidence: ${escapeHtml(String(report.confidence || 'low'))}</div>
+    <div class="small">Scanned lines: ${escapeHtml(String(report.scanned_lines ?? 0))} | Matched triples: ${escapeHtml(String(report.matched_triples ?? 0))} | Distinct values: ${escapeHtml(String(report.distinct_values ?? 0))}</div>
+    <div class="small">Selected files: ${escapeHtml(String(report.selected_files_count ?? 0))}</div>
+    ${report.wdc_value_is_wikidata ? `<div class="small">Wikidata URL-like values: ${escapeHtml(String(report.wikidata_url_like ?? 0))}</div>` : ''}
+    ${warningsHtml}
+    ${samplesHtml}
+    ${filesHtml}
+    ${topUnmatchedHtml}
+    ${closeExamplesHtml}
+    ${topPredicatesHtml}
+    ${invalidWikidataHtml}
+  `;
+}
+
+async function runPreflightCheck() {
+  const error = validateGenerateForm({ requireWikidataInputs: false, enforcePreflightRisk: false });
+  if (error) {
+    showFormError(error);
+    return;
+  }
+  showFormError('');
+  const preflightBtn = document.getElementById('preflight-btn');
+  if (preflightBtn) preflightBtn.disabled = true;
+  try {
+    const query = new URLSearchParams({
+      class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
+      parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
+      wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
+      wikidata_property: normalizeFormText(document.getElementById('wikidata-property-input')?.value),
+      wkd_class: normalizeFormText(document.getElementById('wkd-class-input')?.value),
+      ignore_chars: normalizeFormText(document.getElementById('ignore-chars-input')?.value),
+      wdc_value_is_wikidata: document.getElementById('wdc-value-is-wikidata-checkbox')?.checked ? 'true' : 'false',
+      use_local_only: document.getElementById('use-local-only-checkbox')?.checked ? 'true' : 'false',
+      include_wikidata_preview: 'true',
+      scan_limit_lines: '30000',
+    });
+    const res = await fetch(`/api/preflight?${query.toString()}`, {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    renderPreflightReport(payload);
+  } catch (_) {
+    renderPreflightReport({
+      risk: 'high',
+      confidence: 'low',
+      summary: 'Preflight request failed.',
+      scanned_lines: 0,
+      matched_triples: 0,
+      distinct_values: 0,
+      selected_files_count: 0,
+      warnings: ['Could not reach preflight endpoint'],
+      sample_values: [],
+      selected_files: [],
+      top_unmatched_wdc_values: [],
+      close_wikidata_examples: [],
+      top_predicates: [],
+      invalid_wikidata_samples: [],
+    });
+  } finally {
+    if (preflightBtn) preflightBtn.disabled = false;
+  }
+}
+
 function showToast(message, kind = 'info', timeoutMs = 4200) {
   const wrap = document.getElementById('toast-wrap');
   if (!wrap || !message) return;
@@ -1105,6 +1388,7 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
   const deleteAction = `/builds/${actionClass}/${actionBuild}/delete`;
   const variant = build.with_link || build.without_link || null;
   let tilesHtml = '';
+  let qaHtml = '';
   if (variant) {
     tilesHtml = `
       <div class="build-tiles">
@@ -1112,6 +1396,58 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
         <div class="tile"><div class="tile-label">Entity Links</div><div class="tile-value">${escapeHtml(variant.links_count || '0')}</div></div>
         <div class="tile"><div class="tile-label">WDC Properties</div><div class="tile-value">${escapeHtml(variant.wdc_props || '0')}</div></div>
         <div class="tile"><div class="tile-label">WD Properties</div><div class="tile-value">${escapeHtml(variant.wd_props || '0')}</div></div>
+      </div>
+    `;
+    const warnings = Array.isArray(variant.qa_warnings) ? variant.qa_warnings : [];
+    const warningText = warnings.length > 0
+      ? `<div class="small qa-warning">${escapeHtml(warnings.join('; '))}</div>`
+      : `<div class="small">No major issues detected.</div>`;
+    const sampleLinks = Array.isArray(variant.sample_links) ? variant.sample_links : [];
+    const topWdc = Array.isArray(variant.top_wdc_props) ? variant.top_wdc_props : [];
+    const topWd = Array.isArray(variant.top_wd_props) ? variant.top_wd_props : [];
+    const sampleLinksHtml = sampleLinks.length > 0
+      ? `
+        <div class="qa-block">
+          <div class="small"><b>Sample entity links</b></div>
+          ${sampleLinks.map((row) => `
+            <div class="qa-kv">
+              <div class="qa-left">${escapeHtml(row.wdc_iri || '')}</div>
+              <div class="qa-right">${escapeHtml(row.wikidata_uri || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      `
+      : '';
+    const topPropsHtml = (topWdc.length > 0 || topWd.length > 0)
+      ? `
+        <div class="qa-block">
+          ${topWdc.length > 0 ? `
+            <div class="small"><b>Top WDC properties</b></div>
+            ${topWdc.map((row) => `
+              <div class="qa-kv">
+                <div class="qa-left">${escapeHtml(row.property || '')}</div>
+                <div class="qa-right">${escapeHtml(String(row.count ?? '0'))}</div>
+              </div>
+            `).join('')}
+          ` : ''}
+          ${topWd.length > 0 ? `
+            <div class="small" style="margin-top:6px;"><b>Top Wikidata properties</b></div>
+            ${topWd.map((row) => `
+              <div class="qa-kv">
+                <div class="qa-left">${escapeHtml(row.property || '')}</div>
+                <div class="qa-right">${escapeHtml(String(row.count ?? '0'))}</div>
+              </div>
+            `).join('')}
+          ` : ''}
+        </div>
+      `
+      : '';
+    qaHtml = `
+      <div class="qa-box">
+        <div><b>Result QA</b></div>
+        ${warningText}
+        ${sampleLinksHtml}
+        ${topPropsHtml}
       </div>
     `;
   }
@@ -1165,11 +1501,15 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
           <form method="get" action="${downloadAction}">
             <button class="btn secondary" type="submit">Download build</button>
           </form>
+          <form method="post" action="/builds/${actionClass}/${actionBuild}/rerun" class="js-async-form">
+            <button class="btn secondary" type="submit">Rerun same config</button>
+          </form>
           <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
             <button class="btn danger" type="submit">Delete build</button>
           </form>
         </div>
         ${tilesHtml}
+        ${qaHtml}
         ${cfgHtml}
       </div>
     </div>
@@ -1514,6 +1854,18 @@ function setupAsyncForms() {
           redirect: 'follow',
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        let redirectedError = '';
+        try {
+          const finalUrl = new URL(res.url, window.location.href);
+          redirectedError = finalUrl.searchParams.get('form_error') || '';
+        } catch (_) {}
+        if (redirectedError) {
+          if (btn) btn.disabled = false;
+          showFormError(redirectedError);
+          showToast(redirectedError, 'error', 3000);
+          return;
+        }
+        showFormError('');
         const targetId = form.dataset.deleteTarget;
         if (targetId) {
           const el = document.getElementById(targetId);
@@ -1534,9 +1886,10 @@ function setupAsyncForms() {
           showToast('Deleted', 'success', 2200);
         }
         setTimeout(() => pollDashboardOnce(), 120);
-      } catch (_) {
+      } catch (err) {
         if (btn) btn.disabled = false;
-        showToast('Action failed', 'error', 2600);
+        const detail = (err && err.message) ? ` (${err.message})` : '';
+        showToast(`Action failed${detail}`, 'error', 3000);
       }
     });
   });
@@ -1545,6 +1898,70 @@ function setupAsyncForms() {
 document.addEventListener('DOMContentLoaded', () => {
   const ids = [{% for job in jobs %}{{ job.id }},{% endfor %}];
   initPresetToggle();
+  const formEl = document.getElementById('generate-form');
+  const preflightBtn = document.getElementById('preflight-btn');
+  const classNameSelect = document.getElementById('class-name-select');
+  const partsSpecInput = document.getElementById('parts-spec-input');
+  const patternInput = document.getElementById('wdc-pattern-input');
+  const wkdClassInput = document.getElementById('wkd-class-input');
+  const wikidataPropertyInput = document.getElementById('wikidata-property-input');
+  const ignoreCharsInput = document.getElementById('ignore-chars-input');
+  const useLocalOnlyCheckbox = document.getElementById('use-local-only-checkbox');
+  const wdcValueIsWikidataCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
+  const allowHighRiskCheckbox = document.getElementById('allow-high-risk-checkbox');
+
+  syncWikidataPropertyState();
+  updateMatchingGuidance();
+  if (wdcValueIsWikidataCheckbox) {
+    wdcValueIsWikidataCheckbox.addEventListener('change', () => {
+      syncWikidataPropertyState();
+      updateMatchingGuidance();
+      showFormError('');
+      const preflightBox = document.getElementById('preflight-box');
+      if (preflightBox) {
+        preflightBox.dataset.risk = '';
+      }
+    });
+  }
+  [classNameSelect, partsSpecInput, patternInput, wkdClassInput, wikidataPropertyInput, ignoreCharsInput, useLocalOnlyCheckbox].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('input', () => {
+      updateMatchingGuidance();
+      showFormError('');
+      if (el !== allowHighRiskCheckbox) {
+        const preflightBox = document.getElementById('preflight-box');
+        if (preflightBox) {
+          preflightBox.dataset.risk = '';
+        }
+      }
+    });
+    el.addEventListener('change', () => {
+      updateMatchingGuidance();
+      showFormError('');
+      if (el !== allowHighRiskCheckbox) {
+        const preflightBox = document.getElementById('preflight-box');
+        if (preflightBox) {
+          preflightBox.dataset.risk = '';
+        }
+      }
+    });
+  });
+  if (formEl) {
+    formEl.addEventListener('submit', (event) => {
+      const error = validateGenerateForm();
+      if (error) {
+        event.preventDefault();
+        showFormError(error);
+        return;
+      }
+      showFormError('');
+    });
+  }
+  if (preflightBtn) {
+    preflightBtn.addEventListener('click', () => {
+      runPreflightCheck();
+    });
+  }
   const classSelect = document.querySelector('select[name="class_name"]');
   const classPartsInfoEl = document.getElementById('class-parts-info');
   if (classPartsInfoEl) {

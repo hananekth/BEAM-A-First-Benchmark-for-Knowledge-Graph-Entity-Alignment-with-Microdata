@@ -12,6 +12,7 @@ import argparse
 import os
 import re
 import gzip
+import hashlib
 import shutil
 import json
 import requests
@@ -23,7 +24,7 @@ import time
 import fcntl
 from pathlib import Path
 from collections import defaultdict
-from urllib.parse import urljoin
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 from bs4 import BeautifulSoup
 
 # Configuration
@@ -638,12 +639,56 @@ def normalize_wikidata_property(wikidata_property):
 def extract_wd_entity_iri(value):
     if not value:
         return None
+    value = str(value).strip()
     if value.startswith("<") and value.endswith(">"):
-        value = value[1:-1]
-    m = re.search(r'(?:https?://www\.wikidata\.org/(?:wiki|entity)/)(Q\d+)', value)
-    if not m:
+        value = value[1:-1].strip()
+    if not value:
         return None
-    return f"http://www.wikidata.org/entity/{m.group(1)}"
+
+    # Already a bare QID.
+    m = re.fullmatch(r"[Qq](\d+)", value)
+    if m:
+        return f"http://www.wikidata.org/entity/Q{m.group(1)}"
+
+    # Prefix form (wd:Q42).
+    m = re.fullmatch(r"wd:[Qq](\d+)", value, flags=re.IGNORECASE)
+    if m:
+        return f"http://www.wikidata.org/entity/Q{m.group(1)}"
+
+    try:
+        parsed = urlparse(unquote(value))
+    except Exception:
+        parsed = None
+    if not parsed or parsed.scheme not in {"http", "https"}:
+        return None
+
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host.startswith("m."):
+        host = host[2:]
+    if host != "wikidata.org":
+        return None
+
+    path_parts = [p for p in (parsed.path or "").split("/") if p]
+    for token in reversed(path_parts):
+        m = re.fullmatch(r"[Qq](\d+)", token.strip())
+        if m:
+            return f"http://www.wikidata.org/entity/Q{m.group(1)}"
+
+    query_map = parse_qs(parsed.query or "", keep_blank_values=False)
+    for key in ("title", "entity", "id", "q"):
+        for raw in query_map.get(key, []):
+            m = re.fullmatch(r"[Qq](\d+)", str(raw).strip())
+            if m:
+                return f"http://www.wikidata.org/entity/Q{m.group(1)}"
+
+    frag = (parsed.fragment or "").strip()
+    m = re.fullmatch(r"[Qq](\d+)", frag)
+    if m:
+        return f"http://www.wikidata.org/entity/Q{m.group(1)}"
+
+    return None
 
 def discover_parts(class_name):
     """Découvre les parts disponibles pour une classe"""
@@ -1617,6 +1662,102 @@ def _load_sparql_json_payload(payload_text: str):
     return json.loads(cleaned, strict=False)
 
 
+def _truthy_env(value):
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _wikidata_cache_path(prop, wkd_class_norm, wkd_prop_class_norm, entity_iris=None, lang_key="all"):
+    entity_iris = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
+    entity_hash = "none"
+    if entity_iris:
+        sha = hashlib.sha1()
+        for iri in entity_iris:
+            sha.update(iri.encode("utf-8", errors="ignore"))
+            sha.update(b"\n")
+        entity_hash = sha.hexdigest()
+    key_payload = {
+        "v": 1,
+        "prop": prop or "?prop",
+        "wkd_class": wkd_class_norm or "",
+        "wkd_prop_class": wkd_prop_class_norm or "",
+        "lang": str(lang_key or "all"),
+        "entity_count": len(entity_iris),
+        "entity_hash": entity_hash,
+    }
+    cache_key = hashlib.sha1(
+        json.dumps(key_payload, sort_keys=True, ensure_ascii=True).encode("utf-8", errors="ignore")
+    ).hexdigest()
+    cache_root = Path(os.environ.get("WIKIDATA_CACHE_DIR", str(Path("Download") / ".wikidata_cache")))
+    cache_root.mkdir(parents=True, exist_ok=True)
+    return cache_root / f"values_{cache_key}.json.gz"
+
+
+def _load_wikidata_value_cache(path):
+    if not path.exists() or not path.is_file():
+        return None
+    ttl_s_raw = os.environ.get("WIKIDATA_CACHE_TTL_S", os.environ.get("WIKIDATA_CACHE_TTL", "604800"))
+    try:
+        ttl_s = int(ttl_s_raw)
+    except Exception:
+        ttl_s = 604800
+    if ttl_s > 0:
+        try:
+            age_s = max(0.0, time.time() - float(path.stat().st_mtime))
+            if age_s > ttl_s:
+                return None
+        except Exception:
+            return None
+    try:
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            payload = json.load(f)
+    except Exception:
+        return None
+    value_map_raw = (payload or {}).get("value_map")
+    if not isinstance(value_map_raw, dict):
+        return None
+    value_map = defaultdict(list)
+    for norm, entries in value_map_raw.items():
+        if not isinstance(norm, str):
+            continue
+        if not isinstance(entries, list):
+            continue
+        for pair in entries:
+            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                continue
+            value_map[norm].append((str(pair[0]), str(pair[1])))
+    return value_map
+
+
+def _save_wikidata_value_cache(path, value_map):
+    try:
+        tmp_path = path.with_name(path.name + f".tmp.{os.getpid()}")
+        serializable = {}
+        for norm, entries in (value_map or {}).items():
+            if not isinstance(norm, str):
+                continue
+            rows = []
+            for pair in entries:
+                if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                    continue
+                rows.append([str(pair[0]), str(pair[1])])
+            serializable[norm] = rows
+        payload = {
+            "saved_at": time.time(),
+            "value_map": serializable,
+        }
+        with gzip.open(tmp_path, "wt", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp_path, path)
+        return True
+    except Exception:
+        try:
+            if "tmp_path" in locals() and tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        return False
+
+
 def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None, entity_iris=None):
     """Récupère les valeurs depuis Wikidata pour une propriété donnée, avec filtre de classe optionnel"""
     print_color(f"\n🌐 Récupération des valeurs Wikidata ({wikidata_property})...", Colors.BLUE)
@@ -1644,9 +1785,28 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     """
     
     values_filter = ""
+    entity_iris_sorted = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
     if entity_iris:
-        values = " ".join(f"<{uri}>" for uri in entity_iris)
+        values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
         values_filter = f"VALUES ?entity {{ {values} }}\n"
+    cache_disabled = _truthy_env(os.environ.get("WIKIDATA_CACHE_DISABLED", "0"))
+    cache_lang = os.environ.get("WIKIDATA_CACHE_LANG", "all")
+    cache_path = _wikidata_cache_path(
+        prop=prop,
+        wkd_class_norm=wkd_class_norm,
+        wkd_prop_class_norm=wkd_prop_class_norm,
+        entity_iris=entity_iris_sorted,
+        lang_key=cache_lang,
+    )
+    if not cache_disabled:
+        cached_map = _load_wikidata_value_cache(cache_path)
+        if cached_map is not None:
+            total_entities = sum(len(entries) for entries in cached_map.values())
+            print_color(
+                f"💾 Cache hit: {cache_path.name} ({len(cached_map)} valeurs normalisées, {total_entities} entités)",
+                Colors.GREEN,
+            )
+            return cached_map
     query = f"""
     PREFIX wd: <http://www.wikidata.org/entity/>
     PREFIX wdt: <http://www.wikidata.org/prop/direct/>
@@ -1728,6 +1888,9 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
         
         total_entities = sum(len(entries) for entries in value_map.values())
         print_color(f"✅ {total_entities} entités Wikidata", Colors.GREEN)
+        if not cache_disabled:
+            if _save_wikidata_value_cache(cache_path, value_map):
+                print_color(f"💾 Cache saved: {cache_path.name}", Colors.BLUE)
         
         # Exemples
         print(f"\n📋 Exemples Wikidata (5 premiers):")

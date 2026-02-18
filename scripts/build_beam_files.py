@@ -9,6 +9,7 @@ import fcntl
 from pathlib import Path
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, as_completed, wait
 from typing import Iterable, List
+from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 
@@ -671,22 +672,70 @@ def prop_uri_to_entity(uri):
 
 
 def canonical_wd_entity_uri(uri):
-    uri = uri.strip("<>")
-    match = re.match(r"^https?://www\.wikidata\.org/entity/([pqPQ]\d+)$", uri)
-    if not match:
+    uri = (uri or "").strip().strip("<>")
+    if not uri:
         return uri
-    return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
+    match = re.match(r"^https?://www\.wikidata\.org/entity/([pqPQ]\d+)$", uri)
+    if match:
+        return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
+    return uri
+
+
+def _extract_wikidata_entity_id(uri):
+    text = (uri or "").strip()
+    if not text:
+        return None
+    text = text.strip("<>")
+    m = re.fullmatch(r"[PpQq](\d+)", text)
+    if m:
+        return text[0].upper() + m.group(1)
+    m = re.fullmatch(r"wd:([PpQq]\d+)", text, flags=re.IGNORECASE)
+    if m:
+        return m.group(1).upper()
+
+    try:
+        parsed = urlparse(unquote(text))
+    except Exception:
+        return None
+    if parsed.scheme not in {"http", "https"}:
+        return None
+    host = (parsed.netloc or "").lower()
+    if host.startswith("www."):
+        host = host[4:]
+    if host.startswith("m."):
+        host = host[2:]
+    if host != "wikidata.org":
+        return None
+
+    parts = [p for p in (parsed.path or "").split("/") if p]
+    for token in reversed(parts):
+        m = re.fullmatch(r"[PpQq](\d+)", token.strip())
+        if m:
+            return token[0].upper() + m.group(1)
+
+    query_map = parse_qs(parsed.query or "", keep_blank_values=False)
+    for key in ("title", "entity", "id", "q"):
+        for raw in query_map.get(key, []):
+            m = re.fullmatch(r"[PpQq](\d+)", str(raw).strip())
+            if m:
+                v = str(raw).strip()
+                return v[0].upper() + m.group(1)
+
+    frag = (parsed.fragment or "").strip()
+    m = re.fullmatch(r"[PpQq](\d+)", frag)
+    if m:
+        return frag[0].upper() + m.group(1)
+    return None
 
 
 def canonical_wd_link_entity_uri(uri):
-    uri = uri.strip()
+    uri = (uri or "").strip()
     if not uri:
         return uri
-    uri = uri.strip("<>")
-    match = re.match(r"^https?://www\.wikidata\.org/(?:entity|wiki)/([pqPQ]\d+)$", uri)
-    if not match:
-        return uri
-    return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
+    qid = _extract_wikidata_entity_id(uri)
+    if not qid:
+        return uri.strip("<>")
+    return f"http://www.wikidata.org/entity/{qid}"
 
 
 def collect_wikidata_uris(attr_path, rel_path):

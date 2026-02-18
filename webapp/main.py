@@ -5,11 +5,13 @@ import tempfile
 import time
 import zipfile
 import asyncio
+import difflib
 import re
+from collections import Counter
 from pathlib import Path
 from functools import lru_cache
 from typing import Optional
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote_plus
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,6 +22,7 @@ from starlette.background import BackgroundTask
 
 from beam import db
 from beam.wdc_classes import fetch_wdc_classes
+from scripts import align as align_script
 
 app = FastAPI()
 
@@ -28,6 +31,12 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 WDC_PARTS_BASE_URL = "https://data.dws.informatik.uni-mannheim.de/structureddata/2024-12/quads/classspecific/"
 _PART_HREF_RE = re.compile(r"^part_(\d+)\.gz$", re.IGNORECASE)
 _PART_NAME_RE = re.compile(r"^part_(\d+)(?:\.[A-Za-z0-9]+)?$", re.IGNORECASE)
+_QUAD_RE = re.compile(
+    r'^\s*(<[^>]+>|_:[^\s]+)\s+(<[^>]+>)\s+(".*?"(?:\^\^<[^>]+>|@[a-zA-Z-]+)?|<[^>]+>|_:[^\s]+)\s+(<[^>]+>)\s+\.\s*$'
+)
+_TRIPLE_RE = re.compile(
+    r'^\s*(<[^>]+>|_:[^\s]+)\s+(<[^>]+>)\s+(".*?"(?:\^\^<[^>]+>|@[a-zA-Z-]+)?|<[^>]+>|_:[^\s]+)\s+\.\s*$'
+)
 
 
 PRESETS = {
@@ -183,6 +192,38 @@ def _clean_text(value: Optional[str]) -> str:
     return (value or "").strip()
 
 
+def _validate_and_normalize_job_params(raw_params: dict):
+    params = dict(raw_params or {})
+    params["class_name"] = _clean_text(params.get("class_name"))
+    params["parts_spec"] = _clean_text(params.get("parts_spec")) or "all"
+    params["wdc_predicate_pattern"] = _clean_text(params.get("wdc_predicate_pattern"))
+    params["wikidata_property"] = _clean_text(params.get("wikidata_property"))
+    params["wkd_class"] = _clean_text(params.get("wkd_class"))
+    params["ignore_chars"] = _clean_text(params.get("ignore_chars")) or "spaces;-;."
+    params["wdc_value_is_wikidata"] = bool(params.get("wdc_value_is_wikidata"))
+    params["force_align"] = bool(params.get("force_align"))
+    params["use_local_only"] = bool(params.get("use_local_only"))
+    try:
+        params["max_depth"] = int(params.get("max_depth", 0))
+    except Exception:
+        params["max_depth"] = 0
+
+    if not params["class_name"]:
+        return params, "Class name is required."
+    if not params["wdc_predicate_pattern"]:
+        return params, "WDC predicate pattern is required."
+
+    if params["wdc_value_is_wikidata"]:
+        params["wikidata_property"] = ""
+        if not params["wkd_class"]:
+            return params, "Wikidata class (QID) is required when WDC values are Wikidata URLs."
+    else:
+        if not params["wikidata_property"]:
+            return params, "Wikidata property is required when WDC values are not Wikidata URLs."
+
+    return params, None
+
+
 def _get_recent_presets(limit=50):
     rows = db.list_jobs(limit=limit)
     recent = []
@@ -246,6 +287,459 @@ def _count_lines(path: Path) -> int:
         for _ in f:
             c += 1
     return c
+
+
+def _parse_nq_or_nt(line: str):
+    line = (line or "").strip()
+    if not line or line.startswith("#"):
+        return None
+    m = _QUAD_RE.match(line)
+    if m:
+        s, p, o, _g = m.groups()
+        return s, p, o
+    m = _TRIPLE_RE.match(line)
+    if m:
+        s, p, o = m.groups()
+        return s, p, o
+    return None
+
+
+def _literal_lex(value: str):
+    value = value or ""
+    if not value.startswith('"'):
+        return None
+    escape = False
+    for i in range(1, len(value)):
+        ch = value[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            return value[1:i]
+    return None
+
+
+def _normalize_preflight_value(raw_value: str, ignore_chars_text: str):
+    v = align_script.normalize_for_matching(raw_value or "")
+    if not v:
+        return ""
+    try:
+        extra = align_script.parse_strip_list(ignore_chars_text or "")
+    except Exception:
+        extra = set()
+    if " " in extra:
+        v = v.replace(" ", "")
+    for ch in extra:
+        if ch and ch != " ":
+            v = v.replace(ch, "")
+    return v
+
+
+def _parse_parts_spec_numbers(parts_spec: str):
+    spec = _clean_text(parts_spec) or "all"
+    if spec.lower() == "all":
+        return None, None
+    wanted = set()
+    try:
+        if "," in spec:
+            for token in spec.split(","):
+                token = token.strip()
+                if not token:
+                    continue
+                wanted.add(int(token))
+        elif "-" in spec:
+            left, right = spec.split("-", 1)
+            start = int(left.strip())
+            end = int(right.strip())
+            if end < start:
+                start, end = end, start
+            for n in range(start, end + 1):
+                wanted.add(n)
+        else:
+            wanted.add(int(spec.strip()))
+    except Exception:
+        return None, f"Invalid parts spec: '{parts_spec}'. Use all, 1-10, or 1,2,4."
+    return sorted(wanted), None
+
+
+def _discover_local_part_files(class_name: str):
+    class_dir = Path("Download") / (class_name or "")
+    if not class_dir.exists() or not class_dir.is_dir():
+        return []
+    files = []
+    for fp in sorted(class_dir.iterdir()):
+        if not fp.is_file():
+            continue
+        if not fp.name.startswith("part_"):
+            continue
+        if not (fp.name.endswith(".nq") or fp.name.endswith(".nt") or "." not in fp.name):
+            continue
+        files.append(fp)
+    return files
+
+
+def _select_local_part_files(class_name: str, parts_spec: str):
+    files = _discover_local_part_files(class_name)
+    if not files:
+        return [], []
+    wanted_numbers, parse_error = _parse_parts_spec_numbers(parts_spec)
+    if parse_error:
+        return [], [parse_error]
+    if wanted_numbers is None:
+        return files, []
+
+    files_by_num = {}
+    for fp in files:
+        num = _part_number_from_name(fp.name)
+        if num is None:
+            continue
+        files_by_num.setdefault(num, []).append(fp)
+
+    selected = []
+    missing = []
+    for num in wanted_numbers:
+        if num in files_by_num:
+            selected.extend(files_by_num[num])
+        else:
+            missing.append(num)
+    selected.sort(key=lambda p: p.name)
+
+    warnings = []
+    if missing:
+        warnings.append(f"Requested local parts not found: {_format_part_ranges(missing)}.")
+    if not selected:
+        warnings.append("No local part file matches this parts spec.")
+    return selected, warnings
+
+
+def _read_top_props(path: Path, limit: int = 5):
+    rows = []
+    if not path.exists() or not path.is_file():
+        return rows
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        header_skipped = False
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t")
+            if not header_skipped:
+                header_skipped = True
+                first = parts[0].strip().lower() if parts else ""
+                if first in {"predicate", "property"}:
+                    continue
+            prop = parts[0].strip() if parts else ""
+            count_raw = parts[1].strip() if len(parts) > 1 else "0"
+            try:
+                count = int(count_raw)
+            except Exception:
+                count = 0
+            label = parts[2].strip() if len(parts) > 2 else ""
+            description = parts[3].strip() if len(parts) > 3 else ""
+            rows.append(
+                {
+                    "property": prop,
+                    "count": count,
+                    "label": label,
+                    "description": description,
+                }
+            )
+            if len(rows) >= limit:
+                break
+    return rows
+
+
+def _read_ent_links_samples(path: Path, limit: int = 5):
+    rows = []
+    if not path.exists() or not path.is_file():
+        return rows
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            left = parts[0].strip()
+            right = parts[1].strip()
+            if left == "wdc_iri" and right == "wikidata_uri":
+                continue
+            rows.append({"wdc_iri": left, "wikidata_uri": right})
+            if len(rows) >= limit:
+                break
+    return rows
+
+
+def _fetch_wikidata_preview_values(
+    wikidata_property: str,
+    wkd_class: str,
+    ignore_chars: str,
+    limit: int = 1200,
+):
+    prop = align_script.normalize_wikidata_property(wikidata_property)
+    if not prop:
+        return []
+    wkd_class_norm = align_script.normalize_wkd_class(wkd_class)
+    class_filter = ""
+    if wkd_class_norm:
+        class_filter = f"""
+      ?entity wdt:P31 ?type .
+      ?type wdt:P279* {wkd_class_norm} .
+    """
+    q_limit = max(100, min(int(limit), 5000))
+    query = f"""
+    PREFIX wd: <http://www.wikidata.org/entity/>
+    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+    SELECT DISTINCT ?value WHERE {{
+      ?entity {prop} ?value .
+      {class_filter}
+    }}
+    LIMIT {q_limit}
+    """
+    headers = {
+        "Accept": "application/sparql-results+json",
+        "User-Agent": "beam-preflight/1.0",
+    }
+    timeout_s = max(5, int(os.environ.get("PREFLIGHT_WIKIDATA_TIMEOUT", "25")))
+    try:
+        response = requests.post(
+            align_script.WIKIDATA_ENDPOINT,
+            data={"query": query, "format": "json"},
+            headers=headers,
+            timeout=timeout_s,
+        )
+        response.raise_for_status()
+        loader = getattr(align_script, "_load_sparql_json_payload", None)
+        if callable(loader):
+            payload = loader(response.text)
+        else:
+            payload = json.loads(response.text)
+    except Exception:
+        return []
+
+    rows = []
+    seen_norm = set()
+    bindings = (((payload or {}).get("results") or {}).get("bindings")) or []
+    for item in bindings:
+        value = str((((item or {}).get("value") or {}).get("value")) or "").strip()
+        if not value:
+            continue
+        normalized = _normalize_preflight_value(value, ignore_chars)
+        if not normalized or normalized in seen_norm:
+            continue
+        seen_norm.add(normalized)
+        rows.append({"value": value[:180], "normalized": normalized})
+        if len(rows) >= q_limit:
+            break
+    return rows
+
+
+def _build_preflight_report(
+    class_name: str,
+    parts_spec: str,
+    wdc_predicate_pattern: str,
+    ignore_chars: str,
+    wdc_value_is_wikidata: bool,
+    use_local_only: bool,
+    wikidata_property: str = "",
+    wkd_class: str = "",
+    include_wikidata_preview: bool = True,
+    scan_limit_lines: int = 30000,
+):
+    class_name = _clean_text(class_name)
+    parts_spec = _clean_text(parts_spec) or "all"
+    pattern = _clean_text(wdc_predicate_pattern)
+    ignore_chars = _clean_text(ignore_chars)
+    report = {
+        "ok": False,
+        "class_name": class_name,
+        "parts_spec": parts_spec,
+        "pattern": pattern,
+        "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
+        "scan_limit_lines": int(max(1000, scan_limit_lines)),
+        "selected_files_count": 0,
+        "selected_files": [],
+        "scanned_lines": 0,
+        "matched_triples": 0,
+        "distinct_values": 0,
+        "wikidata_url_like": 0,
+        "sample_values": [],
+        "top_unmatched_wdc_values": [],
+        "close_wikidata_examples": [],
+        "top_predicates": [],
+        "invalid_wikidata_samples": [],
+        "wikidata_preview_count": 0,
+        "risk": "high",
+        "confidence": "low",
+        "warnings": [],
+        "summary": "",
+    }
+
+    if not class_name:
+        report["summary"] = "Class name is required."
+        return report
+    if not pattern:
+        report["summary"] = "WDC predicate pattern is required."
+        return report
+
+    selected_files, select_warnings = _select_local_part_files(class_name, parts_spec)
+    report["warnings"].extend(select_warnings)
+    if not selected_files:
+        report["summary"] = "No local files available for preflight."
+        return report
+
+    selected_names = [fp.name for fp in selected_files]
+    report["selected_files"] = selected_names[:20]
+    report["selected_files_count"] = len(selected_files)
+    if len(selected_names) > 20:
+        report["warnings"].append(f"Preflight uses first 20 listed files out of {len(selected_names)} selected.")
+
+    if not use_local_only:
+        parts_info = _build_class_parts_info(class_name)
+        missing_online = int(parts_info.get("not_downloaded_online_parts_count") or 0)
+        if missing_online > 0:
+            report["warnings"].append(
+                "Preflight scans local files only; some online parts are not downloaded yet."
+            )
+
+    pattern_norm, pattern_raw = align_script.prepare_predicate_pattern(pattern)
+    distinct_norm = set()
+    value_counts = Counter()
+    value_examples = {}
+    predicate_counts = Counter()
+    invalid_wikidata_samples = []
+    sample_values = []
+    wikidata_like_values = 0
+    matched = 0
+    scanned = 0
+    scan_limit = int(max(1000, scan_limit_lines))
+
+    for fp in selected_files:
+        with fp.open("r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if scanned >= scan_limit:
+                    break
+                scanned += 1
+                parsed = _parse_nq_or_nt(line)
+                if not parsed:
+                    continue
+                _s, p_tok, o_tok = parsed
+                predicate = p_tok.strip("<>")
+                predicate_counts[predicate] += 1
+                pred_norm = align_script.normalize_predicate_for_match(predicate, pattern_raw)
+                if pattern_norm not in pred_norm:
+                    continue
+
+                matched += 1
+                if o_tok.startswith('"'):
+                    raw_value = _literal_lex(o_tok) or o_tok.strip('"')
+                else:
+                    raw_value = o_tok.strip("<>")
+                if raw_value:
+                    normalized = _normalize_preflight_value(raw_value, ignore_chars)
+                    if normalized:
+                        if normalized not in distinct_norm and len(sample_values) < 5:
+                            sample_values.append(raw_value[:120])
+                        value_counts[normalized] += 1
+                        if normalized not in value_examples:
+                            value_examples[normalized] = raw_value[:180]
+                        distinct_norm.add(normalized)
+                    if wdc_value_is_wikidata:
+                        if align_script.extract_wd_entity_iri(raw_value):
+                            wikidata_like_values += 1
+                        elif len(invalid_wikidata_samples) < 5:
+                            invalid_wikidata_samples.append(raw_value[:160])
+            if scanned >= scan_limit:
+                break
+
+    report["scanned_lines"] = scanned
+    report["matched_triples"] = matched
+    report["distinct_values"] = len(distinct_norm)
+    report["wikidata_url_like"] = wikidata_like_values
+    report["sample_values"] = sample_values
+    report["invalid_wikidata_samples"] = invalid_wikidata_samples
+    report["top_unmatched_wdc_values"] = [
+        {
+            "normalized": norm,
+            "value": value_examples.get(norm, norm),
+            "count": int(cnt),
+        }
+        for norm, cnt in value_counts.most_common(8)
+    ]
+
+    if scanned >= scan_limit:
+        report["warnings"].append(f"Sample limit reached ({scan_limit:,} lines).")
+    if matched == 0:
+        report["top_predicates"] = [
+            {"predicate": pred, "count": int(cnt)}
+            for pred, cnt in predicate_counts.most_common(8)
+        ]
+        report["risk"] = "high"
+        report["summary"] = "No triple matched this predicate pattern in sampled local data."
+    elif wdc_value_is_wikidata and wikidata_like_values == 0:
+        report["risk"] = "high"
+        report["summary"] = "Pattern matched, but no Wikidata URL-like values were found."
+    elif len(distinct_norm) < 5:
+        report["risk"] = "medium"
+        report["summary"] = "Very few distinct values found; alignment risk is moderate."
+    else:
+        report["risk"] = "low"
+        report["summary"] = "Signal looks good in sampled local data."
+
+    if scanned >= 20000:
+        report["confidence"] = "high"
+    elif scanned >= 5000:
+        report["confidence"] = "medium"
+    else:
+        report["confidence"] = "low"
+
+    if (
+        include_wikidata_preview
+        and not wdc_value_is_wikidata
+        and _clean_text(wikidata_property)
+        and report["top_unmatched_wdc_values"]
+    ):
+        preview_rows = _fetch_wikidata_preview_values(
+            wikidata_property=_clean_text(wikidata_property),
+            wkd_class=_clean_text(wkd_class),
+            ignore_chars=ignore_chars,
+            limit=1200,
+        )
+        report["wikidata_preview_count"] = len(preview_rows)
+        if preview_rows:
+            wd_norm_to_value = {}
+            wd_norm_keys = []
+            for row in preview_rows:
+                norm = row.get("normalized")
+                raw_value = row.get("value")
+                if not norm:
+                    continue
+                if norm not in wd_norm_to_value:
+                    wd_norm_to_value[norm] = raw_value
+                    wd_norm_keys.append(norm)
+            for row in report["top_unmatched_wdc_values"][:5]:
+                norm = row.get("normalized")
+                if not norm:
+                    continue
+                close_norms = difflib.get_close_matches(norm, wd_norm_keys, n=3, cutoff=0.72)
+                if not close_norms:
+                    continue
+                report["close_wikidata_examples"].append(
+                    {
+                        "wdc_value": row.get("value"),
+                        "wdc_count": row.get("count"),
+                        "wikidata_candidates": [wd_norm_to_value[n] for n in close_norms],
+                    }
+                )
+        else:
+            report["warnings"].append("Could not fetch Wikidata preview values for preflight diagnostics.")
+
+    report["ok"] = True
+    return report
 
 
 def _discover_local_class_rows(download_root: str = "Download"):
@@ -472,6 +966,18 @@ def _variant_stats(base: Path, variant: str):
     links_count = max(0, links_lines - 1) if links_lines else 0
     wd_props = max(0, _count_lines(files["prop_stats_wd"]) - 1)
     wdc_props = max(0, _count_lines(files["prop_stats_wdc"]) - 1)
+    top_wdc_props = _read_top_props(files["prop_stats_wdc"], limit=5)
+    top_wd_props = _read_top_props(files["prop_stats_wd"], limit=5)
+    sample_links = _read_ent_links_samples(files["ent_links"], limit=5)
+    qa_warnings = []
+    if links_count == 0:
+        qa_warnings.append("No entity links generated.")
+    if wdc_props == 0:
+        qa_warnings.append("No WDC property stats found.")
+    if wd_props == 0:
+        qa_warnings.append("No Wikidata property stats found.")
+    if links_count > 0 and not sample_links:
+        qa_warnings.append("Could not read ent_links samples.")
     return {
         "name": variant,
         "path": str(p),
@@ -480,6 +986,10 @@ def _variant_stats(base: Path, variant: str):
         "links_count": links_count,
         "wd_props": wd_props,
         "wdc_props": wdc_props,
+        "sample_links": sample_links,
+        "top_wdc_props": top_wdc_props,
+        "top_wd_props": top_wd_props,
+        "qa_warnings": qa_warnings,
         "files": {k: str(v) for k, v in files.items() if v.exists()},
     }
 
@@ -576,6 +1086,68 @@ def _resolve_build_dir(class_name: str, build_name: str):
     if not (base / "BUILD_DONE").exists():
         return None
     return base
+
+
+def _bool_from_any(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    text = str(value or "").strip().lower()
+    return text in {"1", "true", "yes", "on"}
+
+
+def _int_from_any(value, default=0):
+    try:
+        return int(value)
+    except Exception:
+        return int(default)
+
+
+def _find_job_params_by_result_path(result_path: str, limit: int = 4000):
+    target = str(result_path or "").strip()
+    if not target:
+        return None
+    for row in db.list_jobs(limit=limit):
+        rp = str(row["result_path"] or "").strip()
+        if rp != target:
+            continue
+        params = _safe_json_loads(row["params_json"])
+        if isinstance(params, dict) and params:
+            return params
+    return None
+
+
+def _rerun_params_from_build_config(build_dir: Path, class_name: str):
+    cfg_path = build_dir / "BUILD_CONFIG.json"
+    cfg = {}
+    if cfg_path.exists() and cfg_path.is_file():
+        cfg = _safe_json_loads(cfg_path.read_text(encoding="utf-8"))
+    cfg = cfg if isinstance(cfg, dict) else {}
+    fallback = _find_job_params_by_result_path(str(build_dir))
+    fallback = fallback if isinstance(fallback, dict) else {}
+
+    def _pick(key, default=""):
+        v = cfg.get(key, None)
+        if v is None and fallback:
+            v = fallback.get(key, None)
+        if v is None:
+            v = default
+        return v
+
+    raw_params = {
+        "class_name": _clean_text(str(_pick("class_name", class_name))),
+        "parts_spec": _clean_text(str(_pick("parts_spec", "all"))),
+        "wdc_predicate_pattern": _clean_text(str(_pick("wdc_predicate_pattern", ""))),
+        "wikidata_property": _clean_text(str(_pick("wikidata_property", ""))),
+        "wkd_class": _clean_text(str(_pick("wkd_class", ""))),
+        "ignore_chars": _clean_text(str(_pick("ignore_chars", "spaces;-;."))),
+        "wdc_value_is_wikidata": _bool_from_any(_pick("wdc_value_is_wikidata", False)),
+        "max_depth": _int_from_any(_pick("max_depth", 0), default=0),
+        "force_align": _bool_from_any(_pick("force_align", False)),
+        "use_local_only": _bool_from_any(_pick("use_local_only", False)),
+    }
+    return _validate_and_normalize_job_params(raw_params)
 
 
 def _job_outputs(job):
@@ -713,7 +1285,12 @@ def _init_db():
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, preset: Optional[str] = None, recent: Optional[int] = None):
+def index(
+    request: Request,
+    preset: Optional[str] = None,
+    recent: Optional[int] = None,
+    form_error: Optional[str] = None,
+):
     # Ensure classes cached
     if not db.list_wdc_classes():
         try:
@@ -776,6 +1353,7 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
             "builds": builds,
             "class_meta": class_meta,
             "class_parts_info": class_parts_info,
+            "form_error": _clean_text(form_error),
         },
     )
 
@@ -830,6 +1408,33 @@ def dashboard_api(job_limit: int = 80, build_limit: int = 40):
 @app.get("/api/class_parts/{class_name}")
 def class_parts_api(class_name: str):
     return _build_class_parts_info(class_name)
+
+
+@app.get("/api/preflight")
+def preflight_api(
+    class_name: str,
+    parts_spec: str = "all",
+    wdc_predicate_pattern: str = "",
+    wikidata_property: str = "",
+    wkd_class: str = "",
+    ignore_chars: str = "",
+    wdc_value_is_wikidata: bool = False,
+    use_local_only: bool = False,
+    include_wikidata_preview: bool = True,
+    scan_limit_lines: int = 30000,
+):
+    return _build_preflight_report(
+        class_name=class_name,
+        parts_spec=parts_spec,
+        wdc_predicate_pattern=wdc_predicate_pattern,
+        wikidata_property=wikidata_property,
+        wkd_class=wkd_class,
+        ignore_chars=ignore_chars,
+        wdc_value_is_wikidata=bool(wdc_value_is_wikidata),
+        use_local_only=bool(use_local_only),
+        include_wikidata_preview=bool(include_wikidata_preview),
+        scan_limit_lines=int(scan_limit_lines),
+    )
 
 
 @app.post("/jobs/{job_id}/cancel")
@@ -965,8 +1570,9 @@ def create_job(
     max_depth: int = Form(0),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
+    allow_high_risk: Optional[str] = Form(None),
 ):
-    params = {
+    raw_params = {
         "class_name": _clean_text(class_name),
         "parts_spec": _clean_text(parts_spec),
         "wdc_predicate_pattern": _clean_text(wdc_predicate_pattern),
@@ -978,6 +1584,32 @@ def create_job(
         "force_align": bool(force_align),
         "use_local_only": bool(use_local_only),
     }
+    params, validation_error = _validate_and_normalize_job_params(raw_params)
+    if validation_error:
+        return RedirectResponse(url=f"/?form_error={quote_plus(validation_error)}", status_code=303)
+    try:
+        create_scan_limit = int(os.environ.get("JOB_CREATE_PREFLIGHT_SCAN_LIMIT", "12000"))
+    except Exception:
+        create_scan_limit = 12000
+    preflight = _build_preflight_report(
+        class_name=params["class_name"],
+        parts_spec=params["parts_spec"],
+        wdc_predicate_pattern=params["wdc_predicate_pattern"],
+        wikidata_property=params["wikidata_property"],
+        wkd_class=params["wkd_class"],
+        ignore_chars=params["ignore_chars"],
+        wdc_value_is_wikidata=params["wdc_value_is_wikidata"],
+        use_local_only=params["use_local_only"],
+        include_wikidata_preview=False,
+        scan_limit_lines=create_scan_limit,
+    )
+    if preflight.get("ok") and preflight.get("risk") == "high" and not bool(allow_high_risk):
+        summary = _clean_text(preflight.get("summary")) or "high-risk preflight"
+        msg = (
+            f"High-risk preflight: {summary} "
+            f"Run preflight and tick 'Allow high-risk run' to continue."
+        )
+        return RedirectResponse(url=f"/?form_error={quote_plus(msg)}", status_code=303)
     db.insert_job(params)
     return RedirectResponse(url="/", status_code=303)
 
@@ -1021,6 +1653,23 @@ def delete_build(class_name: str, build_name: str):
     except Exception:
         pass
     shutil.rmtree(build_dir, ignore_errors=True)
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/builds/{class_name}/{build_name}/rerun")
+def rerun_build_from_build_card(class_name: str, build_name: str):
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        return RedirectResponse(url="/", status_code=303)
+    try:
+        params, validation_error = _rerun_params_from_build_config(build_dir, class_name)
+        if validation_error:
+            msg = f"Cannot rerun build: {validation_error}"
+            return RedirectResponse(url=f"/?form_error={quote_plus(msg)}", status_code=303)
+        db.insert_job(params)
+    except Exception as exc:
+        msg = f"Cannot rerun build: {exc}"
+        return RedirectResponse(url=f"/?form_error={quote_plus(msg)}", status_code=303)
     return RedirectResponse(url="/", status_code=303)
 
 

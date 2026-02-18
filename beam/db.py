@@ -285,6 +285,23 @@ def list_events(job_id, since_id=None, limit=500):
         return rows
 
 
+def get_latest_event_ts(job_id):
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT MAX(ts) AS ts FROM job_events WHERE job_id = ?",
+            (job_id,),
+        ).fetchone()
+        if not row:
+            return None
+        value = row["ts"]
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+
 def delete_job(job_id):
     with _connect() as conn:
         conn.execute("DELETE FROM job_events WHERE job_id = ?", (job_id,))

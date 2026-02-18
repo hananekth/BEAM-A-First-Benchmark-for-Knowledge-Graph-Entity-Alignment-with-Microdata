@@ -17,6 +17,28 @@ def test_normalize_eta_hint_rejects_zero_like_values():
     assert worker_run._normalize_eta_hint("1m 03s") == "1m 03s"
 
 
+def test_extract_progress_pct_parses_integer_and_decimal():
+    assert worker_run._extract_progress_pct("Progress: 99.7% | ETA: 5s") == 99.7
+    assert worker_run._extract_progress_pct("done 100%") == 100.0
+    assert worker_run._extract_progress_pct("nothing here") is None
+
+
+def test_extract_batch_progress_parses_done_total():
+    done, total = worker_run._extract_batch_progress("[WD] Progress: batches 37/240 | 15.4% | ETA: 2m30s")
+    assert done == 37
+    assert total == 240
+    done2, total2 = worker_run._extract_batch_progress("[HB] build active")
+    assert done2 is None
+    assert total2 is None
+
+
+def test_should_mark_job_stuck():
+    now = time.time()
+    assert worker_run._should_mark_job_stuck(now - 200, now, 180) is True
+    assert worker_run._should_mark_job_stuck(now - 120, now, 180) is False
+    assert worker_run._should_mark_job_stuck(None, now, 180) is False
+
+
 def test_recover_stale_running_build_requeues_with_resume(monkeypatch):
     class_name = "TestClassRecover"
     out_dir = Path("data") / class_name / "beam_resume_target"

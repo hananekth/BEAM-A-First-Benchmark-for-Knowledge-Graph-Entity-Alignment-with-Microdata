@@ -6,6 +6,7 @@ import signal
 import sys
 import threading
 import time
+from collections import deque
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr
 
@@ -15,6 +16,7 @@ from beam.pipeline import generate_benchmark, PipelineError, _config_hash
 MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "8"))
 POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "1"))
 MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", "8"))
+JOB_STUCK_TIMEOUT_S = int(os.environ.get("JOB_STUCK_TIMEOUT_S", os.environ.get("JOB_STUCK_TIMEOUT", "1800")))
 
 
 def _normalize_eta_hint(value):
@@ -32,6 +34,75 @@ def _normalize_eta_hint(value):
         if not tail or re.fullmatch(r"[hms]+", tail):
             return None
     return raw
+
+
+def _format_eta_seconds(seconds):
+    try:
+        total = int(float(seconds))
+    except Exception:
+        return None
+    if total <= 0:
+        return None
+    m, s = divmod(total, 60)
+    h, m = divmod(m, 60)
+    if h:
+        return f"{h}h{m:02d}m{s:02d}s"
+    if m:
+        return f"{m}m{s:02d}s"
+    return f"{s}s"
+
+
+def _extract_progress_pct(msg):
+    if not msg:
+        return None
+    match = re.search(r"(?<!\d)(\d{1,3}(?:\.\d+)?)\s*%", str(msg))
+    if not match:
+        return None
+    try:
+        pct = float(match.group(1))
+    except Exception:
+        return None
+    if pct < 0:
+        return 0.0
+    if pct > 100:
+        return 100.0
+    return pct
+
+
+def _extract_batch_progress(msg):
+    if not msg:
+        return None, None
+    match = re.search(r"\bbatches\s+(\d+)\s*/\s*(\d+)\b", str(msg), flags=re.IGNORECASE)
+    if not match:
+        return None, None
+    try:
+        done = int(match.group(1))
+        total = int(match.group(2))
+    except Exception:
+        return None, None
+    if total <= 0:
+        return None, None
+    done = max(0, min(done, total))
+    return done, total
+
+
+def _should_mark_job_stuck(last_activity_ts, now_ts, timeout_s):
+    if timeout_s is None:
+        return False
+    try:
+        timeout_s = int(timeout_s)
+    except Exception:
+        return False
+    if timeout_s <= 0:
+        return False
+    try:
+        last_ts = float(last_activity_ts or 0.0)
+        now_ts = float(now_ts or 0.0)
+    except Exception:
+        return False
+    if last_ts <= 0 or now_ts <= 0:
+        return False
+    return (now_ts - last_ts) >= timeout_s
 
 
 def _cpu_workers_for(job_count):
@@ -120,6 +191,20 @@ def _cancel_if_active(job_id, subjob_type):
     if row["status"] in ("done", "error", "cancelled", "interrupted"):
         return
     db.update_subjob(row["id"], status="cancelled", ended_at=time.time())
+
+
+def _error_if_active(job_id, subjob_type, reason, ended_at=None):
+    row = db.get_subjob(job_id, subjob_type)
+    if not row:
+        return
+    if row["status"] in ("done", "error", "cancelled", "interrupted"):
+        return
+    db.update_subjob(
+        row["id"],
+        status="error",
+        ended_at=ended_at or time.time(),
+        progress_text=str(reason or "Job marked as error"),
+    )
 
 
 def _align_cache_ready(params):
@@ -425,6 +510,9 @@ def _run_job(job_id, workers):
                 self._last_scan_log_ts = 0.0
                 self._eta_by_phase = {"align": None, "build": None}
                 self._eta_ts_by_phase = {"align": 0.0, "build": 0.0}
+                self._build_batches_done = 0
+                self._build_batches_total = 0
+                self._build_batch_samples = deque(maxlen=20)
                 self._translations = (
                     ("Téléchargement/Décompression", "Download/Decompress"),
                     ("Téléchargement depuis", "Downloading from"),
@@ -488,9 +576,13 @@ def _run_job(job_id, workers):
                     return
                 msg = self._to_english(msg)
                 self._last_emit_ts = time.time()
-                m = re.search(r"(\\d{1,3}\\.\\d)%", msg)
-                pct = float(m.group(1)) if m else None
-                kind = "progress" if (m or ("Progress:" in msg) or ("ETA:" in msg) or ("Lines read" in msg)) else "log"
+                pct = _extract_progress_pct(msg)
+                kind = "progress" if (
+                    (pct is not None)
+                    or ("Progress:" in msg)
+                    or ("ETA:" in msg)
+                    or ("Lines read" in msg)
+                ) else "log"
                 # Throttle very chatty scanner lines to reduce DB pressure.
                 should_emit = True
                 if msg.startswith("Lines read:"):
@@ -520,10 +612,39 @@ def _run_job(job_id, workers):
                 # update progress if line looks like progress
                 if kind == "progress":
                     try:
-                        db.update_job(self.jid, progress_text=msg, progress_pct=pct)
-                        db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
+                        if pct is None:
+                            db.update_job(self.jid, progress_text=msg)
+                            db.update_subjob_by_type(self.jid, self._phase, progress_text=msg)
+                        else:
+                            db.update_job(self.jid, progress_text=msg, progress_pct=pct)
+                            db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
                     except Exception:
                         pass
+                if self._phase == "build":
+                    done_batches, total_batches = _extract_batch_progress(msg)
+                    if done_batches is not None and total_batches is not None:
+                        if total_batches != self._build_batches_total or done_batches < self._build_batches_done:
+                            self._build_batch_samples.clear()
+                        self._build_batches_done = done_batches
+                        self._build_batches_total = total_batches
+                        if done_batches > 0:
+                            if not self._build_batch_samples or done_batches > self._build_batch_samples[-1][1]:
+                                self._build_batch_samples.append((time.time(), done_batches))
+                        if 0 < done_batches < total_batches and len(self._build_batch_samples) >= 2:
+                            t0, d0 = self._build_batch_samples[0]
+                            t1, d1 = self._build_batch_samples[-1]
+                            if d1 > d0 and t1 > t0:
+                                rate = (d1 - d0) / max(0.001, t1 - t0)
+                                remaining = max(0, total_batches - done_batches)
+                                if rate > 0 and remaining > 0:
+                                    eta_txt = _format_eta_seconds(remaining / rate)
+                                    eta_txt = _normalize_eta_hint(eta_txt)
+                                    if eta_txt:
+                                        self._eta_by_phase["build"] = eta_txt
+                                        self._eta_ts_by_phase["build"] = time.time()
+                        elif done_batches >= total_batches:
+                            self._eta_by_phase["build"] = None
+                            self._eta_ts_by_phase["build"] = 0.0
                 eta_match = re.search(r"ETA:\s*([^|]+)", msg, flags=re.IGNORECASE)
                 if eta_match:
                     eta_txt = _normalize_eta_hint(eta_match.group(1))
@@ -842,8 +963,57 @@ def main():
     while True:
         # Clean finished processes
         finished = []
+        now_loop = time.time()
         for job_id, proc in running.items():
             job = db.get_job(job_id)
+            if not job:
+                # Job disappeared from DB; stop tracking and terminate process if still alive.
+                if proc.is_alive():
+                    _terminate_process_tree(proc, grace_s=0.5)
+                finished.append(job_id)
+                continue
+
+            latest_event_ts = float(db.get_latest_event_ts(job_id) or 0.0)
+            last_activity_ts = max(
+                latest_event_ts,
+                float(job["checkpoint_at"] or 0.0),
+                float(job["started_at"] or 0.0),
+                float(job["created_at"] or 0.0),
+            )
+            if job["status"] == "running" and _should_mark_job_stuck(
+                last_activity_ts,
+                now_loop,
+                JOB_STUCK_TIMEOUT_S,
+            ):
+                quiet_s = int(max(0.0, now_loop - last_activity_ts))
+                reason = (
+                    f"Job marked as stuck after {quiet_s}s without activity "
+                    f"(timeout={JOB_STUCK_TIMEOUT_S}s)"
+                )
+                _terminate_process_tree(proc, grace_s=0.5)
+                db.insert_event(
+                    job_id,
+                    "system",
+                    reason,
+                    phase=job["phase"],
+                    kind="stuck",
+                    step=job["current_step"],
+                    worker=job["phase"] or "system",
+                )
+                db.update_job(
+                    job_id,
+                    status="error",
+                    ended_at=now_loop,
+                    progress_text=reason,
+                    error_message=reason,
+                    checkpoint_json=None,
+                    checkpoint_at=None,
+                )
+                _error_if_active(job_id, "align", reason, ended_at=now_loop)
+                _error_if_active(job_id, "build", reason, ended_at=now_loop)
+                finished.append(job_id)
+                continue
+
             build_cancel_now = bool(job and job["phase"] == "build" and db.get_cancel_requested_subjob(job_id, "build"))
             align_cancel_now = db.get_cancel_requested_subjob(job_id, "align")
             if db.get_cancel_requested(job_id) or align_cancel_now or build_cancel_now:

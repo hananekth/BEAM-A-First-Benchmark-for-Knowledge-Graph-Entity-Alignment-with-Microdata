@@ -35,6 +35,15 @@ def _make_build_tree(build_root: Path):
         json.dumps(
             {
                 "class_name": "TestClass",
+                "parts_spec": "all",
+                "wdc_predicate_pattern": "name",
+                "wikidata_property": "rdfs:label",
+                "wkd_class": "Q515",
+                "ignore_chars": "spaces;-;.",
+                "wdc_value_is_wikidata": False,
+                "max_depth": 0,
+                "force_align": False,
+                "use_local_only": True,
                 "build_name": build_root.name,
                 "result_path": str(build_root),
                 "parts_count": 2,
@@ -156,6 +165,142 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
     assert params["wikidata_property"] == "P31"
 
 
+def test_create_job_requires_wikidata_property_when_not_url_mode(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+        "max_depth": "0",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    assert "form_error=" in (resp.headers.get("location") or "")
+    jobs = web_main.db.list_jobs(limit=10)
+    assert jobs == []
+
+
+def test_create_job_url_mode_clears_wikidata_property(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameAs",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q486972",
+        "ignore_chars": "spaces;-;.",
+        "max_depth": "0",
+        "wdc_value_is_wikidata": "on",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["wdc_value_is_wikidata"] is True
+    assert params["wikidata_property"] == ""
+    assert params["wkd_class"] == "Q486972"
+
+
+def test_preflight_api_reports_matches(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    class_dir = Path("Download") / "TestClass"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    lines = [
+        '<http://example.org/e1> <http://schema.org/name> "Paris" .\n',
+        '<http://example.org/e2> <http://schema.org/name> "Berlin" .\n',
+        '<http://example.org/e3> <http://schema.org/name> "Madrid" .\n',
+        '<http://example.org/e4> <http://schema.org/name> "Rome" .\n',
+        '<http://example.org/e5> <http://schema.org/name> "Lisbon" .\n',
+        '<http://example.org/e6> <http://schema.org/name> "Vienna" .\n',
+    ]
+    (class_dir / "part_0001.nq").write_text("".join(lines), encoding="utf-8")
+
+    with client:
+        resp = client.get(
+            "/api/preflight",
+            params={
+                "class_name": "TestClass",
+                "parts_spec": "all",
+                "wdc_predicate_pattern": "name",
+                "ignore_chars": "spaces;-;.",
+                "wdc_value_is_wikidata": "false",
+                "use_local_only": "true",
+                "scan_limit_lines": "10000",
+            },
+        )
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["ok"] is True
+    assert payload["matched_triples"] >= 6
+    assert payload["distinct_values"] >= 6
+    assert payload["risk"] == "low"
+    assert payload["selected_files_count"] == 1
+
+
+def test_create_job_blocks_high_risk_preflight_without_override(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    class_dir = Path("Download") / "TestClass"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    (class_dir / "part_0001.nq").write_text(
+        '<http://example.org/e1> <http://schema.org/url> "https://example.org/a" .\n',
+        encoding="utf-8",
+    )
+    form = {
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+        "max_depth": "0",
+        "use_local_only": "on",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    location = resp.headers.get("location") or ""
+    assert "form_error=" in location
+    assert "High-risk+preflight" in location
+    assert web_main.db.list_jobs(limit=10) == []
+
+
+def test_create_job_allows_high_risk_preflight_with_override(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    class_dir = Path("Download") / "TestClass"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    (class_dir / "part_0001.nq").write_text(
+        '<http://example.org/e1> <http://schema.org/url> "https://example.org/a" .\n',
+        encoding="utf-8",
+    )
+    form = {
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "name",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+        "max_depth": "0",
+        "use_local_only": "on",
+        "allow_high_risk": "1",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+
+
 def test_builds_render_and_download(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     build_name = "beam_20260212_120000"
@@ -192,6 +337,42 @@ def test_delete_build_removes_directory_and_job_rows(monkeypatch, test_wdc_class
     assert web_main.db.get_job(job_id) is None
 
 
+def test_rerun_build_from_card_queues_new_job(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120123"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+
+    with client:
+        resp = client.post(f"/builds/TestClass/{build_name}/rerun", follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["class_name"] == "TestClass"
+    assert params["parts_spec"] == "all"
+    assert params["wdc_predicate_pattern"] == "name"
+    assert params["wikidata_property"] == "rdfs:label"
+
+
+def test_rerun_build_from_card_handles_insert_error(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120124"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+
+    monkeypatch.setattr(web_main.db, "insert_job", lambda _params: (_ for _ in ()).throw(RuntimeError("db is locked")))
+
+    with client:
+        resp = client.post(f"/builds/TestClass/{build_name}/rerun", follow_redirects=False)
+
+    assert resp.status_code == 303
+    loc = resp.headers.get("location", "")
+    assert "form_error=" in loc
+    assert "Cannot+rerun+build%3A+db+is+locked" in loc
+
+
 def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     build_name = "beam_20260212_120777"
@@ -226,6 +407,10 @@ def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classe
     build_entry = next((b for b in payload["builds"] if b["build_name"] == build_name), None)
     assert build_entry is not None
     assert any(g.get("title") == "Input" for g in build_entry.get("config_groups", []))
+    assert build_entry["with_link"]["sample_links"]
+    assert build_entry["with_link"]["top_wdc_props"]
+    assert build_entry["with_link"]["top_wd_props"]
+    assert isinstance(build_entry["with_link"]["qa_warnings"], list)
     assert payload["job_count"] >= 2
     assert running_job_id in payload["active_job_ids"]
     assert done_job_id not in payload["active_job_ids"]

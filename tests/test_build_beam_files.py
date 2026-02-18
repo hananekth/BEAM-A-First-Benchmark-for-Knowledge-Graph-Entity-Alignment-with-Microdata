@@ -29,6 +29,10 @@ def test_canonical_wd_link_entity_uri_accepts_wiki_or_entity_forms():
         build.canonical_wd_link_entity_uri("<http://www.wikidata.org/entity/q918195>")
         == "http://www.wikidata.org/entity/Q918195"
     )
+    assert (
+        build.canonical_wd_link_entity_uri("https://m.wikidata.org/wiki/Special:EntityPage/Q64?uselang=en")
+        == "http://www.wikidata.org/entity/Q64"
+    )
 
 
 def test_write_links_outputs_wdc_iri_and_canonical_wikidata_iri(tmp_path):
