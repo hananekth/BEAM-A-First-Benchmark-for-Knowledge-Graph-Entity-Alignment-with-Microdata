@@ -25,6 +25,24 @@
     .col { flex:1; min-width:260px; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
     label { display:block; margin-top:12px; font-weight:600; font-size:13px; color:var(--text); }
+    .label-help { display:inline-flex; align-items:center; gap:6px; }
+    .help-tip {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:16px;
+      height:16px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#0b0f17;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:700;
+      line-height:1;
+      cursor:help;
+      user-select:none;
+    }
+    .help-tip:focus { outline:2px solid rgba(47,129,247,0.35); outline-offset:1px; }
     input, select, button { width:100%; padding:10px 12px; margin-top:6px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
     input, select {
       background:#1f2630;
@@ -52,6 +70,8 @@
     .job-header { display:flex; justify-content:space-between; align-items:center; }
     .header-left { display:flex; align-items:center; gap:8px; }
     .job-controls { display:flex; align-items:center; gap:8px; }
+    .head-actions { display:flex; align-items:center; gap:6px; }
+    .head-actions form { margin:0; }
     .btn-icon {
       width:auto;
       margin-top:0;
@@ -65,6 +85,7 @@
       border-radius:6px;
       cursor:pointer;
     }
+    .btn-icon.danger { color:#fca5a5; border-color:#7f1d1d; background:#2a0f10; }
     .job-body.collapsed { display:none; }
     .pill { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted); }
     .pill.ok { color:#9ae6b4; border-color:#14532d; background:#0f2a1b; }
@@ -84,6 +105,7 @@
     .job-actions .btn { margin-top:0; }
     .builds { margin-top:20px; }
     .build { border:1px solid var(--border); border-radius:10px; background:var(--card); padding:14px 16px; margin:10px 0; }
+    .job.selectable-card, .build.selectable-card { cursor:pointer; }
     .build-body.collapsed { display:none; }
     .build-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
     .build-path { margin-top:6px; font-size:13px; }
@@ -145,17 +167,22 @@
   <div class="row">
     <div class="col card">
       <h3>Presets</h3>
-      <select onchange="if(this.value) window.location='/?preset='+this.value;">
-        <option value="">(none)</option>
+      <select id="preset-select" onchange="if(this.value) window.location='/?preset='+this.value;">
+        <option value="">Preset</option>
         {% for key, p in presets.items() %}
-          <option value="{{ key }}">{{ p.label }}</option>
+          {% set is_test_preset = 1 if (p.class_name and p.class_name.startswith('TestClass')) else 0 %}
+          <option value="{{ key }}" data-test-preset="{{ is_test_preset }}" {% if selected_preset == key %}selected{% endif %}>{{ p.label }}</option>
         {% endfor %}
       </select>
+      <label class="checkrow" style="margin-top:8px;">
+        <input type="checkbox" id="toggle-test-presets" checked>
+        Show test presets
+      </label>
     </div>
     <div class="col card">
       <h3>Recent runs</h3>
       <select onchange="if(this.value) window.location='/?recent='+this.value;">
-        <option value="">(none)</option>
+        <option value="">Recent run</option>
         {% for r in recent_presets %}
           <option value="{{ r.job_id }}">{{ r.label }}</option>
         {% endfor %}
@@ -170,7 +197,12 @@
   <form method="post" action="/jobs" class="card" style="margin-top:16px;">
     <div class="row">
       <div class="col">
-        <label>Class name</label>
+        <label>
+          <span class="label-help">
+            Class name
+            <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language). Use Refresh WDC classes if it is missing.">?</span>
+          </span>
+        </label>
         <select name="class_name">
           <option value="">(select class)</option>
           {% for name, meta in class_meta.items() %}
@@ -181,64 +213,109 @@
           {% endif %}
         </select>
 
-        <label>Parts spec</label>
-        <input name="parts_spec" value="{{ form.parts_spec }}" placeholder="all / 1-5 / 1,2,3" />
+        <label>
+          <span class="label-help">
+            Parts spec
+            <span class="help-tip" tabindex="0" title="Choose which parts to scan. Use all, a list like 1,2,4, or a range like 1-10.">?</span>
+          </span>
+        </label>
+        <input name="parts_spec" value="{{ form.parts_spec }}" placeholder="all or 1,2,4 or 1-10" />
 
-        <label>WDC predicate pattern</label>
+        <label>
+          <span class="label-help">
+            WDC predicate pattern
+            <span class="help-tip" tabindex="0" title="Predicate keyword used to extract WDC values (for example name, eidr, telephone, sameAs, url).">?</span>
+          </span>
+        </label>
         <input name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="eidr / name / telephone / isrc" />
 
-        <label>Wikidata property</label>
+        <label>
+          <span class="label-help">
+            Wikidata property
+            <span class="help-tip" tabindex="0" title="Property used to fetch comparison values from Wikidata (for example P2704, wdt:P2704, rdfs:label). Leave empty when WDC values are already Wikidata URLs.">?</span>
+          </span>
+        </label>
         <input name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="P2704 / wdt:P2704 / rdfs:label" />
       </div>
       <div class="col">
-        <label>Wikidata class (QID)</label>
+        <label>
+          <span class="label-help">
+            Wikidata class (QID)
+            <span class="help-tip" tabindex="0" title="Usually used when linking by label or existing links (for example sameAs/url) and you want to filter Wikidata to a target class. Example: Q486972 for City.">?</span>
+          </span>
+        </label>
         <input name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q33742" />
 
-        <label>Max depth (bnodes)</label>
+        <label>
+          <span class="label-help">
+            Max depth (bnodes)
+            <span class="help-tip" tabindex="0" title="Traversal depth from seed entities during graph extraction. 0 means direct triples only; higher values include neighbors; -1 means no explicit limit.">?</span>
+          </span>
+        </label>
         <select name="max_depth">
           {% for d in [-1,0,1,2,3,4,5] %}
             <option value="{{ d }}" {% if form.max_depth == d %}selected{% endif %}>{{ d }}</option>
           {% endfor %}
         </select>
 
-        <label>Normalization: extra chars to strip</label>
+        <label>
+          <span class="label-help">
+            Normalization: extra chars to strip
+            <span class="help-tip" tabindex="0" title="Characters removed before matching values. Default spaces;-;. helps normalize formatting differences.">?</span>
+          </span>
+        </label>
         <input name="ignore_chars" value="{{ form.ignore_chars }}" placeholder="spaces;-;.;special-chars" />
 
         <label class="checkrow">
           <input type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
           WDC values are Wikidata URLs
+          <span class="help-tip" tabindex="0" title="Enable this when WDC values are Wikidata entity URLs (often in sameAs or url). Matching is then done directly on Wikidata entities.">?</span>
         </label>
         <label class="checkrow">
           <input type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
           Ignore align cache (force re-run align)
+          <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
         </label>
         <label class="checkrow">
           <input type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
           Use local parts only (no downloads)
+          <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
         </label>
       </div>
     </div>
 
-    {% if form.class_name and form.class_name in class_meta %}
-      <div class="info">
-        Parts: {{ class_meta[form.class_name].num_parts or 'N/A' }} | Size: {{ class_meta[form.class_name].size_human or 'N/A' }}
-        <br/>
-        Local parts downloaded: {{ local_parts }}
-      </div>
-    {% endif %}
+    <div
+      id="class-parts-info"
+      class="info"
+      {% if not class_parts_info %}style="display:none"{% endif %}
+      data-initial='{{ (class_parts_info or {}) | tojson }}'
+    >
+      <div><b id="class-parts-title"></b></div>
+      <div class="small" id="class-parts-meta"></div>
+      <div class="small" id="class-parts-downloaded"></div>
+      <div class="small" id="class-parts-missing"></div>
+      <div class="small" id="class-parts-online-error" style="display:none"></div>
+      <div class="small" id="class-parts-local-only" style="display:none"></div>
+    </div>
 
     <button class="btn" type="submit">Generate benchmark</button>
   </form>
 
   <div class="jobs">
     <h2>Builds</h2>
-    {% if builds %}
+    <div id="build-list">
+      {% if builds %}
       {% for b in builds %}
-      <div class="build" id="build-card-{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}">
+      <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}">
         <div class="build-head">
           <div class="header-left">
             <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}">-</button>
             <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }}</span></div>
+          </div>
+          <div class="head-actions">
+            <form method="post" action="/builds/{{ b.class_name }}/{{ b.build_name }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
+              <button class="btn-icon danger" type="submit" title="Delete build" aria-label="Delete build">&#128465;</button>
+            </form>
           </div>
         </div>
         <div class="build-body" id="build-body-{{ loop.index0 }}">
@@ -305,14 +382,15 @@
         </div>
       </div>
       {% endfor %}
-    {% else %}
-      <div class="small">(no completed builds found)</div>
-    {% endif %}
+      {% endif %}
+    </div>
+    <div class="small" id="build-empty-msg" {% if builds %}style="display:none"{% endif %}>(no completed builds found)</div>
 
     <h2>Jobs</h2>
+    <div id="jobs-list">
   {% if jobs %}
-  {% for job in jobs %}
-      <div class="job" id="job-card-{{ job.id }}" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}" data-job-phase="{{ job.phase or '' }}">
+    {% for job in jobs %}
+      <div class="job selectable-card" id="job-card-{{ job.id }}" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}" data-job-phase="{{ job.phase or '' }}">
         <div class="job-header">
           <div class="header-left">
             <button type="button" class="btn-icon js-toggle-job" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">-</button>
@@ -327,6 +405,16 @@
                 {{ job.status }}{% if job.phase %} · {{ job.phase }}{% endif %}
               </div>
             {% endif %}
+            <form
+              method="post"
+              action="/jobs/{{ job.id }}/delete"
+              class="js-async-form"
+              data-delete-target="job-card-{{ job.id }}"
+              id="job-delete-icon-wrap-{{ job.id }}"
+              {% if job.status in ["running", "queued"] %}style="display:none"{% endif %}
+            >
+              <button class="btn-icon danger" type="submit" title="Delete job" aria-label="Delete job">&#128465;</button>
+            </form>
           </div>
         </div>
         <div class="job-body" id="job-body-{{ job.id }}">
@@ -444,9 +532,9 @@
         </div>
       </div>
     {% endfor %}
-    {% else %}
-      <div class="small">(no jobs to show; successful jobs are hidden and tracked in Builds)</div>
-    {% endif %}
+  {% endif %}
+    </div>
+    <div class="small" id="jobs-empty-msg" {% if jobs %}style="display:none"{% endif %}>(no jobs to show; successful jobs with downloadable builds are moved to Builds)</div>
   </div>
 
 <script>
@@ -464,6 +552,7 @@ const lastStatusByJob = {};
 const phaseByJob = {};
 const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
 const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
+const SHOW_TEST_PRESETS_KEY = 'beam.showTestPresets';
 const PENDING_TOAST_KEY = 'beam.pendingToast';
 const LAST_TOAST_ID_KEY = 'beam.lastToastId';
 const TERMINAL_STATUSES = new Set(['done', 'error', 'cancelled', 'interrupted']);
@@ -471,6 +560,7 @@ let dashboardPollTimer = null;
 let dashboardPollBusy = false;
 let dashboardReloadQueued = false;
 let lastKnownBuildCount = Number({{ builds|length }});
+let nextBuildDomId = Number({{ builds|length }});
 
 function getMinimizedJobs() {
   try {
@@ -504,6 +594,48 @@ function saveMinimizedBuilds(map) {
   } catch (_) {}
 }
 
+function getShowTestPresets() {
+  try {
+    const raw = localStorage.getItem(SHOW_TEST_PRESETS_KEY);
+    if (raw === '0') return false;
+    if (raw === '1') return true;
+  } catch (_) {}
+  return true;
+}
+
+function saveShowTestPresets(value) {
+  try {
+    localStorage.setItem(SHOW_TEST_PRESETS_KEY, value ? '1' : '0');
+  } catch (_) {}
+}
+
+function applyPresetVisibility(showTestPresets) {
+  const select = document.getElementById('preset-select');
+  if (!select) return;
+  const selected = select.value;
+  Array.from(select.options).forEach((opt) => {
+    if (!opt.value) {
+      opt.hidden = false;
+      return;
+    }
+    const isTest = String(opt.dataset.testPreset || '0') === '1';
+    opt.hidden = isTest && !showTestPresets && opt.value !== selected;
+  });
+}
+
+function initPresetToggle() {
+  const toggle = document.getElementById('toggle-test-presets');
+  if (!toggle) return;
+  const initial = getShowTestPresets();
+  toggle.checked = initial;
+  applyPresetVisibility(initial);
+  toggle.addEventListener('change', () => {
+    const show = !!toggle.checked;
+    saveShowTestPresets(show);
+    applyPresetVisibility(show);
+  });
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replaceAll('&', '&amp;')
@@ -511,6 +643,105 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function renderClassPartsInfo(info) {
+  const box = document.getElementById('class-parts-info');
+  if (!box) return;
+  if (!info || !info.class_name) {
+    box.style.display = 'none';
+    return;
+  }
+
+  box.style.display = '';
+  const titleEl = document.getElementById('class-parts-title');
+  const metaEl = document.getElementById('class-parts-meta');
+  const downloadedEl = document.getElementById('class-parts-downloaded');
+  const missingEl = document.getElementById('class-parts-missing');
+  const onlineErrEl = document.getElementById('class-parts-online-error');
+  const localOnlyEl = document.getElementById('class-parts-local-only');
+
+  if (titleEl) titleEl.textContent = `Class: ${info.class_name}`;
+  if (metaEl) {
+    const catalogParts = (info.class_num_parts !== null && info.class_num_parts !== undefined)
+      ? String(info.class_num_parts)
+      : 'N/A';
+    const size = info.class_size_human || 'N/A';
+    const onlineCount = Number(info.online_available_count || 0);
+    const onlineRanges = info.online_available_ranges || '—';
+    metaEl.textContent = `Catalog parts: ${catalogParts} | Size: ${size} | Available online: ${onlineCount} (${onlineRanges})`;
+  }
+  if (downloadedEl) {
+    const ranges = info.downloaded_part_ranges || '—';
+    downloadedEl.textContent = `Parts downloaded: ${ranges}`;
+  }
+  if (missingEl) {
+    const ranges = info.not_downloaded_online_part_ranges || '—';
+    missingEl.textContent = `Parts not downloaded: ${ranges}`;
+  }
+  if (onlineErrEl) {
+    if (info.online_error) {
+      onlineErrEl.style.display = '';
+      onlineErrEl.textContent = `Online scan unavailable: ${info.online_error}`;
+    } else if (info.online_inferred_from_catalog) {
+      onlineErrEl.style.display = '';
+      const discoveredCount = Number(info.online_discovered_count || 0);
+      const discoveredRanges = info.online_discovered_ranges || '—';
+      onlineErrEl.textContent = `Online listing looked incomplete (${discoveredCount}: ${discoveredRanges}); completed using catalog count.`;
+    } else {
+      onlineErrEl.style.display = 'none';
+      onlineErrEl.textContent = '';
+    }
+  }
+  if (localOnlyEl) {
+    const count = Number(info.local_only_parts_count || 0);
+    if (count > 0) {
+      localOnlyEl.style.display = '';
+      localOnlyEl.textContent = `Local-only part numbers: ${info.local_only_part_numbers_text || '—'}`;
+    } else {
+      localOnlyEl.style.display = 'none';
+      localOnlyEl.textContent = '';
+    }
+  }
+}
+
+async function refreshClassPartsInfo(className) {
+  const selected = String(className || '').trim();
+  if (!selected) {
+    renderClassPartsInfo(null);
+    return;
+  }
+  try {
+    const res = await fetch(`/api/class_parts/${encodeURIComponent(selected)}`, {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    renderClassPartsInfo(payload);
+  } catch (_) {
+    renderClassPartsInfo({
+      class_name: selected,
+      class_num_parts: null,
+      class_size_human: null,
+      online_available_count: 0,
+      online_available_ranges: '—',
+      online_discovered_count: 0,
+      online_discovered_ranges: '—',
+      online_inferred_from_catalog: false,
+      downloaded_parts_count: 0,
+      downloaded_part_ranges: '—',
+      downloaded_part_numbers_text: '—',
+      not_downloaded_online_parts_count: 0,
+      not_downloaded_online_part_ranges: '—',
+      not_downloaded_online_part_numbers_text: '—',
+      online_error: 'request failed',
+      local_only_parts_count: 0,
+      local_only_part_numbers_text: '—',
+    });
+  }
 }
 
 function showToast(message, kind = 'info', timeoutMs = 4200) {
@@ -640,6 +871,8 @@ function estimateEtaFromPct(pct, startedAtSec) {
 }
 
 function computeSubjobEta(subjob, fallbackProgressText) {
+  const status = String((subjob && subjob.status) || '');
+  if (status !== 'running' && status !== 'queued') return '—';
   const etaFromText = extractEtaText(subjob && subjob.progress_text);
   if (etaFromText) return etaFromText;
   const etaFromFallback = extractEtaText(fallbackProgressText);
@@ -705,9 +938,38 @@ function updateJobArtifacts(jobId, payload) {
 function setJobCollapsed(jobId, collapsed) {
   const body = document.getElementById('job-body-' + jobId);
   const btn = document.querySelector(`.js-toggle-job[data-job-id="${jobId}"]`);
+  const card = document.getElementById('job-card-' + jobId);
   if (!body || !btn) return;
   body.classList.toggle('collapsed', !!collapsed);
   btn.textContent = collapsed ? '+' : '-';
+  if (card) card.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function toggleJobCollapsed(jobId) {
+  const body = document.getElementById('job-body-' + jobId);
+  if (!body) return;
+  const next = !body.classList.contains('collapsed');
+  setJobCollapsed(jobId, next);
+  const state = getMinimizedJobs();
+  state[jobId] = next ? 1 : 0;
+  saveMinimizedJobs(state);
+}
+
+function shouldIgnoreCardToggle(event) {
+  const target = event && event.target;
+  if (!target || !(target instanceof Element)) return true;
+  if (
+    target.closest(
+      'button,a,input,select,textarea,label,summary,details,form,[contenteditable="true"],[data-no-card-toggle],.logbox,.job-actions,.build-actions,.subjob-actions,.parts-list'
+    )
+  ) {
+    return true;
+  }
+  try {
+    const sel = window.getSelection ? String(window.getSelection() || '') : '';
+    if (sel && sel.trim().length > 0) return true;
+  } catch (_) {}
+  return false;
 }
 
 function bindJobMinimize() {
@@ -716,14 +978,21 @@ function bindJobMinimize() {
     const jobId = btn.dataset.jobId;
     const initialCollapsed = minimized[jobId] !== 0;
     setJobCollapsed(jobId, initialCollapsed);
-    btn.addEventListener('click', () => {
-      const body = document.getElementById('job-body-' + jobId);
-      if (!body) return;
-      const next = !body.classList.contains('collapsed');
-      setJobCollapsed(jobId, next);
-      const state = getMinimizedJobs();
-      state[jobId] = next ? 1 : 0;
-      saveMinimizedJobs(state);
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleJobCollapsed(jobId);
+    });
+  });
+  document.querySelectorAll('.job[data-job-id]').forEach((card) => {
+    const jobId = card.dataset.jobId;
+    if (!jobId) return;
+    if (card.dataset.bound === '1') return;
+    card.dataset.bound = '1';
+    card.addEventListener('click', (event) => {
+      if (shouldIgnoreCardToggle(event)) return;
+      toggleJobCollapsed(jobId);
     });
   });
 }
@@ -731,9 +1000,21 @@ function bindJobMinimize() {
 function setBuildCollapsed(buildId, collapsed) {
   const body = document.getElementById('build-body-' + buildId);
   const btn = document.querySelector(`.js-toggle-build[data-build-id="${buildId}"]`);
+  const card = document.getElementById('build-card-' + buildId);
   if (!body || !btn) return;
   body.classList.toggle('collapsed', !!collapsed);
   btn.textContent = collapsed ? '+' : '-';
+  if (card) card.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
+function toggleBuildCollapsed(buildId) {
+  const body = document.getElementById('build-body-' + buildId);
+  if (!body) return;
+  const next = !body.classList.contains('collapsed');
+  setBuildCollapsed(buildId, next);
+  const state = getMinimizedBuilds();
+  state[buildId] = next ? 1 : 0;
+  saveMinimizedBuilds(state);
 }
 
 function bindBuildMinimize() {
@@ -742,16 +1023,163 @@ function bindBuildMinimize() {
     const buildId = btn.dataset.buildId;
     const initialCollapsed = minimized[buildId] !== 0;
     setBuildCollapsed(buildId, initialCollapsed);
-    btn.addEventListener('click', () => {
-      const body = document.getElementById('build-body-' + buildId);
-      if (!body) return;
-      const next = !body.classList.contains('collapsed');
-      setBuildCollapsed(buildId, next);
-      const state = getMinimizedBuilds();
-      state[buildId] = next ? 1 : 0;
-      saveMinimizedBuilds(state);
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      toggleBuildCollapsed(buildId);
     });
   });
+  document.querySelectorAll('.build[data-build-id]').forEach((card) => {
+    const buildId = card.dataset.buildId;
+    if (!buildId) return;
+    if (card.dataset.bound === '1') return;
+    card.dataset.bound = '1';
+    card.addEventListener('click', (event) => {
+      if (shouldIgnoreCardToggle(event)) return;
+      toggleBuildCollapsed(buildId);
+    });
+  });
+}
+
+function refreshBuildEmptyState() {
+  const list = document.getElementById('build-list');
+  const empty = document.getElementById('build-empty-msg');
+  if (!list || !empty) return;
+  const hasBuilds = !!list.querySelector('.build[data-build-key]');
+  empty.style.display = hasBuilds ? 'none' : '';
+}
+
+function refreshJobsEmptyState() {
+  const list = document.getElementById('jobs-list');
+  const empty = document.getElementById('jobs-empty-msg');
+  if (!list || !empty) return;
+  const hasJobs = !!list.querySelector('.job[data-job-id]');
+  empty.style.display = hasJobs ? 'none' : '';
+}
+
+function buildKeyOf(build) {
+  return `${build && build.class_name ? build.class_name : ''}::${build && build.build_name ? build.build_name : ''}`;
+}
+
+function hasBuildCard(buildKey) {
+  if (!buildKey) return false;
+  return Array.from(document.querySelectorAll('.build[data-build-key]')).some((el) => el.dataset.buildKey === buildKey);
+}
+
+function removeDoneJobsFromList(activeJobIds) {
+  const active = new Set((Array.isArray(activeJobIds) ? activeJobIds : []).map((v) => Number(v)));
+  document.querySelectorAll('.job[data-job-id]').forEach((el) => {
+    const id = Number(el.dataset.jobId || 0);
+    if (!id || active.has(id)) return;
+    stopReconnectByJob[id] = true;
+    closeSocketNow(id);
+    el.remove();
+  });
+  refreshJobsEmptyState();
+}
+
+function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
+  const className = String(build.class_name || '');
+  const buildName = String(build.build_name || '');
+  const doneAt = escapeHtml(build.done_at || 'N/A');
+  const path = escapeHtml(build.path || '');
+  const actionClass = encodeURIComponent(className);
+  const actionBuild = encodeURIComponent(buildName);
+  const downloadAction = `/builds/${actionClass}/${actionBuild}/download`;
+  const deleteAction = `/builds/${actionClass}/${actionBuild}/delete`;
+  const variant = build.with_link || build.without_link || null;
+  let tilesHtml = '';
+  if (variant) {
+    tilesHtml = `
+      <div class="build-tiles">
+        <div class="tile"><div class="tile-label">Total Size</div><div class="tile-value">${escapeHtml(variant.size_total_h || '—')}</div></div>
+        <div class="tile"><div class="tile-label">Entity Links</div><div class="tile-value">${escapeHtml(variant.links_count || '0')}</div></div>
+        <div class="tile"><div class="tile-label">WDC Properties</div><div class="tile-value">${escapeHtml(variant.wdc_props || '0')}</div></div>
+        <div class="tile"><div class="tile-label">WD Properties</div><div class="tile-value">${escapeHtml(variant.wd_props || '0')}</div></div>
+      </div>
+    `;
+  }
+  const cfgGroups = Array.isArray(build.config_groups) ? build.config_groups : [];
+  let cfgHtml = '';
+  if (cfgGroups.length > 0) {
+    const groupsHtml = cfgGroups.map((group) => {
+      const title = escapeHtml((group && group.title) || '');
+      const items = Array.isArray(group && group.items) ? group.items : [];
+      const rowsHtml = items.map((item) => {
+        const key = escapeHtml(Array.isArray(item) ? item[0] : '');
+        const valRaw = Array.isArray(item) ? item[1] : '';
+        const val = escapeHtml(valRaw === null || valRaw === undefined ? '' : String(valRaw));
+        return `
+          <div class="cfg-row">
+            <div class="cfg-key">${key}</div>
+            <div class="cfg-val">${val}</div>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="cfg-group">
+          <div class="cfg-title">${title}</div>
+          ${rowsHtml}
+        </div>
+      `;
+    }).join('');
+    cfgHtml = `
+      <div class="build-config">
+        <div><b>Config</b></div>
+        ${groupsHtml}
+      </div>
+    `;
+  }
+  return `
+    <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}">
+      <div class="build-head">
+        <div class="header-left">
+          <button type="button" class="btn-icon js-toggle-build" data-build-id="${buildId}">-</button>
+          <div><b>${escapeHtml(className)}</b> <span class="small">· Completed: ${doneAt}</span></div>
+        </div>
+        <div class="head-actions">
+          <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
+            <button class="btn-icon danger" type="submit" title="Delete build" aria-label="Delete build">&#128465;</button>
+          </form>
+        </div>
+      </div>
+      <div class="build-body" id="${bodyId}">
+        <div class="small build-path">Path: ${path}</div>
+        <div class="build-actions">
+          <form method="get" action="${downloadAction}">
+            <button class="btn secondary" type="submit">Download build</button>
+          </form>
+          <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
+            <button class="btn danger" type="submit">Delete build</button>
+          </form>
+        </div>
+        ${tilesHtml}
+        ${cfgHtml}
+      </div>
+    </div>
+  `;
+}
+
+function reconcileBuildList(builds) {
+  const list = document.getElementById('build-list');
+  if (!list || !Array.isArray(builds)) return 0;
+  let inserted = 0;
+  builds.forEach((build) => {
+    const key = buildKeyOf(build);
+    if (!key || hasBuildCard(key)) return;
+    const buildId = nextBuildDomId++;
+    const cardId = `build-card-${buildId}`;
+    const bodyId = `build-body-${buildId}`;
+    list.insertAdjacentHTML('afterbegin', buildCardHtml(build, cardId, buildId, bodyId, key));
+    inserted += 1;
+  });
+  if (inserted > 0) {
+    setupAsyncForms();
+    bindBuildMinimize();
+    refreshBuildEmptyState();
+  }
+  return inserted;
 }
 
 function clearSocketTimers(jobId) {
@@ -826,6 +1254,13 @@ function applyProgressPayload(jobId, payload, opts = {}) {
   if (jobDeleteWrap) {
     jobDeleteWrap.style.display = (statusRaw === 'running' || statusRaw === 'queued') ? 'none' : '';
   }
+  const jobDeleteIconWrap = document.getElementById('job-delete-icon-wrap-' + jobId);
+  if (jobDeleteIconWrap) {
+    jobDeleteIconWrap.style.display = (statusRaw === 'running' || statusRaw === 'queued') ? 'none' : '';
+  }
+
+  const terminal = TERMINAL_STATUSES.has(statusRaw);
+  const becameTerminal = terminal && !TERMINAL_STATUSES.has(prevStatus);
 
   let phaseEtaUpdated = false;
   if (Array.isArray(payload.subjobs)) {
@@ -848,7 +1283,7 @@ function applyProgressPayload(jobId, payload, opts = {}) {
       const s = document.getElementById(`subjob-step-${jobId}-${t}`);
       const f = document.getElementById(`subjob-file-${jobId}-${t}`);
       if (p) p.textContent = `Progress: ${sj.progress_text || '—'}`;
-      const etaText = computeSubjobEta(sj, payload.progress_text);
+      const etaText = computeSubjobEta(sj, t === phase ? payload.progress_text : null);
       if (etaEl) etaEl.textContent = `ETA: ${etaText}`;
       if (s) s.textContent = sj.current_step ? `Step: ${sj.current_step}` : '';
       if (f) f.textContent = sj.current_file ? `File: ${sj.current_file}` : '';
@@ -872,9 +1307,11 @@ function applyProgressPayload(jobId, payload, opts = {}) {
     const etaText = extractEtaText(payload.progress_text) || '—';
     updateLaneMeta(jobId, phase, { etaText });
   }
+  if (terminal) {
+    updateLaneMeta(jobId, 'align', { etaText: '—' });
+    updateLaneMeta(jobId, 'build', { etaText: '—' });
+  }
 
-  const terminal = TERMINAL_STATUSES.has(statusRaw);
-  const becameTerminal = terminal && !TERMINAL_STATUSES.has(prevStatus);
   if (statusRaw === 'done') {
     updateLaneMeta(jobId, 'align', { status: 'done' });
     updateLaneMeta(jobId, 'build', { status: 'done' });
@@ -892,7 +1329,7 @@ function applyProgressPayload(jobId, payload, opts = {}) {
         ? `Build completed for Job ${jobId}`
         : `Job ${jobId} completed`;
       showToast(msg, 'success');
-      queueReloadWithToast(msg, 'success');
+      setTimeout(() => pollDashboardOnce(), 120);
     } else if (statusRaw === 'error') {
       showToast(`Job ${jobId} failed`, 'error');
     } else {
@@ -1018,7 +1455,19 @@ async function pollDashboardOnce() {
         startLogs(j.id);
       }
     });
-    lastKnownBuildCount = Number(payload.build_count || lastKnownBuildCount || 0);
+    removeDoneJobsFromList(payload.visible_job_ids || payload.active_job_ids || []);
+    const insertedBuilds = reconcileBuildList(Array.isArray(payload.builds) ? payload.builds : []);
+    const nextBuildCount = Number(payload.build_count || 0);
+    if (insertedBuilds > 0) {
+      const msg = insertedBuilds === 1 ? 'Build is ready to download' : `${insertedBuilds} builds are ready to download`;
+      showToast(msg, 'success', 2400);
+    } else if (Number.isFinite(nextBuildCount) && nextBuildCount > Number(lastKnownBuildCount || 0)) {
+      // Fallback: backend saw new build but current DOM did not reconcile for any reason.
+      queueReloadWithToast('Build list updated', 'success');
+    }
+    if (Number.isFinite(nextBuildCount) && nextBuildCount >= 0) {
+      lastKnownBuildCount = nextBuildCount;
+    }
   } catch (_) {
     // Silent retry on next poll.
   } finally {
@@ -1046,7 +1495,13 @@ function setupAsyncForms() {
         const targetId = form.dataset.deleteTarget;
         if (targetId) {
           const el = document.getElementById(targetId);
-          if (el) el.remove();
+          if (el) {
+            const wasBuild = el.classList.contains('build');
+            const wasJob = el.classList.contains('job');
+            el.remove();
+            if (wasBuild) refreshBuildEmptyState();
+            if (wasJob) refreshJobsEmptyState();
+          }
         }
         if (form.action.includes('/cancel')) {
           showToast('Cancellation requested', 'info', 2200);
@@ -1067,6 +1522,23 @@ function setupAsyncForms() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const ids = [{% for job in jobs %}{{ job.id }},{% endfor %}];
+  initPresetToggle();
+  const classSelect = document.querySelector('select[name="class_name"]');
+  const classPartsInfoEl = document.getElementById('class-parts-info');
+  if (classPartsInfoEl) {
+    try {
+      const initialPayload = JSON.parse(classPartsInfoEl.dataset.initial || '{}');
+      if (initialPayload && initialPayload.class_name) renderClassPartsInfo(initialPayload);
+    } catch (_) {}
+  }
+  if (classSelect) {
+    classSelect.addEventListener('change', () => {
+      refreshClassPartsInfo(classSelect.value);
+    });
+    if (classSelect.value && (!classPartsInfoEl || !classPartsInfoEl.dataset.initial || classPartsInfoEl.dataset.initial === '{}')) {
+      refreshClassPartsInfo(classSelect.value);
+    }
+  }
   document.querySelectorAll('.job[data-job-id]').forEach((el) => {
     const id = Number(el.dataset.jobId);
     if (!id) return;
@@ -1082,6 +1554,8 @@ document.addEventListener('DOMContentLoaded', () => {
   showPendingToastFromStorage();
   bindBuildMinimize();
   bindJobMinimize();
+  refreshBuildEmptyState();
+  refreshJobsEmptyState();
   ids.forEach((id) => startLogs(id));
   setupAsyncForms();
   pollDashboardOnce();

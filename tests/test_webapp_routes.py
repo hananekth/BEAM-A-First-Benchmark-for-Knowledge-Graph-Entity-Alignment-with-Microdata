@@ -2,6 +2,7 @@ import importlib
 import json
 from pathlib import Path
 
+from bs4 import BeautifulSoup
 from fastapi.testclient import TestClient
 
 
@@ -67,9 +68,25 @@ def test_index_populates_testclass_list(monkeypatch, test_wdc_classes):
 
     assert resp.status_code == 200
     assert "TestClass" in resp.text
+    assert "Show test presets" in resp.text
+    assert 'data-test-preset="1"' in resp.text
 
     rows = [dict(r) for r in web_main.db.list_wdc_classes()]
     assert any(row["class_name"] == "TestClass" for row in rows)
+
+
+def test_index_keeps_selected_preset_in_dropdown(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    with client:
+        resp = client.get("/?preset=testclass_quick")
+
+    assert resp.status_code == 200
+    soup = BeautifulSoup(resp.text, "html.parser")
+    select = soup.find("select", {"id": "preset-select"})
+    assert select is not None
+    selected = select.find("option", {"value": "testclass_quick"})
+    assert selected is not None
+    assert selected.has_attr("selected")
 
 
 def test_refresh_classes_updates_cache(monkeypatch, test_wdc_classes):
@@ -206,10 +223,14 @@ def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classe
     assert resp.status_code == 200
     payload = resp.json()
     assert payload["build_count"] >= 1
-    assert any(b["build_name"] == build_name for b in payload["builds"])
+    build_entry = next((b for b in payload["builds"] if b["build_name"] == build_name), None)
+    assert build_entry is not None
+    assert any(g.get("title") == "Input" for g in build_entry.get("config_groups", []))
     assert payload["job_count"] >= 2
     assert running_job_id in payload["active_job_ids"]
     assert done_job_id not in payload["active_job_ids"]
+    assert running_job_id in payload["visible_job_ids"]
+    assert done_job_id not in payload["visible_job_ids"]
 
     jobs = {j["id"]: j for j in payload["jobs"]}
     assert jobs[running_job_id]["status"] == "running"
@@ -217,3 +238,84 @@ def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classe
     assert isinstance(jobs[running_job_id]["subjobs"], list)
     assert jobs[done_job_id]["status"] == "done"
     assert jobs[done_job_id]["outputs"]["build_done"] is True
+
+
+def test_dashboard_api_keeps_failed_job_visible_when_no_build_output(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+
+    failed_no_build_job_id = web_main.db.insert_job({"class_name": "City", "parts_spec": "1"})
+    web_main.db.update_job(
+        failed_no_build_job_id,
+        status="error",
+        result_path=None,
+        error_message="No alignments found (0); build skipped.",
+    )
+
+    done_with_build_job_id = web_main.db.insert_job({"class_name": "City", "parts_spec": "1"})
+    fake_build = Path("data") / "City" / "beam_20260216_150000"
+    _make_build_tree(fake_build)
+    web_main.db.update_job(done_with_build_job_id, status="done", result_path=str(fake_build.resolve()))
+
+    with client:
+        resp = client.get("/api/dashboard")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert failed_no_build_job_id in payload["visible_job_ids"]
+    assert done_with_build_job_id not in payload["visible_job_ids"]
+
+
+def test_class_parts_api_reports_downloaded_and_missing(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    class_dir = Path("Download") / "TestClass"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    (class_dir / "part_0001.nq").write_text("<s> <p> <o> .\n", encoding="utf-8")
+    (class_dir / "part_0003.nq").write_text("<s> <p> <o> .\n", encoding="utf-8")
+
+    monkeypatch.setattr(web_main, "_discover_online_part_numbers", lambda class_name: ([1, 2, 3, 4], None))
+
+    with client:
+        resp = client.get("/api/class_parts/TestClass")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["class_name"] == "TestClass"
+    assert payload["downloaded_part_numbers"] == [1, 3]
+    assert payload["not_downloaded_online_part_numbers"] == [2, 4]
+    assert payload["downloaded_parts_count"] == 2
+    assert payload["not_downloaded_online_parts_count"] == 2
+
+
+def test_class_parts_api_infers_missing_from_catalog_count(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    web_main.db.upsert_wdc_classes(
+        [
+            {
+                "class_name": "Movie",
+                "num_parts": 13,
+                "size_human": "24.9 GB",
+            }
+        ]
+    )
+
+    class_dir = Path("Download") / "Movie"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    for i in range(12):
+        (class_dir / f"part_{i:04d}.nq").write_text("<s> <p> <o> .\n", encoding="utf-8")
+    (class_dir / "part_0999.nq").write_text("<s> <p> <o> .\n", encoding="utf-8")
+
+    monkeypatch.setattr(web_main, "_discover_online_part_numbers", lambda class_name: (list(range(12)), None))
+
+    with client:
+        resp = client.get("/api/class_parts/Movie")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["class_name"] == "Movie"
+    assert payload["class_num_parts"] == 13
+    assert payload["online_available_count"] == 13
+    assert payload["online_available_ranges"] == "0-12"
+    assert payload["downloaded_part_ranges"] == "0-11"
+    assert payload["not_downloaded_online_part_ranges"] == "12"
+    assert payload["not_downloaded_online_part_numbers"] == [12]
+    assert payload["local_only_part_numbers"] == [999]

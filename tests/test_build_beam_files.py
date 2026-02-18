@@ -20,6 +20,28 @@ def test_canonical_wd_entity_uri_normalizes_lowercase_ids():
     assert build.canonical_wd_entity_uri("http://www.wikidata.org/entity/P31") == "http://www.wikidata.org/entity/P31"
 
 
+def test_canonical_wd_link_entity_uri_accepts_wiki_or_entity_forms():
+    assert (
+        build.canonical_wd_link_entity_uri("https://www.wikidata.org/wiki/Q174224")
+        == "http://www.wikidata.org/entity/Q174224"
+    )
+    assert (
+        build.canonical_wd_link_entity_uri("<http://www.wikidata.org/entity/q918195>")
+        == "http://www.wikidata.org/entity/Q918195"
+    )
+
+
+def test_write_links_outputs_wdc_iri_and_canonical_wikidata_iri(tmp_path):
+    out = tmp_path / "ent_links"
+    build.write_links(
+        str(out),
+        ["<https://example.org/wdc/e1>"],
+        ["https://www.wikidata.org/wiki/Q64"],
+        dedupe=True,
+    )
+    assert out.read_text(encoding="utf-8") == "https://example.org/wdc/e1\thttp://www.wikidata.org/entity/Q64\n"
+
+
 def test_append_wdc_labels_descriptions_strips_literal_suffixes_and_matches_iris():
     class_dir = Path("Download") / "TestClass"
     class_dir.mkdir(parents=True, exist_ok=True)
@@ -237,3 +259,114 @@ def test_write_wikidata_from_sparql_excludes_props_case_insensitively(monkeypatc
 
     assert out_attr.read_text(encoding="utf-8") == ""
     assert out_rel.read_text(encoding="utf-8") == ""
+
+
+def test_write_wikidata_from_sparql_deduplicates_subjects(monkeypatch):
+    out_dir = Path("data") / "TestClass" / "beam_test_wd_dedupe" / "without_link_code"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_attr = out_dir / "attr_triples_2"
+    out_rel = out_dir / "rel_triples_2"
+    seen = {}
+
+    def _fake_construct(endpoint, subjects, language, batch_size, sleep_s, timeout, retries, backoff, start_batch, session=None):
+        seen["subjects"] = list(subjects)
+        for idx, subj in enumerate(subjects, start=1):
+            yield idx, (
+                f"<{subj}>",
+                "<http://www.wikidata.org/prop/direct/P31>",
+                "<http://www.wikidata.org/entity/Q5>",
+            )
+            yield idx, None
+
+    monkeypatch.setattr(build, "sparql_construct", _fake_construct)
+
+    build.write_wikidata_from_sparql(
+        endpoint="https://query.wikidata.org/sparql",
+        subjects=[
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q2",
+        ],
+        out_attr_path=str(out_attr),
+        out_rel_path=str(out_rel),
+        lowercase_wd=True,
+        language="en",
+        batch_size=50,
+        sleep_s=0.0,
+        timeout=30,
+        retries=1,
+        backoff=2.0,
+    )
+
+    assert seen["subjects"] == [
+        "http://www.wikidata.org/entity/Q1",
+        "http://www.wikidata.org/entity/Q2",
+    ]
+
+
+def test_write_wikidata_from_sparql_reuses_raw_cache(monkeypatch):
+    out_dir = Path("data") / "TestClass" / "beam_test_wd_cache" / "without_link_code"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_attr_1 = out_dir / "attr_triples_2.first"
+    out_rel_1 = out_dir / "rel_triples_2.first"
+    out_attr_2 = out_dir / "attr_triples_2.second"
+    out_rel_2 = out_dir / "rel_triples_2.second"
+    raw_cache = out_dir / ".wd_raw_cache.tsv"
+    calls = {"count": 0}
+
+    def _fake_construct(endpoint, subjects, language, batch_size, sleep_s, timeout, retries, backoff, start_batch, session=None):
+        calls["count"] += 1
+        yield 1, (
+            "<http://www.wikidata.org/entity/Q1>",
+            "<http://www.wikidata.org/prop/direct/P31>",
+            "<http://www.wikidata.org/entity/Q5>",
+        )
+        yield 1, (
+            "<http://www.wikidata.org/entity/Q1>",
+            "<http://www.w3.org/2000/01/rdf-schema#label>",
+            "\"Entity One\"@en",
+        )
+        yield 1, None
+
+    monkeypatch.setattr(build, "sparql_construct", _fake_construct)
+
+    build.write_wikidata_from_sparql(
+        endpoint="https://query.wikidata.org/sparql",
+        subjects=["http://www.wikidata.org/entity/Q1"],
+        out_attr_path=str(out_attr_1),
+        out_rel_path=str(out_rel_1),
+        lowercase_wd=True,
+        language="en",
+        batch_size=50,
+        sleep_s=0.0,
+        timeout=30,
+        retries=1,
+        backoff=2.0,
+        raw_triples_cache_path=str(raw_cache),
+    )
+
+    assert calls["count"] == 1
+    assert raw_cache.exists()
+
+    def _fail_construct(*args, **kwargs):
+        raise AssertionError("sparql_construct should not be called when cache exists")
+
+    monkeypatch.setattr(build, "sparql_construct", _fail_construct)
+
+    build.write_wikidata_from_sparql(
+        endpoint="https://query.wikidata.org/sparql",
+        subjects=["http://www.wikidata.org/entity/Q1"],
+        out_attr_path=str(out_attr_2),
+        out_rel_path=str(out_rel_2),
+        lowercase_wd=True,
+        language="en",
+        batch_size=50,
+        sleep_s=0.0,
+        timeout=30,
+        retries=1,
+        backoff=2.0,
+        raw_triples_cache_path=str(raw_cache),
+    )
+
+    assert out_attr_1.read_text(encoding="utf-8") == out_attr_2.read_text(encoding="utf-8")
+    assert out_rel_1.read_text(encoding="utf-8") == out_rel_2.read_text(encoding="utf-8")

@@ -12,8 +12,8 @@ from contextlib import redirect_stdout, redirect_stderr
 from beam import db
 from beam.pipeline import generate_benchmark, PipelineError, _config_hash
 
-MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "2"))
-POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "2"))
+MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "8"))
+POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "1"))
 MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", "8"))
 
 
@@ -126,6 +126,24 @@ def _align_cache_ready(params):
         return False
 
 
+def _safe_json_dumps(value):
+    try:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    except Exception:
+        return json.dumps({})
+
+
+def _checkpoint_for_job(job):
+    try:
+        raw = job["checkpoint_json"] if job else None
+        if not raw:
+            return {}
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
 def _recover_stale_running_jobs():
     """Recover jobs left in running state after worker/server restarts."""
     now = time.time()
@@ -150,6 +168,8 @@ def _recover_stale_running_jobs():
                 status="cancelled",
                 ended_at=now,
                 error_message="Cancelled (recovered after restart)",
+                checkpoint_json=None,
+                checkpoint_at=None,
             )
             _cancel_if_active(job_id, "align")
             _cancel_if_active(job_id, "build")
@@ -160,14 +180,30 @@ def _recover_stale_running_jobs():
                 params = json.loads(job["params_json"] or "{}")
             except Exception:
                 params = {}
+            ckpt = _checkpoint_for_job(job)
+            job_result_path = ""
+            try:
+                job_result_path = str(job["result_path"] or "").strip()
+            except Exception:
+                job_result_path = ""
+            resume_out_dir = (
+                str(ckpt.get("resume_out_dir") or "").strip()
+                or job_result_path
+                or str(params.get("resume_out_dir") or "").strip()
+            )
             restart_build_only = (job["phase"] == "build") and _align_cache_ready(params)
             if restart_build_only:
                 params["require_cached_align"] = True
                 params["skip_build"] = False
                 params["force_align"] = False
+                if resume_out_dir:
+                    params["resume_build"] = True
+                    params["resume_out_dir"] = resume_out_dir
                 db.update_subjob_by_type(job_id, "align", status="done", ended_at=now, cancel_requested=0)
                 db.update_subjob_by_type(job_id, "build", status="queued", started_at=None, ended_at=None, cancel_requested=0)
             else:
+                params.pop("resume_build", None)
+                params.pop("resume_out_dir", None)
                 db.update_subjob_by_type(job_id, "align", status="queued", started_at=None, ended_at=None, cancel_requested=0)
                 db.update_subjob_by_type(job_id, "build", status="queued", started_at=None, ended_at=None, cancel_requested=0)
             db.update_job(
@@ -184,9 +220,19 @@ def _recover_stale_running_jobs():
                 current_file=None,
                 job_pid=None,
                 job_pgid=None,
-                result_path=None,
+                result_path=resume_out_dir if restart_build_only and resume_out_dir else None,
                 error_message="Auto-requeued after restart",
-                params_json=json.dumps(params),
+                params_json=_safe_json_dumps(params),
+                checkpoint_json=_safe_json_dumps(
+                    {
+                        "phase": "build" if restart_build_only else "align",
+                        "step": "queued",
+                        "resume_out_dir": resume_out_dir if restart_build_only and resume_out_dir else None,
+                        "reason": "recovered_after_restart",
+                        "ts": now,
+                    }
+                ) if restart_build_only else None,
+                checkpoint_at=now if restart_build_only else None,
             )
             if restart_build_only:
                 db.insert_event(job_id, "system", "Recovered stale running state after restart (auto-requeued: build)")
@@ -207,6 +253,78 @@ def _reconcile_terminal_subjobs():
                     db.update_subjob(sj["id"], status=status, ended_at=now)
 
 
+def _looks_like_skipped_build_reason(text):
+    msg = str(text or "").strip().lower()
+    if not msg:
+        return False
+    return ("build skipped" in msg) or ("no alignments found" in msg)
+
+
+def _reconcile_legacy_skipped_build_jobs():
+    """
+    Legacy compatibility:
+    old versions could persist jobs as done when build was skipped due to 0 alignments.
+    Normalize those rows to error so UI state is consistent.
+    """
+    now = time.time()
+    rows = list(db.list_jobs_by_status("done")) + list(db.list_jobs_by_status("error"))
+    for job in rows:
+        job_id = job["id"]
+        build_row = db.get_subjob(job_id, "build")
+        if not build_row:
+            continue
+
+        build_step = str(build_row["current_step"] or "").strip().lower()
+        build_msg = str(build_row["progress_text"] or "").strip()
+        job_msg = str(job["progress_text"] or "").strip()
+        err_msg = str(job["error_message"] or "").strip()
+
+        skipped = (
+            build_step == "skipped"
+            or _looks_like_skipped_build_reason(build_msg)
+            or _looks_like_skipped_build_reason(job_msg)
+            or _looks_like_skipped_build_reason(err_msg)
+        )
+        if not skipped:
+            continue
+
+        # Never rewrite true completed builds.
+        result_path = str(job["result_path"] or "").strip()
+        has_build_done = bool(result_path and (Path(result_path) / "BUILD_DONE").exists())
+        if has_build_done and job["status"] == "done":
+            continue
+
+        reason = build_msg or job_msg or err_msg or "No alignments found (0); build skipped."
+        if job["status"] == "done":
+            db.update_job(
+                job_id,
+                status="error",
+                phase="build",
+                ended_at=job["ended_at"] or now,
+                result_path=None if not has_build_done else result_path,
+                progress_text=reason,
+                error_message=reason,
+            )
+        if build_row["status"] != "error":
+            db.update_subjob_by_type(
+                job_id,
+                "build",
+                status="error",
+                ended_at=build_row["ended_at"] or now,
+                progress_text=reason,
+                current_step="skipped",
+            )
+            db.insert_event(
+                job_id,
+                "system",
+                "Reconciled legacy skipped build result to error state",
+                phase="build",
+                kind="reconcile",
+                step="skipped",
+                worker="build",
+            )
+
+
 def _run_job(job_id, workers):
     # Make this process a new process group so we can kill the whole tree
     try:
@@ -218,7 +336,12 @@ def _run_job(job_id, workers):
     if not job:
         return
     params = job["params_json"]
-    parsed_params = json.loads(params)
+    try:
+        parsed_params = json.loads(params or "{}")
+        if not isinstance(parsed_params, dict):
+            parsed_params = {}
+    except Exception:
+        parsed_params = {}
 
     db.update_job(
         job_id,
@@ -283,6 +406,8 @@ def _run_job(job_id, workers):
                 self._last_step_key = None
                 self._last_scan_pct_logged = None
                 self._last_scan_log_ts = 0.0
+                self._eta_by_phase = {"align": None, "build": None}
+                self._eta_ts_by_phase = {"align": 0.0, "build": 0.0}
                 self._translations = (
                     ("Téléchargement/Décompression", "Download/Decompress"),
                     ("Téléchargement depuis", "Downloading from"),
@@ -382,6 +507,18 @@ def _run_job(job_id, workers):
                         db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
                     except Exception:
                         pass
+                eta_match = re.search(r"ETA:\s*([^|]+)", msg, flags=re.IGNORECASE)
+                if eta_match:
+                    eta_txt = str(eta_match.group(1) or "").strip()
+                    eta_compact = re.sub(r"\s+", "", eta_txt.lower())
+                    is_zero_eta = eta_compact in {"0s", "0m0s", "0m00s", "0h0m0s", "0h00m00s"}
+                    if eta_txt and eta_txt.lower() not in {"n/a", "-", "—"} and not is_zero_eta:
+                        self._eta_by_phase[self._phase] = eta_txt
+                        self._eta_ts_by_phase[self._phase] = time.time()
+                    elif is_zero_eta:
+                        # Avoid stale "ETA: 0s" repeating when the phase continues for a long time.
+                        self._eta_by_phase[self._phase] = None
+                        self._eta_ts_by_phase[self._phase] = 0.0
                 # step detection
                 step = None
                 current_file = None
@@ -400,9 +537,9 @@ def _run_job(job_id, workers):
                     step = "linking"
                 elif ("Exporting results" in msg) or ("Export des résultats" in msg):
                     step = "export"
-                elif "[WDC] depth" in msg:
+                elif self._phase == "build" and msg.startswith("[WDC]"):
                     step = "build_wdc"
-                elif "[WD] batch" in msg:
+                elif self._phase == "build" and msg.startswith("[WD]"):
                     step = "build_wd"
                 if step or current_file:
                     if step:
@@ -426,6 +563,62 @@ def _run_job(job_id, workers):
                         self._last_step_key = step_key
 
         writer = DbWriter(job_id)
+        checkpoint_lock = threading.Lock()
+        checkpoint_state = {"last_saved_at": 0.0}
+        resume_out_dir_ref = {"path": str(parsed_params.get("resume_out_dir") or "").strip()}
+
+        def _clear_resume_flags():
+            parsed_params.pop("resume_build", None)
+            parsed_params.pop("resume_out_dir", None)
+            parsed_params.pop("resume_checkpoint_at", None)
+            parsed_params.pop("resume_checkpoint_step", None)
+            parsed_params.pop("resume_checkpoint_reason", None)
+
+        def _save_build_checkpoint(reason="heartbeat", force=False):
+            out_dir = str(resume_out_dir_ref.get("path") or "").strip()
+            if not out_dir:
+                return
+            now = time.time()
+            with checkpoint_lock:
+                if not force and reason == "heartbeat":
+                    if (now - checkpoint_state["last_saved_at"]) < 60.0:
+                        return
+                parsed_params["resume_build"] = True
+                parsed_params["resume_out_dir"] = out_dir
+                parsed_params["require_cached_align"] = True
+                parsed_params["skip_build"] = False
+                parsed_params["force_align"] = False
+                parsed_params["resume_checkpoint_at"] = now
+                parsed_params["resume_checkpoint_step"] = writer._current_step or "build"
+                parsed_params["resume_checkpoint_reason"] = reason
+                checkpoint_payload = {
+                    "phase": "build",
+                    "step": writer._current_step or "build",
+                    "current_file": writer._current_file,
+                    "resume_out_dir": out_dir,
+                    "reason": reason,
+                    "ts": now,
+                }
+                db.update_job(
+                    job_id,
+                    checkpoint_json=_safe_json_dumps(checkpoint_payload),
+                    checkpoint_at=now,
+                    result_path=out_dir,
+                    params_json=_safe_json_dumps(parsed_params),
+                )
+                checkpoint_state["last_saved_at"] = now
+
+        def _on_pipeline_checkpoint(payload):
+            if not isinstance(payload, dict):
+                return
+            if payload.get("kind") != "build_started":
+                return
+            out_dir = str(payload.get("out_dir") or "").strip()
+            if out_dir:
+                resume_out_dir_ref["path"] = out_dir
+            _save_build_checkpoint(reason="build_started", force=True)
+            db.insert_event(job_id, "system", f"Checkpoint saved for build restart ({out_dir})")
+
         with redirect_stdout(writer), redirect_stderr(writer):
             print(f"[JOB {job_id}] started")
             print(f"[JOB {job_id}] workers={workers}")
@@ -437,6 +630,7 @@ def _run_job(job_id, workers):
                     if writer._phase != "build":
                         continue
                     now = time.time()
+                    _save_build_checkpoint(reason="heartbeat", force=False)
                     quiet_s = int(now - writer._last_emit_ts)
                     if quiet_s < 15:
                         continue
@@ -444,7 +638,11 @@ def _run_job(job_id, workers):
                         continue
                     phase_elapsed = int(now - writer._phase_started_at)
                     step = writer._current_step or "build"
-                    msg = f"[HB] build active | step={step} | phase_elapsed={phase_elapsed}s | quiet={quiet_s}s"
+                    eta_hint = writer._eta_by_phase.get("build")
+                    eta_ts = float(writer._eta_ts_by_phase.get("build") or 0.0)
+                    eta_age_ok = eta_ts > 0 and (now - eta_ts) <= 45.0
+                    eta_suffix = f" | ETA: {eta_hint}" if (eta_hint and eta_age_ok) else ""
+                    msg = f"[HB] build active | step={step} | phase_elapsed={phase_elapsed}s | quiet={quiet_s}s{eta_suffix}"
                     try:
                         db.insert_event(
                             writer.jid,
@@ -480,6 +678,8 @@ def _run_job(job_id, workers):
                 writer._phase = phase
                 writer._phase_started_at = time.time()
                 writer._last_heartbeat_ts = 0.0
+                writer._eta_by_phase[phase] = None
+                writer._eta_ts_by_phase[phase] = 0.0
                 try:
                     db.update_job(job_id, phase=phase)
                     db.insert_event(job_id, "system", f"Phase switched to {phase}", phase=phase, kind="phase", step=phase, worker=phase)
@@ -492,6 +692,7 @@ def _run_job(job_id, workers):
                     if align_row and align_row["status"] == "running":
                         db.update_subjob(align_row["id"], status="done", ended_at=time.time())
                     db.update_subjob_by_type(job_id, "build", status="running", started_at=time.time())
+                    _save_build_checkpoint(reason="phase_build", force=True)
 
             try:
                 result = generate_benchmark(
@@ -500,6 +701,7 @@ def _run_job(job_id, workers):
                     should_cancel=should_cancel,
                     set_phase=set_phase,
                     should_skip_build=should_skip_build,
+                    on_checkpoint=_on_pipeline_checkpoint,
                 )
             finally:
                 heartbeat_stop.set()
@@ -511,20 +713,25 @@ def _run_job(job_id, workers):
         if result.get("build_skipped"):
             reason = result.get("build_skip_reason") or "Build skipped."
             db.insert_event(job_id, "system", reason, phase="build", kind="skip", step="build", worker="build")
+            _clear_resume_flags()
             db.update_job(
                 job_id,
-                status="done",
+                status="error",
                 ended_at=time.time(),
                 result_path=None,
                 align_dir=result.get("align_dir"),
                 reused_align=1 if result.get("reused_align") else 0,
                 progress_text=reason,
+                error_message=reason,
                 phase="build",
+                params_json=_safe_json_dumps(parsed_params),
+                checkpoint_json=None,
+                checkpoint_at=None,
             )
             db.update_subjob_by_type(
                 job_id,
                 "build",
-                status="done",
+                status="error",
                 ended_at=time.time(),
                 progress_text=reason,
                 current_step="skipped",
@@ -532,6 +739,7 @@ def _run_job(job_id, workers):
             return
         if result.get("build_cancelled"):
             _cancel_if_active(job_id, "build")
+            _clear_resume_flags()
             db.update_job(
                 job_id,
                 status="cancelled",
@@ -540,8 +748,12 @@ def _run_job(job_id, workers):
                 align_dir=result.get("align_dir"),
                 reused_align=1 if result.get("reused_align") else 0,
                 error_message="Build cancelled by user",
+                params_json=_safe_json_dumps(parsed_params),
+                checkpoint_json=None,
+                checkpoint_at=None,
             )
             return
+        _clear_resume_flags()
         db.update_job(
             job_id,
             status="done",
@@ -549,17 +761,24 @@ def _run_job(job_id, workers):
             result_path=result.get("out_dir"),
             align_dir=result.get("align_dir"),
             reused_align=1 if result.get("reused_align") else 0,
+            params_json=_safe_json_dumps(parsed_params),
+            checkpoint_json=None,
+            checkpoint_at=None,
         )
         db.update_subjob_by_type(job_id, "build", status="done", ended_at=time.time())
     except PipelineError as e:
         if "Cancelled" in str(e):
             align_cancel = db.get_cancel_requested_subjob(job_id, "align")
             build_cancel = db.get_cancel_requested_subjob(job_id, "build")
+            _clear_resume_flags()
             db.update_job(
                 job_id,
                 status="cancelled",
                 ended_at=time.time(),
                 error_message=str(e),
+                params_json=_safe_json_dumps(parsed_params),
+                checkpoint_json=None,
+                checkpoint_at=None,
             )
             if align_cancel:
                 _cancel_if_active(job_id, "align")
@@ -570,20 +789,28 @@ def _run_job(job_id, workers):
                 _cancel_if_active(job_id, "align")
                 _cancel_if_active(job_id, "build")
             return
+        _clear_resume_flags()
         db.update_job(
             job_id,
             status="error",
             ended_at=time.time(),
             error_message=str(e),
+            params_json=_safe_json_dumps(parsed_params),
+            checkpoint_json=None,
+            checkpoint_at=None,
         )
         db.update_subjob_by_type(job_id, "align", status="error", ended_at=time.time())
         db.update_subjob_by_type(job_id, "build", status="error", ended_at=time.time())
     except Exception as e:
+        _clear_resume_flags()
         db.update_job(
             job_id,
             status="error",
             ended_at=time.time(),
             error_message=f"Unexpected error: {e}",
+            params_json=_safe_json_dumps(parsed_params),
+            checkpoint_json=None,
+            checkpoint_at=None,
         )
         db.update_subjob_by_type(job_id, "align", status="error", ended_at=time.time())
         db.update_subjob_by_type(job_id, "build", status="error", ended_at=time.time())
@@ -593,6 +820,7 @@ def _run_job(job_id, workers):
 def main():
     db.init_db()
     _reconcile_terminal_subjobs()
+    _reconcile_legacy_skipped_build_jobs()
     _recover_stale_running_jobs()
     running = {}
 
@@ -619,6 +847,8 @@ def main():
                         status="cancelled",
                         ended_at=time.time(),
                         error_message="Cancelled by user",
+                        checkpoint_json=None,
+                        checkpoint_at=None,
                     )
                     finished.append(job_id)
                 else:
@@ -637,6 +867,8 @@ def main():
                     ended_at=time.time(),
                     error_message="Job interrupted (process stopped)",
                     interrupted=1,
+                    checkpoint_json=None,
+                    checkpoint_at=None,
                 )
 
         # Launch new jobs if capacity

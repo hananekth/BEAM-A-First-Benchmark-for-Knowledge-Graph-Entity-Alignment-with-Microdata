@@ -13,6 +13,7 @@ import os
 import re
 import gzip
 import shutil
+import json
 import requests
 import unicodedata
 import random
@@ -22,7 +23,6 @@ import time
 import fcntl
 from pathlib import Path
 from collections import defaultdict
-from SPARQLWrapper import SPARQLWrapper, JSON
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
@@ -1003,7 +1003,7 @@ def _extract_batch(lines):
     return value_map, all_raw_values, all_iris, country_code_changes, line_count
 
 def _extract_batch_with_pattern(args):
-    lines, pattern_normalized, pattern_raw, collect_top_props = args
+    lines, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri = args
     value_map = defaultdict(list)
     all_raw_values = set()
     all_iris = set()
@@ -1013,33 +1013,47 @@ def _extract_batch_with_pattern(args):
     matched_count = 0
     for line in lines:
         line_count += 1
-        predicates = re.findall(r'<([^>]+)>', line)
-        if len(predicates) >= 1:
-            predicate = predicates[0]
-            if collect_top_props:
-                predicates_found[predicate] += 1
-            predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-            if pattern_normalized not in predicate_normalized:
-                continue
-        else:
+        subject, predicate_tok, obj_tok = _extract_spo_tokens(line)
+        if not (subject and predicate_tok and obj_tok):
+            continue
+        predicate = predicate_tok.strip("<>")
+        if collect_top_props:
+            predicates_found[predicate] += 1
+        predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
+        if pattern_normalized not in predicate_normalized:
             continue
         
         matched_count += 1
-        match = re.match(r'(\S+)\s+<([^>]+)>\s+"([^"]+)"', line)
-        if match:
-            subject = match.group(1)
-            value = match.group(3)
-            all_raw_values.add(value)
-            all_iris.add(subject)
-            value_normalized = normalize_for_matching(value)
-            value_normalized_original = value_normalized
-            value_normalized = normalize_country_code(value_normalized)
-            if value_normalized != value_normalized_original:
-                old_code = value_normalized_original[:2]
-                new_code = value_normalized[:2]
-                country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
-            if value_normalized:
-                value_map[value_normalized].append((value, subject))
+        if obj_tok.startswith('"'):
+            value = _literal_lex(obj_tok)
+            if value is None:
+                continue
+        elif obj_tok.startswith("<") and obj_tok.endswith(">"):
+            value = obj_tok[1:-1]
+        else:
+            continue
+
+        value_for_norm = value
+        if wdc_value_is_wd_iri:
+            wd_iri = extract_wd_entity_iri(value)
+            if not wd_iri:
+                continue
+            value_for_norm = wd_iri
+        elif not obj_tok.startswith('"'):
+            # In non-Wikidata mode, only literal values should be aligned.
+            continue
+
+        all_raw_values.add(value)
+        all_iris.add(subject)
+        value_normalized = normalize_for_matching(value_for_norm)
+        value_normalized_original = value_normalized
+        value_normalized = normalize_country_code(value_normalized)
+        if value_normalized != value_normalized_original:
+            old_code = value_normalized_original[:2]
+            new_code = value_normalized[:2]
+            country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
+        if value_normalized:
+            value_map[value_normalized].append((value, subject))
     return value_map, all_raw_values, all_iris, country_code_changes, line_count, matched_count, (predicates_found or {})
 
 def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=200000):
@@ -1151,8 +1165,14 @@ def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=2
     
     return value_map
 
-def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, executor):
-    futures = [executor.submit(_extract_batch_with_pattern, (b, pattern_normalized, pattern_raw, collect_top_props)) for b in window_batches]
+def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, executor):
+    futures = [
+        executor.submit(
+            _extract_batch_with_pattern,
+            (b, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri),
+        )
+        for b in window_batches
+    ]
     for fut in as_completed(futures):
         vmap, raw_vals, iris, cc_changes, lines, matched, preds = fut.result()
         yield vmap, raw_vals, iris, cc_changes, lines, matched, preds
@@ -1209,7 +1229,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
 
                     if len(window_batches) >= window_size:
                         for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                            window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                            window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
                         ):
                             matched_lines += matched
                             all_raw_values.update(raw_vals)
@@ -1232,7 +1252,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     window_batches.append(buffer)
                 if window_batches:
                     for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                        window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                        window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
                     ):
                         matched_lines += matched
                         all_raw_values.update(raw_vals)
@@ -1254,38 +1274,44 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
             for line in f:
                 bytes_read += len(line)
                 total_lines += 1
-                predicates = re.findall(r'<([^>]+)>', line)
-                if len(predicates) >= 1:
-                    predicate = predicates[0]
-                    if collect_top_props:
-                        predicates_found[predicate] += 1
-                    predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                    if pattern_normalized not in predicate_normalized:
-                        continue
-                else:
+                subject, predicate_tok, obj_tok = _extract_spo_tokens(line)
+                if not (subject and predicate_tok and obj_tok):
+                    continue
+                predicate = predicate_tok.strip("<>")
+                if collect_top_props:
+                    predicates_found[predicate] += 1
+                predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
+                if pattern_normalized not in predicate_normalized:
                     continue
                 
                 matched_lines += 1
-                match = re.match(r'(\S+)\s+<([^>]+)>\s+"([^"]+)"', line)
-                if match:
-                    subject = match.group(1)
-                    value = match.group(3)
-                    value_for_norm = value
-                    if wdc_value_is_wd_iri:
-                        wd_iri = extract_wd_entity_iri(value)
-                        if wd_iri:
-                            value_for_norm = wd_iri
-                    all_raw_values.add(value)
-                    all_iris.add(subject)
-                    value_normalized = normalize_for_matching(value_for_norm)
-                    value_normalized_original = value_normalized
-                    value_normalized = normalize_country_code(value_normalized)
-                    if value_normalized != value_normalized_original:
-                        old_code = value_normalized_original[:2]
-                        new_code = value_normalized[:2]
-                        country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
-                    if value_normalized:
-                        value_map[value_normalized].append((value, subject))
+                if obj_tok.startswith('"'):
+                    value = _literal_lex(obj_tok)
+                    if value is None:
+                        continue
+                elif obj_tok.startswith("<") and obj_tok.endswith(">"):
+                    value = obj_tok[1:-1]
+                else:
+                    continue
+                value_for_norm = value
+                if wdc_value_is_wd_iri:
+                    wd_iri = extract_wd_entity_iri(value)
+                    if not wd_iri:
+                        continue
+                    value_for_norm = wd_iri
+                elif not obj_tok.startswith('"'):
+                    continue
+                all_raw_values.add(value)
+                all_iris.add(subject)
+                value_normalized = normalize_for_matching(value_for_norm)
+                value_normalized_original = value_normalized
+                value_normalized = normalize_country_code(value_normalized)
+                if value_normalized != value_normalized_original:
+                    old_code = value_normalized_original[:2]
+                    new_code = value_normalized[:2]
+                    country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
+                if value_normalized:
+                    value_map[value_normalized].append((value, subject))
                 if progress_every and total_lines % progress_every == 0:
                     done_bytes = bytes_read
                     prog = _progress_line(start_ts, done_bytes, total_bytes)
@@ -1402,7 +1428,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
 
                         if len(window_batches) >= window_size:
                             for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                                window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                                window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
                             ):
                                 matched_lines += matched
                                 all_raw_values.update(raw_vals)
@@ -1431,7 +1457,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                 window_batches.append(buffer)
             if window_batches:
                 for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                    window_batches, pattern_normalized, pattern_raw, collect_top_props, ex
+                    window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
                 ):
                     matched_lines += matched
                     all_raw_values.update(raw_vals)
@@ -1457,38 +1483,44 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                 for line in f:
                     bytes_read += len(line)
                     total_lines += 1
-                    predicates = re.findall(r'<([^>]+)>', line)
-                    if len(predicates) >= 1:
-                        predicate = predicates[0]
-                        if collect_top_props:
-                            predicates_found[predicate] += 1
-                        predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                        if pattern_normalized not in predicate_normalized:
-                            continue
-                    else:
+                    subject, predicate_tok, obj_tok = _extract_spo_tokens(line)
+                    if not (subject and predicate_tok and obj_tok):
+                        continue
+                    predicate = predicate_tok.strip("<>")
+                    if collect_top_props:
+                        predicates_found[predicate] += 1
+                    predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
+                    if pattern_normalized not in predicate_normalized:
                         continue
                     
                     matched_lines += 1
-                    match = re.match(r'(\S+)\s+<([^>]+)>\s+"([^"]+)"', line)
-                    if match:
-                        subject = match.group(1)
-                        value = match.group(3)
-                        value_for_norm = value
-                        if wdc_value_is_wd_iri:
-                            wd_iri = extract_wd_entity_iri(value)
-                            if wd_iri:
-                                value_for_norm = wd_iri
-                        all_raw_values.add(value)
-                        all_iris.add(subject)
-                        value_normalized = normalize_for_matching(value_for_norm)
-                        value_normalized_original = value_normalized
-                        value_normalized = normalize_country_code(value_normalized)
-                        if value_normalized != value_normalized_original:
-                            old_code = value_normalized_original[:2]
-                            new_code = value_normalized[:2]
-                            country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
-                        if value_normalized:
-                            value_map[value_normalized].append((value, subject))
+                    if obj_tok.startswith('"'):
+                        value = _literal_lex(obj_tok)
+                        if value is None:
+                            continue
+                    elif obj_tok.startswith("<") and obj_tok.endswith(">"):
+                        value = obj_tok[1:-1]
+                    else:
+                        continue
+                    value_for_norm = value
+                    if wdc_value_is_wd_iri:
+                        wd_iri = extract_wd_entity_iri(value)
+                        if not wd_iri:
+                            continue
+                        value_for_norm = wd_iri
+                    elif not obj_tok.startswith('"'):
+                        continue
+                    all_raw_values.add(value)
+                    all_iris.add(subject)
+                    value_normalized = normalize_for_matching(value_for_norm)
+                    value_normalized_original = value_normalized
+                    value_normalized = normalize_country_code(value_normalized)
+                    if value_normalized != value_normalized_original:
+                        old_code = value_normalized_original[:2]
+                        new_code = value_normalized[:2]
+                        country_code_changes[f"{old_code.upper()}→{new_code.upper()}"] += 1
+                    if value_normalized:
+                        value_map[value_normalized].append((value, subject))
                 if progress_every and total_lines % progress_every == 0:
                     done_bytes = file_base + bytes_read
                     prog = _progress_line(start_ts, done_bytes, total_bytes)
@@ -1560,8 +1592,29 @@ def _is_retryable_query_error(exc: Exception) -> bool:
         "bad gateway",
         "service unavailable",
         "gateway timeout",
+        "invalid control character",
+        "unterminated string",
+        "jsondecodeerror",
+        "expecting value",
+        "extra data",
     )
     return any(tok in msg for tok in retry_tokens)
+
+
+def _load_sparql_json_payload(payload_text: str):
+    try:
+        return json.loads(payload_text)
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        return json.loads(payload_text, strict=False)
+    except json.JSONDecodeError:
+        pass
+
+    # Some endpoint responses may contain raw control chars in string values.
+    cleaned = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F]", "", payload_text)
+    return json.loads(cleaned, strict=False)
 
 
 def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None, entity_iris=None):
@@ -1569,10 +1622,6 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     print_color(f"\n🌐 Récupération des valeurs Wikidata ({wikidata_property})...", Colors.BLUE)
     
     prop = normalize_wikidata_property(wikidata_property)
-    
-    sparql = SPARQLWrapper(WIKIDATA_ENDPOINT)
-    sparql.setReturnFormat(JSON)
-    sparql.setTimeout(300)
     
     class_filter = ""
     wkd_class_norm = normalize_wkd_class(wkd_class)
@@ -1622,16 +1671,26 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     """
     
     print(f"   Requête SPARQL pour {prop or '?prop'}...")
-    
-    sparql.setQuery(query)
-    
+
     try:
         max_attempts = max(1, int(os.environ.get("WIKIDATA_QUERY_MAX_RETRIES", "4")))
         base_delay = max(0.1, float(os.environ.get("WIKIDATA_QUERY_RETRY_DELAY", "2.0")))
+        timeout_s = max(1, int(os.environ.get("WIKIDATA_QUERY_TIMEOUT", "300")))
+        headers = {
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "beam-align/1.0",
+        }
         results = None
         for attempt in range(1, max_attempts + 1):
             try:
-                results = sparql.query().convert()
+                response = requests.post(
+                    WIKIDATA_ENDPOINT,
+                    data={"query": query, "format": "json"},
+                    headers=headers,
+                    timeout=timeout_s,
+                )
+                response.raise_for_status()
+                results = _load_sparql_json_payload(response.text)
                 break
             except Exception as e:
                 if (_is_rate_limited_error(e) or _is_retryable_query_error(e)) and attempt < max_attempts:

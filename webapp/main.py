@@ -5,9 +5,14 @@ import tempfile
 import time
 import zipfile
 import asyncio
+import re
 from pathlib import Path
+from functools import lru_cache
 from typing import Optional
+from urllib.parse import urljoin
 
+import requests
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Form
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -15,11 +20,14 @@ from starlette.background import BackgroundTask
 
 from beam import db
 from beam.wdc_classes import fetch_wdc_classes
-from beam.pipeline import _count_local_parts
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+WDC_PARTS_BASE_URL = "https://data.dws.informatik.uni-mannheim.de/structureddata/2024-12/quads/classspecific/"
+_PART_HREF_RE = re.compile(r"^part_(\d+)\.gz$", re.IGNORECASE)
+_PART_NAME_RE = re.compile(r"^part_(\d+)(?:\.[A-Za-z0-9]+)?$", re.IGNORECASE)
 
 
 PRESETS = {
@@ -33,8 +41,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": 0,
-        "force_align": True,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "testclass_quick": {
         "label": "Quick local test (TestClass / language label)",
@@ -46,7 +54,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": 0,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "testclass_label": {
         "label": "TestClass label matching (name -> rdfs:label)",
@@ -58,7 +67,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": 0,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "testclass_identifier": {
         "label": "TestClass identifier matching (eidr -> P2704)",
@@ -70,7 +80,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
         "max_depth": 0,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "testclass_wikidata_url": {
         "label": "TestClass Wikidata links (url -> P31 city)",
@@ -82,7 +93,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
         "max_depth": 0,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "testclass_wikidata_sameas": {
         "label": "TestClass Wikidata links (sameAs -> P31 country)",
@@ -94,7 +106,8 @@ PRESETS = {
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
         "max_depth": 0,
-        "use_local_only": True,
+        "force_align": False,
+        "use_local_only": False,
     },
     "property_movie": {
         "label": "Match with property (Movie / EIDR)",
@@ -105,7 +118,9 @@ PRESETS = {
         "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": -1,
+        "max_depth": 0,
+        "force_align": False,
+        "use_local_only": False,
     },
     "label_language": {
         "label": "Match with label (Language / rdfs:label)",
@@ -113,32 +128,38 @@ PRESETS = {
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
-        "wkd_class": "Q34770",
+        "wkd_class": "Q34772",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": -1,
+        "max_depth": 0,
+        "force_align": False,
+        "use_local_only": False,
     },
-    "property_country_iso2": {
-        "label": "Match with property (Country / ISO 3166-1 alpha-2)",
-        "class_name": "Country",
+    "property_college_or_university_telephone": {
+        "label": "Match with property (CollegeOrUniversity / telephone)",
+        "class_name": "CollegeOrUniversity",
         "parts_spec": "all",
-        "wdc_predicate_pattern": "iso",
-        "wikidata_property": "wdt:P297",
-        "wkd_class": "Q6256",
+        "wdc_predicate_pattern": "telephone",
+        "wikidata_property": "P1329",
+        "wkd_class": "Q38723",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": -1,
+        "max_depth": 0,
+        "force_align": False,
+        "use_local_only": False,
     },
     "wikidata_link_city": {
-        "label": "Match with existing Wikidata link (City / url)",
+        "label": "Match with existing Wikidata link (City / sameAs)",
         "class_name": "City",
         "parts_spec": "all",
-        "wdc_predicate_pattern": "url",
-        "wikidata_property": "wdt:P31",
-        "wkd_class": "Q515",
+        "wdc_predicate_pattern": "sameAs",
+        "wikidata_property": "",
+        "wkd_class": "Q486972",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
-        "max_depth": -1,
+        "max_depth": 0,
+        "force_align": False,
+        "use_local_only": False,
     },
 }
 
@@ -152,7 +173,7 @@ def _default_form():
         "wkd_class": "",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": -1,
+        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     }
@@ -266,6 +287,165 @@ def _discover_local_class_rows(download_root: str = "Download"):
             }
         )
     return rows
+
+
+def _part_number_from_name(name: str):
+    if not name:
+        return None
+    m = _PART_HREF_RE.match(name) or _PART_NAME_RE.match(name)
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except Exception:
+        return None
+
+
+def _discover_local_part_numbers(class_name: str):
+    class_dir = Path("Download") / (class_name or "")
+    if not class_dir.exists() or not class_dir.is_dir():
+        return []
+
+    numbers = set()
+    for fp in class_dir.iterdir():
+        if not fp.is_file():
+            continue
+        name = fp.name
+        if not name.startswith("part_"):
+            continue
+        if not (name.endswith(".nq") or name.endswith(".nt") or "." not in name):
+            continue
+        num = _part_number_from_name(name)
+        if num is not None:
+            numbers.add(num)
+    return sorted(numbers)
+
+
+@lru_cache(maxsize=256)
+def _discover_online_part_numbers(class_name: str):
+    if not class_name:
+        return [], "class_name is empty"
+    url = urljoin(WDC_PARTS_BASE_URL, f"{class_name}/")
+    try:
+        resp = requests.get(url, timeout=20)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        numbers = set()
+        for link in soup.find_all("a"):
+            href = (link.get("href") or "").strip()
+            num = _part_number_from_name(href)
+            if num is not None:
+                numbers.add(num)
+        return sorted(numbers), None
+    except Exception as exc:
+        return [], str(exc)
+
+
+def _format_part_ranges(values):
+    if not values:
+        return "—"
+    nums = sorted(set(int(v) for v in values))
+    chunks = []
+    start = nums[0]
+    prev = nums[0]
+    for n in nums[1:]:
+        if n == prev + 1:
+            prev = n
+            continue
+        chunks.append(f"{start}-{prev}" if start != prev else str(start))
+        start = prev = n
+    chunks.append(f"{start}-{prev}" if start != prev else str(start))
+    if len(chunks) > 28:
+        return ", ".join(chunks[:28]) + f", ... (+{len(chunks)-28} ranges)"
+    return ", ".join(chunks)
+
+
+def _format_part_list(values, limit=60):
+    if not values:
+        return "—"
+    nums = [int(v) for v in sorted(set(values))]
+    if len(nums) <= limit:
+        return ", ".join(str(v) for v in nums)
+    return ", ".join(str(v) for v in nums[:limit]) + f", ... (+{len(nums)-limit})"
+
+
+def _class_meta_by_name(class_name: str):
+    for row in db.list_wdc_classes():
+        if row["class_name"] == class_name:
+            return dict(row)
+    return None
+
+
+def _build_class_parts_info(class_name: str):
+    class_name = _clean_text(class_name)
+    local_numbers = _discover_local_part_numbers(class_name)
+    online_numbers, online_error = _discover_online_part_numbers(class_name)
+    local_set = set(local_numbers)
+    meta = _class_meta_by_name(class_name) or {}
+    class_num_parts = meta.get("num_parts")
+    try:
+        class_num_parts = int(class_num_parts) if class_num_parts is not None else None
+    except Exception:
+        class_num_parts = None
+
+    online_set = set(online_numbers)
+    inferred_online_set = set(online_set)
+    inferred_from_catalog = False
+
+    if online_numbers:
+        start_num = min(online_numbers)
+    elif local_numbers:
+        start_num = min(local_numbers)
+    else:
+        start_num = 0
+
+    catalog_expected_numbers = []
+    if class_num_parts and class_num_parts > 0:
+        catalog_expected_numbers = list(range(start_num, start_num + class_num_parts))
+        catalog_set = set(catalog_expected_numbers)
+        if not inferred_online_set:
+            inferred_online_set = set(catalog_set)
+            inferred_from_catalog = True
+        elif len(inferred_online_set) < class_num_parts:
+            # Online listing can be incomplete; complete the expected contiguous range using catalog count.
+            inferred_online_set |= catalog_set
+            inferred_from_catalog = True
+
+    if inferred_online_set:
+        downloaded_numbers = sorted(local_set & inferred_online_set)
+    else:
+        downloaded_numbers = list(local_numbers)
+    not_downloaded_online_numbers = sorted(inferred_online_set - local_set)
+    local_only_numbers = sorted(local_set - inferred_online_set) if inferred_online_set else []
+
+    return {
+        "class_name": class_name,
+        "class_num_parts": class_num_parts,
+        "class_size_human": meta.get("size_human"),
+        "online_error": online_error,
+        "online_available_count": len(inferred_online_set),
+        "online_available_numbers": sorted(inferred_online_set),
+        "online_available_numbers_text": _format_part_list(sorted(inferred_online_set)),
+        "online_available_ranges": _format_part_ranges(sorted(inferred_online_set)),
+        "online_discovered_count": len(online_numbers),
+        "online_discovered_numbers": online_numbers,
+        "online_discovered_numbers_text": _format_part_list(online_numbers),
+        "online_discovered_ranges": _format_part_ranges(online_numbers),
+        "online_inferred_from_catalog": inferred_from_catalog,
+        "catalog_expected_numbers": catalog_expected_numbers,
+        "catalog_expected_ranges": _format_part_ranges(catalog_expected_numbers),
+        "downloaded_parts_count": len(downloaded_numbers),
+        "downloaded_part_numbers": downloaded_numbers,
+        "downloaded_part_numbers_text": _format_part_list(downloaded_numbers),
+        "downloaded_part_ranges": _format_part_ranges(downloaded_numbers),
+        "not_downloaded_online_parts_count": len(not_downloaded_online_numbers),
+        "not_downloaded_online_part_numbers": not_downloaded_online_numbers,
+        "not_downloaded_online_part_numbers_text": _format_part_list(not_downloaded_online_numbers),
+        "not_downloaded_online_part_ranges": _format_part_ranges(not_downloaded_online_numbers),
+        "local_only_parts_count": len(local_only_numbers),
+        "local_only_part_numbers": local_only_numbers,
+        "local_only_part_numbers_text": _format_part_list(local_only_numbers),
+    }
 
 
 def _variant_stats(base: Path, variant: str):
@@ -422,7 +602,15 @@ def _safe_json_loads(raw: Optional[str]):
 
 def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
     all_jobs = [dict(j) for j in db.list_jobs(limit=job_limit)]
-    active_jobs = [j for j in all_jobs if j["status"] != "done"]
+    jobs_by_id = {j["id"]: j for j in all_jobs}
+    # Always include truly active jobs even if they are outside the recency window.
+    for st in ("running", "queued"):
+        for row in db.list_jobs_by_status(st):
+            jid = row["id"]
+            if jid not in jobs_by_id:
+                jobs_by_id[jid] = dict(row)
+    all_jobs = sorted(jobs_by_id.values(), key=lambda r: int(r.get("id") or 0), reverse=True)
+    active_jobs = [j for j in all_jobs if j["status"] in {"running", "queued"}]
     builds = _scan_builds(limit=build_limit)
 
     build_params = {}
@@ -468,9 +656,16 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
         jobs_params[jid] = _safe_json_loads(j.get("params_json"))
         jobs_subjobs[jid] = [dict(s) for s in db.list_subjobs(jid)]
 
+    # Keep done jobs visible when there is no downloadable build output.
+    jobs_for_panel = [
+        j for j in all_jobs
+        if j["status"] != "done" or not jobs_outputs.get(j["id"], {}).get("build_done")
+    ]
+
     return {
         "all_jobs": all_jobs,
         "active_jobs": active_jobs,
+        "jobs_for_panel": jobs_for_panel,
         "builds": builds,
         "jobs_outputs": jobs_outputs,
         "jobs_times": jobs_times,
@@ -502,8 +697,10 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
             pass
 
     form = _default_form()
+    selected_preset = ""
     if preset and preset in PRESETS:
         form.update(PRESETS[preset])
+        selected_preset = preset
 
     if recent:
         job = db.get_job(recent)
@@ -517,13 +714,13 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
     wdc_classes = [dict(r) for r in db.list_wdc_classes()]
     class_meta = {r["class_name"]: r for r in wdc_classes}
 
-    local_parts = 0
+    class_parts_info = None
     if form.get("class_name"):
-        local_parts = _count_local_parts(str(Path("Download") / form["class_name"]))
+        class_parts_info = _build_class_parts_info(form["class_name"])
 
     recent_presets = _get_recent_presets()
     dashboard = _build_dashboard_state(job_limit=50, build_limit=40)
-    jobs = dashboard["active_jobs"]
+    jobs = dashboard["jobs_for_panel"]
     builds = dashboard["builds"]
     jobs_outputs = {j["id"]: dashboard["jobs_outputs"][j["id"]] for j in jobs}
     jobs_times = {j["id"]: dashboard["jobs_times"][j["id"]] for j in jobs}
@@ -536,6 +733,7 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
         {
             "form": form,
             "presets": PRESETS,
+            "selected_preset": selected_preset,
             "recent_presets": recent_presets,
             "jobs": jobs,
             "jobs_outputs": jobs_outputs,
@@ -544,7 +742,7 @@ def index(request: Request, preset: Optional[str] = None, recent: Optional[int] 
             "jobs_subjobs": jobs_subjobs,
             "builds": builds,
             "class_meta": class_meta,
-            "local_parts": local_parts,
+            "class_parts_info": class_parts_info,
         },
     )
 
@@ -579,6 +777,7 @@ def dashboard_api(job_limit: int = 80, build_limit: int = 40):
                 "with_link": b.get("with_link"),
                 "without_link": b.get("without_link"),
                 "variants_same": b.get("variants_same"),
+                "config_groups": b.get("config_groups") or [],
             }
         )
 
@@ -586,11 +785,18 @@ def dashboard_api(job_limit: int = 80, build_limit: int = 40):
         "server_ts": time.time(),
         "job_count": len(jobs),
         "active_job_count": len(dashboard["active_jobs"]),
+        "visible_job_count": len(dashboard["jobs_for_panel"]),
         "build_count": len(builds),
         "active_job_ids": [j["id"] for j in dashboard["active_jobs"]],
+        "visible_job_ids": [j["id"] for j in dashboard["jobs_for_panel"]],
         "jobs": jobs,
         "builds": builds,
     }
+
+
+@app.get("/api/class_parts/{class_name}")
+def class_parts_api(class_name: str):
+    return _build_class_parts_info(class_name)
 
 
 @app.post("/jobs/{job_id}/cancel")
@@ -723,7 +929,7 @@ def create_job(
     wkd_class: str = Form(""),
     ignore_chars: str = Form(""),
     wdc_value_is_wikidata: Optional[str] = Form(None),
-    max_depth: int = Form(-1),
+    max_depth: int = Form(0),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
 ):

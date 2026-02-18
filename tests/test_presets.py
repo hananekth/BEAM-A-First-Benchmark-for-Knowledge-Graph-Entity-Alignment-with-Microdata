@@ -20,11 +20,15 @@ def test_webapp_presets_use_valid_wikidata_ids():
     assert "testclass_wikidata_sameas" in presets
     assert "property_movie" in presets
     assert "label_language" in presets
-    assert "property_country_iso2" in presets
+    assert "property_college_or_university_telephone" in presets
     assert "wikidata_link_city" in presets
 
     for key, preset in presets.items():
         assert preset["class_name"], f"{key} class_name should not be empty"
+        assert preset.get("parts_spec") == "all", f"{key} should default to parts_spec=all"
+        assert preset.get("max_depth") == 0, f"{key} should default to max_depth=0"
+        assert bool(preset.get("force_align", False)) is False, f"{key} should not force align cache bypass"
+        assert bool(preset.get("use_local_only", False)) is False, f"{key} should not force local-only mode"
         if preset["wkd_class"]:
             assert QID_RE.match(preset["wkd_class"]), f"{key} has invalid wkd_class"
         prop = preset["wikidata_property"]
@@ -40,7 +44,7 @@ def test_webapp_presets_use_valid_wikidata_ids():
     assert testclass_large["wikidata_property"] == "rdfs:label"
     assert testclass_large["wkd_class"] == "Q34770"
     assert testclass_large["wdc_value_is_wikidata"] is False
-    assert testclass_large["force_align"] is True
+    assert testclass_large["force_align"] is False
 
     testclass_label = presets["testclass_label"]
     assert testclass_label["wikidata_property"] == "rdfs:label"
@@ -61,3 +65,26 @@ def test_webapp_presets_use_valid_wikidata_ids():
     assert testclass_wikidata_sameas["wikidata_property"] == "wdt:P31"
     assert testclass_wikidata_sameas["wkd_class"] == "Q6256"
     assert testclass_wikidata_sameas["wdc_value_is_wikidata"] is True
+
+    label_language = presets["label_language"]
+    assert label_language["wikidata_property"] == "rdfs:label"
+    assert label_language["wkd_class"] == "Q34772"
+
+    college_phone = presets["property_college_or_university_telephone"]
+    assert college_phone["class_name"] == "CollegeOrUniversity"
+    assert college_phone["parts_spec"] == "all"
+    assert college_phone["wdc_predicate_pattern"] == "telephone"
+    assert college_phone["wikidata_property"] == "P1329"
+    assert college_phone["wkd_class"] == "Q38723"
+    assert college_phone["wdc_value_is_wikidata"] is False
+
+    city_link = presets["wikidata_link_city"]
+    assert city_link["class_name"] == "City"
+    assert city_link["parts_spec"] == "all"
+    assert city_link["wdc_predicate_pattern"] == "sameAs"
+    assert city_link["wikidata_property"] == ""
+    assert city_link["wkd_class"] == "Q486972"
+    assert city_link["wdc_value_is_wikidata"] is True
+    assert city_link["max_depth"] == 0
+    assert city_link["force_align"] is False
+    assert city_link["use_local_only"] is False

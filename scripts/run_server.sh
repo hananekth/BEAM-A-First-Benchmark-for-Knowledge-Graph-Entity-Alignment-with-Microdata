@@ -16,7 +16,7 @@ PORT=8501
 if pgrep -f "python -m worker.run" >/dev/null 2>&1; then
   echo "[OK] worker already running"
 else
-  nohup python -m worker.run > logs/worker.log 2>&1 &
+  nohup env MAX_CONCURRENT_JOBS="${MAX_CONCURRENT_JOBS:-8}" JOB_POLL_INTERVAL="${JOB_POLL_INTERVAL:-1}" python -m worker.run > logs/worker.log 2>&1 &
   echo "[OK] worker started"
 fi
 

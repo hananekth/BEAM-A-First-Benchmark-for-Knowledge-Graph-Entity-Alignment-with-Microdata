@@ -1,7 +1,35 @@
-venv
-sync.sh
-Download
-beam
-data
-scripts/__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Runtime logs/state
+logs/
+worker.log
+jobs.db
+jobs.db-shm
+jobs.db-wal
+
+# Generated data/artifacts
+Download/
+data/
+reports/
+test-results/
+jobs/
+
+# Local helper files
+sync.sh
+
+# OS/Editor
+.DS_Store
+.idea/
+.vscode/

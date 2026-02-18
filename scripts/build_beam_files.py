@@ -324,6 +324,8 @@ def write_links(path, wdc_entities, wd_entities, dedupe):
     seen = set()
     with open(path, "w", encoding="utf-8") as out:
         for wdc, wd in zip(wdc_entities, wd_entities):
+            wdc = wdc.strip().strip("<>")
+            wd = canonical_wd_link_entity_uri(wd)
             if not wdc or not wd:
                 continue
             if dedupe:
@@ -506,6 +508,26 @@ def batch_iter(items: List[str], size: int) -> Iterable[List[str]]:
         yield items[i:i + size]
 
 
+def dedupe_preserve_order(items):
+    seen = set()
+    out = []
+    for item in items:
+        if item in seen:
+            continue
+        seen.add(item)
+        out.append(item)
+    return out
+
+
+def _read_raw_wd_triples(path):
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            parts = line.rstrip("\n").split("\t", 2)
+            if len(parts) != 3:
+                continue
+            yield parts[0], parts[1], parts[2]
+
+
 def count_wdc_triples(input_path, subjects, exclude_props=None, exclude_prop_patterns=None, mask_values=None):
     counts = {s: 0 for s in subjects}
     input_paths = _iter_input_paths(input_path)
@@ -649,7 +671,19 @@ def prop_uri_to_entity(uri):
 
 
 def canonical_wd_entity_uri(uri):
-    match = re.match(r"^http://www\.wikidata\.org/entity/([pqPQ]\d+)$", uri)
+    uri = uri.strip("<>")
+    match = re.match(r"^https?://www\.wikidata\.org/entity/([pqPQ]\d+)$", uri)
+    if not match:
+        return uri
+    return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
+
+
+def canonical_wd_link_entity_uri(uri):
+    uri = uri.strip()
+    if not uri:
+        return uri
+    uri = uri.strip("<>")
+    match = re.match(r"^https?://www\.wikidata\.org/(?:entity|wiki)/([pqPQ]\d+)$", uri)
     if not match:
         return uri
     return f"http://www.wikidata.org/entity/{match.group(1).upper()}"
@@ -723,62 +757,90 @@ def fetch_wd_labels_descriptions(uris, endpoint, language, batch_size, sleep_s, 
         "User-Agent": "beam-builder/1.0",
     }
     results = []
-    uris = list(uris)
-    for batch_idx, batch in enumerate(batch_iter(uris, batch_size), start=1):
-        values = " ".join(f"<{uri}>" for uri in batch)
-        query = (
-            "SELECT ?s "
-            "(SAMPLE(?labelPref) AS ?label_pref) "
-            "(SAMPLE(?labelAny) AS ?label_any) "
-            "(SAMPLE(?descPref) AS ?desc_pref) "
-            "(SAMPLE(?descAny) AS ?desc_any) "
-            "WHERE { "
-            f"VALUES ?s {{ {values} }} "
-            "OPTIONAL { ?s rdfs:label ?labelPref FILTER(LANG(?labelPref) = \"" + language + "\" || LANG(?labelPref) = \"\") } "
-            "OPTIONAL { ?s rdfs:label ?labelAny } "
-            "OPTIONAL { ?s schema:description ?descPref FILTER(LANG(?descPref) = \"" + language + "\" || LANG(?descPref) = \"\") } "
-            "OPTIONAL { ?s schema:description ?descAny } "
-            "} GROUP BY ?s"
+    uris = dedupe_preserve_order(list(uris))
+    if not uris:
+        return results
+
+    batch_size_eff = max(1, int(batch_size or 1))
+    total_batches = max(1, (len(uris) + batch_size_eff - 1) // batch_size_eff)
+    progress_started_at = time.time()
+
+    def _emit_labels_progress(done_batches):
+        done_i = max(0, min(int(done_batches), total_batches))
+        pct = (done_i / total_batches) * 100.0 if total_batches > 0 else 100.0
+        if done_i <= 0:
+            eta_txt = "ETA: N/A"
+        else:
+            elapsed = max(0.001, time.time() - progress_started_at)
+            remaining = max(0, total_batches - done_i)
+            eta_txt = _format_eta((elapsed / done_i) * remaining)
+        print(
+            f"[WD] labels progress: batches {done_i}/{total_batches} | {pct:5.1f}% | {eta_txt}",
+            file=sys.stderr,
         )
-        attempt = 0
-        while True:
-            try:
-                resp = requests.post(
-                    endpoint,
-                    data={"query": query},
-                    headers=headers,
-                    timeout=timeout,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                for row in data.get("results", {}).get("bindings", []):
-                    s = row["s"]["value"]
-                    label_val = (
-                        row.get("label_pref", {}).get("value")
-                        or row.get("label_any", {}).get("value")
+
+    _emit_labels_progress(0)
+    session = requests.Session()
+    try:
+        for batch_idx, batch in enumerate(batch_iter(uris, batch_size_eff), start=1):
+            values = " ".join(f"<{uri}>" for uri in batch)
+            query = (
+                "SELECT ?s "
+                "(SAMPLE(?labelPref) AS ?label_pref) "
+                "(SAMPLE(?labelAny) AS ?label_any) "
+                "(SAMPLE(?descPref) AS ?desc_pref) "
+                "(SAMPLE(?descAny) AS ?desc_any) "
+                "WHERE { "
+                f"VALUES ?s {{ {values} }} "
+                "OPTIONAL { ?s rdfs:label ?labelPref FILTER(LANG(?labelPref) = \"" + language + "\" || LANG(?labelPref) = \"\") } "
+                "OPTIONAL { ?s rdfs:label ?labelAny } "
+                "OPTIONAL { ?s schema:description ?descPref FILTER(LANG(?descPref) = \"" + language + "\" || LANG(?descPref) = \"\") } "
+                "OPTIONAL { ?s schema:description ?descAny } "
+                "} GROUP BY ?s"
+            )
+            attempt = 0
+            while True:
+                try:
+                    resp = session.post(
+                        endpoint,
+                        data={"query": query},
+                        headers=headers,
+                        timeout=timeout,
                     )
-                    desc_val = (
-                        row.get("desc_pref", {}).get("value")
-                        or row.get("desc_any", {}).get("value")
-                    )
-                    if label_val and not desc_val:
-                        desc_val = label_val
-                    if desc_val and not label_val:
-                        label_val = desc_val
-                    if label_val:
-                        results.append((s, "http://www.w3.org/2000/01/rdf-schema#label", f"\"{label_val}\""))
-                    if desc_val:
-                        results.append((s, "http://schema.org/description", f"\"{desc_val}\""))
-                break
-            except requests.RequestException as exc:
-                attempt += 1
-                if attempt > retries:
-                    raise
-                wait_s = backoff ** attempt
-                print(f"[WD] label retry {attempt}/{retries} in {wait_s}s: {exc}", file=sys.stderr)
-                time.sleep(wait_s)
-        if sleep_s > 0:
-            time.sleep(sleep_s)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    for row in data.get("results", {}).get("bindings", []):
+                        s = row["s"]["value"]
+                        label_val = (
+                            row.get("label_pref", {}).get("value")
+                            or row.get("label_any", {}).get("value")
+                        )
+                        desc_val = (
+                            row.get("desc_pref", {}).get("value")
+                            or row.get("desc_any", {}).get("value")
+                        )
+                        if label_val and not desc_val:
+                            desc_val = label_val
+                        if desc_val and not label_val:
+                            label_val = desc_val
+                        if label_val:
+                            results.append((s, "http://www.w3.org/2000/01/rdf-schema#label", f"\"{label_val}\""))
+                        if desc_val:
+                            results.append((s, "http://schema.org/description", f"\"{desc_val}\""))
+                    _emit_labels_progress(batch_idx)
+                    break
+                except requests.RequestException as exc:
+                    attempt += 1
+                    if attempt > retries:
+                        raise
+                    wait_s = backoff ** attempt
+                    print(f"[WD] label retry {attempt}/{retries} in {wait_s}s: {exc}", file=sys.stderr)
+                    time.sleep(wait_s)
+            if sleep_s > 0:
+                time.sleep(sleep_s)
+        _emit_labels_progress(total_batches)
+    finally:
+        session.close()
     return results
 
 
@@ -1061,6 +1123,7 @@ def run_pipeline(
     replace_map,
     lowercase_wd,
     add_wd_labels,
+    wd_raw_cache_path=None,
 ):
     out_attr_1 = os.path.join(out_dir, "attr_triples_1")
     out_rel_1 = os.path.join(out_dir, "rel_triples_1")
@@ -1070,7 +1133,12 @@ def run_pipeline(
     out_prop_stats_wdc = os.path.join(out_dir, "prop_stats_wdc.tsv")
     out_prop_stats_wd = os.path.join(out_dir, "prop_stats_wd.tsv")
 
-    wd_entities_out = [normalize_wd_uri(replace_map.get(uri, uri), lowercase_wd) for uri in wd_entities_raw]
+    wd_entities_out = [
+        canonical_wd_link_entity_uri(
+            normalize_wd_uri(replace_map.get(uri, uri), lowercase_wd)
+        )
+        for uri in wd_entities_raw
+    ]
     write_links(out_links, wdc_entities, wd_entities_out, args.dedupe_links)
 
     split_triples(
@@ -1150,6 +1218,7 @@ def run_pipeline(
             replace_map=replace_map,
             state_path=args.state_file or os.path.join(out_dir, ".wd_state.json"),
             resume=args.resume,
+            raw_triples_cache_path=wd_raw_cache_path,
         )
         if args.wd_prop_min_count > 0:
             filter_triples_by_prop_count(
@@ -1196,49 +1265,58 @@ def sparql_construct(
     retries,
     backoff,
     start_batch,
+    session=None,
 ):
     headers = {
         "Accept": "application/n-triples",
         "User-Agent": "beam-builder/1.0",
     }
-    for batch_idx, batch in enumerate(batch_iter(subjects, batch_size), start=1):
-        if batch_idx < start_batch:
-            continue
-        values = " ".join(f"<{uri}>" for uri in batch)
-        query = (
-            "CONSTRUCT { ?s ?p ?o . } WHERE { "
-            f"VALUES ?s {{ {values} }} "
-            "?s ?p ?o . "
-            "FILTER(!isLiteral(?o) || lang(?o) = \"\" "
-            f"|| langMatches(lang(?o), \"{language}\")) "
-            "}"
-        )
-        print(f"[WD] batch {batch_idx} size={len(batch)}", file=sys.stderr)
-        attempt = 0
-        while True:
-            try:
-                resp = requests.post(
-                    endpoint,
-                    data={"query": query},
-                    headers=headers,
-                    timeout=timeout,
-                )
-                resp.raise_for_status()
-                for line in resp.text.splitlines():
-                    parsed = parse_nq_or_nt(line)
-                    if parsed:
-                        yield batch_idx, parsed
-                yield batch_idx, None
-                break
-            except requests.RequestException as exc:
-                attempt += 1
-                if attempt > retries:
-                    raise
-                wait_s = backoff ** attempt
-                print(f"[WD] retry {attempt}/{retries} in {wait_s}s: {exc}", file=sys.stderr)
-                time.sleep(wait_s)
-        if sleep_s > 0:
-            time.sleep(sleep_s)
+    close_session = False
+    if session is None:
+        session = requests.Session()
+        close_session = True
+    try:
+        for batch_idx, batch in enumerate(batch_iter(subjects, batch_size), start=1):
+            if batch_idx < start_batch:
+                continue
+            values = " ".join(f"<{uri}>" for uri in batch)
+            query = (
+                "CONSTRUCT { ?s ?p ?o . } WHERE { "
+                f"VALUES ?s {{ {values} }} "
+                "?s ?p ?o . "
+                "FILTER(!isLiteral(?o) || lang(?o) = \"\" "
+                f"|| langMatches(lang(?o), \"{language}\")) "
+                "}"
+            )
+            print(f"[WD] batch {batch_idx} size={len(batch)}", file=sys.stderr)
+            attempt = 0
+            while True:
+                try:
+                    resp = session.post(
+                        endpoint,
+                        data={"query": query},
+                        headers=headers,
+                        timeout=timeout,
+                    )
+                    resp.raise_for_status()
+                    for line in resp.text.splitlines():
+                        parsed = parse_nq_or_nt(line)
+                        if parsed:
+                            yield batch_idx, parsed
+                    yield batch_idx, None
+                    break
+                except requests.RequestException as exc:
+                    attempt += 1
+                    if attempt > retries:
+                        raise
+                    wait_s = backoff ** attempt
+                    print(f"[WD] retry {attempt}/{retries} in {wait_s}s: {exc}", file=sys.stderr)
+                    time.sleep(wait_s)
+            if sleep_s > 0:
+                time.sleep(sleep_s)
+    finally:
+        if close_session:
+            session.close()
 
 
 def write_wikidata_from_sparql(
@@ -1258,16 +1336,36 @@ def write_wikidata_from_sparql(
     replace_map=None,
     state_path=None,
     resume=False,
+    raw_triples_cache_path=None,
 ):
     os.makedirs(os.path.dirname(out_attr_path), exist_ok=True)
     os.makedirs(os.path.dirname(out_rel_path), exist_ok=True)
+    subjects_in = [s for s in subjects if s]
+    total_subjects_in = len(subjects_in)
+    subjects = dedupe_preserve_order(subjects_in)
+    total_subjects_unique = len(subjects)
+    if not subjects:
+        Path(out_attr_path).write_text("", encoding="utf-8")
+        Path(out_rel_path).write_text("", encoding="utf-8")
+        return
+
+    if total_subjects_unique < total_subjects_in:
+        print(
+            f"[WD] dedup subjects {total_subjects_unique}/{total_subjects_in}",
+            file=sys.stderr,
+        )
+
+    batch_size_eff = max(1, int(batch_size or 1))
+    total_batches = max(1, (total_subjects_unique + batch_size_eff - 1) // batch_size_eff)
+    progress_started_at = time.time()
+
     start_batch = 1
     state = {
         "done_batch": 0,
         "batch_size": batch_size,
         "lang": language,
         "endpoint": endpoint,
-        "total_subjects": len(subjects),
+        "total_subjects": total_subjects_unique,
     }
     if resume and state_path and os.path.exists(state_path):
         with open(state_path, "r", encoding="utf-8") as f:
@@ -1275,54 +1373,121 @@ def write_wikidata_from_sparql(
         start_batch = int(prev.get("done_batch", 0)) + 1
         print(f"[WD] resuming from batch {start_batch}", file=sys.stderr)
 
+    done_batches = max(0, start_batch - 1)
+
+    def _emit_batch_progress(done):
+        done_i = max(0, min(int(done), total_batches))
+        pct = (done_i / total_batches) * 100.0 if total_batches > 0 else 100.0
+        if done_i <= 0:
+            eta_txt = "ETA: N/A"
+        else:
+            elapsed = max(0.001, time.time() - progress_started_at)
+            remaining_batches = max(0, total_batches - done_i)
+            eta_txt = _format_eta((elapsed / done_i) * remaining_batches)
+        print(
+            f"[WD] Progress: batches {done_i}/{total_batches} | {pct:5.1f}% | {eta_txt}",
+            file=sys.stderr,
+        )
+
+    _emit_batch_progress(done_batches)
+
     attr_mode = "a" if resume else "w"
     rel_mode = "a" if resume else "w"
     exclude_props_norm = {_normalize_prop_token(p) for p in exclude_props} if exclude_props else None
+    load_from_cache = bool(raw_triples_cache_path and os.path.exists(raw_triples_cache_path))
+    cache_tmp_path = None
+    cache_writer = None
+    cache_completed = False
+    if raw_triples_cache_path and not load_from_cache:
+        cache_tmp_path = f"{raw_triples_cache_path}.tmp.{os.getpid()}"
+        cache_dir = os.path.dirname(raw_triples_cache_path)
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
+        cache_writer = open(cache_tmp_path, "w", encoding="utf-8")
+
+    def _write_processed_triple(attr_out, rel_out, triple, counters):
+        kept_attr, kept_rel = counters
+        s, p, o = triple
+        p_norm = _normalize_prop_token(p)
+        if exclude_props_norm and p_norm in exclude_props_norm:
+            return kept_attr, kept_rel
+        if replace_map:
+            s_key = s.strip("<>")
+            if s_key in replace_map:
+                s = replace_map[s_key]
+        if replace_map and (not o.startswith('"')):
+            o_key = o.strip("<>")
+            if o_key in replace_map:
+                o = replace_map[o_key]
+        s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
+        if o.startswith('"'):
+            o_out = clean_literal(o_out)
+            if mask_values:
+                lex = literal_lex(o_out)
+                if lex in mask_values:
+                    return kept_attr, kept_rel
+            attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
+            kept_attr += 1
+        else:
+            rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
+            kept_rel += 1
+        return kept_attr, kept_rel
+
+    session = requests.Session()
     with open(out_attr_path, attr_mode, encoding="utf-8") as attr_out, \
          open(out_rel_path, rel_mode, encoding="utf-8") as rel_out:
         kept_attr = 0
         kept_rel = 0
-        for batch_idx, item in sparql_construct(
-            endpoint,
-            subjects,
-            language,
-            batch_size,
-            sleep_s,
-            timeout,
-            retries,
-            backoff,
-            start_batch,
-        ):
-            if item is None:
-                if state_path:
-                    state["done_batch"] = batch_idx
-                    with open(state_path, "w", encoding="utf-8") as f:
-                        json.dump(state, f, indent=2)
-                continue
-            s, p, o = item
-            p_norm = _normalize_prop_token(p)
-            if exclude_props_norm and p_norm in exclude_props_norm:
-                continue
-            if replace_map:
-                s_key = s.strip("<>")
-                if s_key in replace_map:
-                    s = replace_map[s_key]
-            if replace_map and (not o.startswith('"')):
-                o_key = o.strip("<>")
-                if o_key in replace_map:
-                    o = replace_map[o_key]
-            s_out, p_out, o_out = transform_triple(s, p, o, lowercase_wd)
-            if o.startswith('"'):
-                o_out = clean_literal(o_out)
-                if mask_values:
-                    lex = literal_lex(o_out)
-                    if lex in mask_values:
-                        continue
-                attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
-                kept_attr += 1
+        try:
+            if load_from_cache:
+                print(f"[WD] using cached triples: {raw_triples_cache_path}", file=sys.stderr)
+                for triple in _read_raw_wd_triples(raw_triples_cache_path):
+                    kept_attr, kept_rel = _write_processed_triple(
+                        attr_out, rel_out, triple, (kept_attr, kept_rel)
+                    )
+                done_batches = total_batches
+                _emit_batch_progress(done_batches)
+                cache_completed = True
             else:
-                rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
-                kept_rel += 1
+                for batch_idx, item in sparql_construct(
+                    endpoint,
+                    subjects,
+                    language,
+                    batch_size,
+                    sleep_s,
+                    timeout,
+                    retries,
+                    backoff,
+                    start_batch,
+                    session=session,
+                ):
+                    if item is None:
+                        done_batches = max(done_batches, batch_idx)
+                        _emit_batch_progress(done_batches)
+                        if state_path:
+                            state["done_batch"] = batch_idx
+                            with open(state_path, "w", encoding="utf-8") as f:
+                                json.dump(state, f, indent=2)
+                        continue
+                    if cache_writer:
+                        cache_writer.write(f"{item[0]}\t{item[1]}\t{item[2]}\n")
+                    kept_attr, kept_rel = _write_processed_triple(
+                        attr_out, rel_out, item, (kept_attr, kept_rel)
+                    )
+                done_batches = total_batches
+                _emit_batch_progress(done_batches)
+                cache_completed = True
+        finally:
+            session.close()
+            if cache_writer:
+                cache_writer.close()
+                try:
+                    if cache_completed:
+                        os.replace(cache_tmp_path, raw_triples_cache_path)
+                    elif cache_tmp_path and os.path.exists(cache_tmp_path):
+                        os.remove(cache_tmp_path)
+                except Exception:
+                    pass
         print(f"[WD] done attr={kept_attr} rel={kept_rel}", file=sys.stderr)
 
 
