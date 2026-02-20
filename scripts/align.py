@@ -67,16 +67,32 @@ def parse_strip_list(spec):
         return []
     parts = [p for p in spec.split(";") if p != ""]
     chars = []
+    named_chars = {
+        "dot": ".",
+        "period": ".",
+        "hyphen": "-",
+        "dash": "-",
+        "semicolon": ";",
+        "semi": ";",
+        "comma": ",",
+        "slash": "/",
+        "underscore": "_",
+        "colon": ":",
+    }
     for p in parts:
         p = p.strip()
         if not p:
             continue
-        if p.lower() == "spaces":
+        p_lower = p.lower()
+        if p_lower == "spaces":
             chars.extend([" ", "\t", "\n", "\r"])
             continue
-        if p.lower() == "special-chars":
+        if p_lower == "special-chars":
             # Placeholder token handled in normalize_for_matching
             chars.append("__SPECIAL_CHARS__")
+            continue
+        if p_lower in named_chars:
+            chars.append(named_chars[p_lower])
             continue
         # unescape common sequences
         p = p.replace("\\;", ";").replace("\\/", "/").replace("\\\\", "\\")
@@ -142,6 +158,46 @@ def _extract_spo_tokens(line):
     if not m:
         return None, None, None
     return m.group(1), m.group(2), m.group(3)
+
+
+def default_type_filter_iris_for_class(class_name):
+    class_name = str(class_name or "").strip()
+    if not class_name:
+        return []
+    return [
+        f"<http://schema.org/{class_name}>",
+        f"<https://schema.org/{class_name}>",
+    ]
+
+
+def collect_allowed_subjects_by_type(files, type_filter_iris=None, progress_every=100):
+    if not type_filter_iris:
+        return None
+    files = [Path(p) for p in files]
+    type_pred = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+    type_set = set(type_filter_iris)
+    allowed_subjects = set()
+    total_bytes = sum(Path(p).stat().st_size for p in files)
+    done_bytes = 0
+    start_ts = time.time()
+
+    print_color("\n🔎 Filtrage des sujets par rdf:type...", Colors.BLUE)
+    for file_path in files:
+        print(f"\n  📄 Type scan: {file_path.name}")
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                done_bytes += len(line)
+                s, p, o = _extract_spo_tokens(line)
+                if not s:
+                    continue
+                if p == type_pred and o in type_set:
+                    allowed_subjects.add(s)
+                if progress_every and done_bytes % (progress_every * 50) == 0:
+                    prog = _progress_line(start_ts, done_bytes, total_bytes)
+                    print(f"\r  Sujets retenus: {len(allowed_subjects):,} | {prog}", end="", flush=True)
+
+    print(f"\n  ✅ Sujets retenus: {len(allowed_subjects):,}")
+    return allowed_subjects
 
 def _update_reservoir(samples_map, counts_map, key, sample, k=5):
     count = counts_map.get(key, 0) + 1
@@ -808,7 +864,7 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
     
     print_color(f"\n📦 Téléchargement/Décompression de {len(parts)} parts...", Colors.BLUE)
     executor = None
-    futures = []
+    futures = {}
     current_workers = None
     
     for i, part_file in enumerate(parts, 1):
@@ -864,7 +920,8 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
                     executor = ProcessPoolExecutor(max_workers=desired_workers)
                     current_workers = desired_workers
                 
-                futures.append(executor.submit(_decompress_worker, str(gz_path), str(nq_path)))
+                fut = executor.submit(_decompress_worker, str(gz_path), str(nq_path))
+                futures[fut] = (part_file, gz_path, nq_path)
             else:
                 _decompress_worker(str(gz_path), str(nq_path))
                 size = nq_path.stat().st_size / (1024**2)
@@ -877,6 +934,7 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
     
     if executor:
         for fut in as_completed(futures):
+            part_file, gz_path, nq_path = futures[fut]
             try:
                 nq_path_str = fut.result()
                 nq_path = Path(nq_path_str)
@@ -887,6 +945,29 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
                 if "Cancelled" in str(e):
                     raise
                 print_color(f"  ❌ Erreur décompression: {e}", Colors.RED)
+                # Auto-heal once: remove broken artifacts, re-download and decompress this part.
+                try:
+                    if nq_path.exists():
+                        nq_path.unlink()
+                except Exception:
+                    pass
+                try:
+                    if gz_path.exists():
+                        gz_path.unlink()
+                except Exception:
+                    pass
+                try:
+                    url = urljoin(WDC_BASE_URL, f"{class_name}/{part_file}")
+                    print(f"  🔁 Retry download: {url}")
+                    download_file(url, gz_path)
+                    _decompress_worker(str(gz_path), str(nq_path))
+                    size = nq_path.stat().st_size / (1024**2)
+                    print_color(f"  ✅ Retry OK ({nq_path.name}, {size:.1f} MB)", Colors.GREEN)
+                    decompressed_files.append(nq_path)
+                except Exception as retry_e:
+                    if "Cancelled" in str(retry_e):
+                        raise
+                    print_color(f"  ❌ Retry décompression échouée: {retry_e}", Colors.RED)
         executor.shutdown(wait=True)
     
     return decompressed_files
@@ -1222,7 +1303,7 @@ def _process_extract_window(window_batches, pattern_normalized, pattern_raw, col
         vmap, raw_vals, iris, cc_changes, lines, matched, preds = fut.result()
         yield vmap, raw_vals, iris, cc_changes, lines, matched, preds
 
-def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False):
+def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False, type_filter_iris=None):
     """
     Scanne un fichier NQuads complet, filtre par pattern de prédicat,
     et extrait les valeurs distinctes sans générer de fichier filtré.
@@ -1241,6 +1322,10 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     predicates_found = defaultdict(int) if collect_top_props else None
     total_lines = 0
     matched_lines = 0
+    allowed_subjects = collect_allowed_subjects_by_type([graph_file], type_filter_iris, progress_every=progress_every)
+    if allowed_subjects is not None and len(allowed_subjects) == 0:
+        print_color("❌ Aucun sujet ne matche le rdf:type demandé", Colors.RED)
+        return {}, 0
     
     total_bytes = Path(graph_file).stat().st_size
     done_bytes = 0
@@ -1262,6 +1347,10 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                 for line in f:
                     bytes_read += len(line)
                     total_lines += 1
+                    if allowed_subjects is not None:
+                        subject_tok, _, _ = _extract_spo_tokens(line)
+                        if not subject_tok or subject_tok not in allowed_subjects:
+                            continue
                     buffer.append(line)
                     if len(buffer) >= batch_size:
                         window_batches.append(buffer)
@@ -1321,6 +1410,8 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                 total_lines += 1
                 subject, predicate_tok, obj_tok = _extract_spo_tokens(line)
                 if not (subject and predicate_tok and obj_tok):
+                    continue
+                if allowed_subjects is not None and subject not in allowed_subjects:
                     continue
                 predicate = predicate_tok.strip("<>")
                 if collect_top_props:
@@ -1413,7 +1504,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     
     return value_map, matched_lines
 
-def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False):
+def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False, type_filter_iris=None):
     """
     Scanne plusieurs fichiers NQuads (parts), filtre par pattern de prédicat,
     et extrait les valeurs distinctes sans générer de fichier fusionné.
@@ -1434,6 +1525,10 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
     matched_lines = 0
     
     files = [Path(p) for p in files]
+    allowed_subjects = collect_allowed_subjects_by_type(files, type_filter_iris, progress_every=progress_every)
+    if allowed_subjects is not None and len(allowed_subjects) == 0:
+        print_color("❌ Aucun sujet ne matche le rdf:type demandé", Colors.RED)
+        return {}, 0
     
     total_bytes = sum(Path(p).stat().st_size for p in files)
     done_bytes = 0
@@ -1461,6 +1556,10 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                     for line in f:
                         bytes_read += len(line)
                         total_lines += 1
+                        if allowed_subjects is not None:
+                            subject_tok, _, _ = _extract_spo_tokens(line)
+                            if not subject_tok or subject_tok not in allowed_subjects:
+                                continue
                         buffer.append(line)
                         if len(buffer) >= batch_size:
                             window_batches.append(buffer)
@@ -1530,6 +1629,8 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                     total_lines += 1
                     subject, predicate_tok, obj_tok = _extract_spo_tokens(line)
                     if not (subject and predicate_tok and obj_tok):
+                        continue
+                    if allowed_subjects is not None and subject not in allowed_subjects:
                         continue
                     predicate = predicate_tok.strip("<>")
                     if collect_top_props:
@@ -1662,6 +1763,36 @@ def _load_sparql_json_payload(payload_text: str):
     return json.loads(cleaned, strict=False)
 
 
+def _chunk_list(values, chunk_size):
+    chunk_size = max(1, int(chunk_size))
+    for i in range(0, len(values), chunk_size):
+        yield values[i : i + chunk_size]
+
+
+def _run_sparql_query_with_retry(query, headers, timeout_s, max_attempts, base_delay):
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.post(
+                WIKIDATA_ENDPOINT,
+                data={"query": query, "format": "json"},
+                headers=headers,
+                timeout=timeout_s,
+            )
+            response.raise_for_status()
+            return _load_sparql_json_payload(response.text)
+        except Exception as e:
+            if (_is_rate_limited_error(e) or _is_retryable_query_error(e)) and attempt < max_attempts:
+                delay_s = (base_delay * (2 ** (attempt - 1))) + random.uniform(0, 0.5)
+                print_color(
+                    f"⚠️ Wikidata query retry {attempt}/{max_attempts} in {delay_s:.1f}s ({type(e).__name__})...",
+                    Colors.YELLOW,
+                )
+                time.sleep(delay_s)
+                continue
+            raise
+    return None
+
+
 def _truthy_env(value):
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
@@ -1784,11 +1915,11 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
       ?propType wdt:P279* {wkd_prop_class_norm} .
     """
     
-    values_filter = ""
     entity_iris_sorted = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
-    if entity_iris:
-        values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
-        values_filter = f"VALUES ?entity {{ {values} }}\n"
+    if not prop and not entity_iris_sorted:
+        print_color("❌ No Wikidata entity IRIs provided (empty VALUES set).", Colors.RED)
+        return {}
+
     cache_disabled = _truthy_env(os.environ.get("WIKIDATA_CACHE_DISABLED", "0"))
     cache_lang = os.environ.get("WIKIDATA_CACHE_LANG", "all")
     cache_path = _wikidata_cache_path(
@@ -1807,7 +1938,7 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
                 Colors.GREEN,
             )
             return cached_map
-    query = f"""
+    query_template = """
     PREFIX wd: <http://www.wikidata.org/entity/>
     PREFIX wdt: <http://www.wikidata.org/prop/direct/>
     PREFIX p: <http://www.wikidata.org/prop/>
@@ -1836,42 +1967,73 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
         max_attempts = max(1, int(os.environ.get("WIKIDATA_QUERY_MAX_RETRIES", "4")))
         base_delay = max(0.1, float(os.environ.get("WIKIDATA_QUERY_RETRY_DELAY", "2.0")))
         timeout_s = max(1, int(os.environ.get("WIKIDATA_QUERY_TIMEOUT", "300")))
+        entity_batch_size = max(1, int(os.environ.get("WIKIDATA_ENTITY_BATCH_SIZE", "500")))
         headers = {
             "Accept": "application/sparql-results+json",
             "User-Agent": "beam-align/1.0",
         }
-        results = None
-        for attempt in range(1, max_attempts + 1):
-            try:
-                response = requests.post(
-                    WIKIDATA_ENDPOINT,
-                    data={"query": query, "format": "json"},
-                    headers=headers,
-                    timeout=timeout_s,
+        bindings = []
+
+        # Large VALUES payloads can yield massive/truncated JSON responses; batch them.
+        if entity_iris_sorted and len(entity_iris_sorted) > entity_batch_size:
+            batches = list(_chunk_list(entity_iris_sorted, entity_batch_size))
+            print(f"   Batching entities: {len(entity_iris_sorted):,} IRIs in {len(batches)} batches (size={entity_batch_size})")
+            for idx, entity_batch in enumerate(batches, 1):
+                values = " ".join(f"<{uri}>" for uri in entity_batch)
+                values_filter = f"VALUES ?entity {{ {values} }}\n"
+                batch_query = query_template.format(
+                    values_filter=values_filter,
+                    property_triple=property_triple,
+                    prop_class_filter=prop_class_filter,
+                    class_filter=class_filter,
                 )
-                response.raise_for_status()
-                results = _load_sparql_json_payload(response.text)
-                break
-            except Exception as e:
-                if (_is_rate_limited_error(e) or _is_retryable_query_error(e)) and attempt < max_attempts:
-                    delay_s = (base_delay * (2 ** (attempt - 1))) + random.uniform(0, 0.5)
-                    print_color(
-                        f"⚠️ Wikidata query retry {attempt}/{max_attempts} in {delay_s:.1f}s ({type(e).__name__})...",
-                        Colors.YELLOW,
-                    )
-                    time.sleep(delay_s)
-                    continue
-                raise
-        if results is None:
+                print(f"   [WD] batch {idx}/{len(batches)} size={len(entity_batch)}")
+                results = _run_sparql_query_with_retry(
+                    batch_query,
+                    headers=headers,
+                    timeout_s=timeout_s,
+                    max_attempts=max_attempts,
+                    base_delay=base_delay,
+                )
+                if results and isinstance(results, dict):
+                    batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                    if isinstance(batch_bindings, list):
+                        bindings.extend(batch_bindings)
+        else:
+            values_filter = ""
+            if entity_iris_sorted:
+                values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
+                values_filter = f"VALUES ?entity {{ {values} }}\n"
+            query = query_template.format(
+                values_filter=values_filter,
+                property_triple=property_triple,
+                prop_class_filter=prop_class_filter,
+                class_filter=class_filter,
+            )
+            results = _run_sparql_query_with_retry(
+                query,
+                headers=headers,
+                timeout_s=timeout_s,
+                max_attempts=max_attempts,
+                base_delay=base_delay,
+            )
+            if results and isinstance(results, dict):
+                direct_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                if isinstance(direct_bindings, list):
+                    bindings.extend(direct_bindings)
+        if not bindings:
             return {}
         
         # {value_normalized: [(original_value, wikidata_uri), ...]}
         value_map = defaultdict(list)
         all_raw_values = set()
         
-        for result in results["results"]["bindings"]:
-            value = result["value"]["value"]
-            entity_uri = result["entity"]["value"]
+        for result in bindings:
+            try:
+                value = result["value"]["value"]
+                entity_uri = result["entity"]["value"]
+            except Exception:
+                continue
             
             all_raw_values.add(value)
             
@@ -2160,7 +2322,7 @@ def main():
     parser.add_argument("wikidata_property", nargs="?")
     parser.add_argument("--wkd-class", help="Wikidata class QID or IRI (e.g., Q6256 or wdt:Q6256) used to filter items")
     parser.add_argument("--wkd-prop-class", help="Wikidata property class QID/IRI to filter ?prop (e.g., Q853614 for identifiers)")
-    parser.add_argument("--wdc-type", help="WDC rdf:type IRI or class name (e.g., http://schema.org/Country or Country) used to filter top-props")
+    parser.add_argument("--wdc-type", help="WDC rdf:type IRI or class name (e.g., http://schema.org/Country or Country) used to filter extracted subjects")
     parser.add_argument("--top-props", action="store_true", help="Afficher le top 100 des propriétés WDC (calculé pendant le filtrage)")
     parser.add_argument("--workers", type=int, help="Nombre de workers pour le parallélisme (défaut: 80% CPU partagé entre runs)")
     parser.add_argument("--ignore-chars", help="Liste de caractères à supprimer avant normalisation (ex: \"spaces;+;\\\\;\\\\/;\\\\\\\\\")")
@@ -2172,6 +2334,10 @@ def main():
     pattern = args.pattern
     parts_spec = args.parts_spec
     wikidata_property = args.wikidata_property
+    if args.wdc_type:
+        type_filter_iris = [normalize_wdc_type(args.wdc_type)]
+    else:
+        type_filter_iris = default_type_filter_iris_for_class(class_name)
     if args.ignore_chars:
         set_extra_strip_chars(parse_strip_list(args.ignore_chars))
     if args.wdc_value_is_wikidata and not args.wkd_class:
@@ -2211,91 +2377,56 @@ def main():
         workers_default, runs, cpu = compute_shared_workers(lock_path, share=0.8)
         print(f"Workers:             {workers_default} (80% CPU partagé / {runs} runs, CPU={cpu})")
     
-    full_graph_file = data_dir / f"{class_name}_full_graph.nq"
-    use_full_graph = full_graph_file.exists()
-    if not use_full_graph:
-        candidates = sorted(data_dir.glob("*full_graph.nq"))
-        if candidates:
-            full_graph_file = candidates[0]
-            use_full_graph = True
-    
-    # 1. Déterminer la source locale si disponible
+    # 1. Source WDC: toujours part_* (jamais *_full_graph.nq)
     decompressed_files = []
-    graph_file = work_dir / f"{class_name}.nq"
-    if use_full_graph:
-        graph_file = full_graph_file
-        decompressed_files = [full_graph_file]
-        print_color(f"  ✅ Full graph détecté: {full_graph_file}", Colors.GREEN)
+    available_parts = None
+    if parts_spec is None:
+        print_color("❌ parts_spec manquant (ex: all)", Colors.RED)
+        sys.exit(1)
+    if parts_spec.lower() == "all":
+        available_parts = discover_parts(class_name)
+        if not available_parts:
+            print_color("❌ Aucune part disponible", Colors.RED)
+            sys.exit(1)
     else:
-        available_parts = None
-        if parts_spec is None:
-            print_color("❌ parts_spec manquant (ex: all)", Colors.RED)
-            sys.exit(1)
-        if parts_spec.lower() == "all":
-            available_parts = discover_parts(class_name)
-            if not available_parts:
-                print_color("❌ Aucune part disponible", Colors.RED)
-                sys.exit(1)
-        else:
-            available_parts = discover_parts(class_name)
-            if not available_parts:
-                print_color("⚠️  Impossible de récupérer la liste distante, utilisation de la spécification locale.", Colors.YELLOW)
-                available_parts = None
+        available_parts = discover_parts(class_name)
+        if not available_parts:
+            print_color("⚠️  Impossible de récupérer la liste distante, utilisation de la spécification locale.", Colors.YELLOW)
+            available_parts = None
 
-        parts_to_download = parse_parts_spec(parts_spec, available_parts)
-        if not parts_to_download:
-            print_color(f"❌ Aucune part valide pour '{parts_spec}'", Colors.RED)
-            sys.exit(1)
+    parts_to_download = parse_parts_spec(parts_spec, available_parts)
+    if not parts_to_download:
+        print_color(f"❌ Aucune part valide pour '{parts_spec}'", Colors.RED)
+        sys.exit(1)
 
-        print_color(f"\n📦 {len(parts_to_download)} parts sélectionnées", Colors.GREEN)
-        decompressed_files = download_and_decompress(
-            class_name,
-            parts_to_download,
-            data_dir,
-            parallel_decompress=True,
-            workers=workers_override,
-            lock_path=lock_path,
-        )
+    print_color(f"\n📦 {len(parts_to_download)} parts sélectionnées", Colors.GREEN)
+    decompressed_files = download_and_decompress(
+        class_name,
+        parts_to_download,
+        data_dir,
+        parallel_decompress=True,
+        workers=workers_override,
+        lock_path=lock_path,
+    )
     if not decompressed_files:
         print_color("❌ Aucun fichier disponible", Colors.RED)
         sys.exit(1)
     
     # 2. Top-props only: pas besoin de pattern/WD
     if top_props_only:
-        type_filter_iris = None
-        if args.wdc_type:
-            type_filter_iris = [normalize_wdc_type(args.wdc_type)]
-        else:
-            # default to schema.org/<ClassName> (http + https)
-            type_filter_iris = [
-                f"<http://schema.org/{class_name}>",
-                f"<https://schema.org/{class_name}>",
-            ]
         top_props_file = work_dir / "top-props.txt"
         if top_props_file.exists():
             top_props_file.unlink()
-        if use_full_graph:
-            scan_top_props_from_files(
-                [graph_file],
-                top_n=1000,
-                parallel=True,
-                workers=workers_override,
-                lock_path=lock_path,
-                progress_every=100,
-                output_file=top_props_file,
-                type_filter_iris=type_filter_iris,
-            )
-        else:
-            scan_top_props_from_files(
-                decompressed_files,
-                top_n=1000,
-                parallel=True,
-                workers=workers_override,
-                lock_path=lock_path,
-                progress_every=100,
-                output_file=top_props_file,
-                type_filter_iris=type_filter_iris,
-            )
+        scan_top_props_from_files(
+            decompressed_files,
+            top_n=1000,
+            parallel=True,
+            workers=workers_override,
+            lock_path=lock_path,
+            progress_every=100,
+            output_file=top_props_file,
+            type_filter_iris=type_filter_iris,
+        )
         print_color(f"\n✅ Top-props écrit dans {top_props_file}", Colors.GREEN)
         elapsed = time.time() - start_ts
         took = _format_eta(elapsed).replace("ETA: ", "")
@@ -2308,30 +2439,18 @@ def main():
         return
 
     # 3. Extraire les IRIs WDC uniques (sans fichier filtré ni graphe fusionné)
-    if use_full_graph:
-        wdc_map, matched_count = extract_unique_iris_from_graph(
-            graph_file,
-            pattern,
-            collect_top_props=args.top_props,
-            top_n=100,
-            parallel=True,
-            workers=workers_override,
-            lock_path=lock_path,
-            progress_every=100,
-            wdc_value_is_wd_iri=args.wdc_value_is_wikidata,
-        )
-    else:
-        wdc_map, matched_count = extract_unique_iris_from_files(
-            decompressed_files,
-            pattern,
-            collect_top_props=args.top_props,
-            top_n=100,
-            parallel=True,
-            workers=workers_override,
-            lock_path=lock_path,
-            progress_every=100,
-            wdc_value_is_wd_iri=args.wdc_value_is_wikidata,
-        )
+    wdc_map, matched_count = extract_unique_iris_from_files(
+        decompressed_files,
+        pattern,
+        collect_top_props=args.top_props,
+        top_n=100,
+        parallel=True,
+        workers=workers_override,
+        lock_path=lock_path,
+        progress_every=100,
+        wdc_value_is_wd_iri=args.wdc_value_is_wikidata,
+        type_filter_iris=type_filter_iris,
+    )
     if matched_count == 0:
         sys.exit(1)
     
@@ -2344,6 +2463,9 @@ def main():
                 wd_iri = extract_wd_entity_iri(value)
                 if wd_iri:
                     wd_entity_iris.add(wd_iri)
+        if not wd_entity_iris:
+            print_color("❌ No Wikidata URLs extracted from WDC values.", Colors.RED)
+            sys.exit(1)
         wikidata_map = fetch_wikidata_values(
             wikidata_property=None,
             wkd_class=args.wkd_class,

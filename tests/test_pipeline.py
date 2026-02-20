@@ -33,6 +33,8 @@ def _install_test_stubs(monkeypatch):
     def extract_unique_iris_from_files(files, pattern, **kwargs):
         assert pattern == "name"
         assert len(files) == 2
+        assert "<http://schema.org/TestClass>" in set(kwargs.get("type_filter_iris") or [])
+        assert "<https://schema.org/TestClass>" in set(kwargs.get("type_filter_iris") or [])
         return (
             {
                 "alpha node": [("Alpha Node", "http://example.org/wdc/entity1")],
@@ -282,3 +284,75 @@ def test_generate_benchmark_resume_build_reuses_out_dir(monkeypatch):
     assert checkpoints
     assert checkpoints[0]["kind"] == "build_started"
     assert checkpoints[0]["out_dir"] == str(resume_out_dir)
+
+
+def test_generate_benchmark_wikidata_mode_fails_when_no_wd_urls(monkeypatch):
+    class_name = "TestClassNoWdUrls"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+    monkeypatch.setattr(
+        pipeline.align,
+        "extract_unique_iris_from_files",
+        lambda *args, **kwargs: ({}, 10),
+    )
+
+    def _must_not_fetch(*args, **kwargs):
+        raise AssertionError("fetch_wikidata_values should not be called when no Wikidata URLs were extracted")
+
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", _must_not_fetch)
+
+    with pytest.raises(pipeline.PipelineError, match="No Wikidata URLs extracted from WDC values"):
+        pipeline.generate_benchmark(
+            {
+                "class_name": class_name,
+                "parts_spec": "all",
+                "wdc_predicate_pattern": "sameAs",
+                "wikidata_property": None,
+                "wkd_class": "Q515",
+                "wdc_value_is_wikidata": True,
+                "use_local_only": True,
+                "force_align": True,
+            },
+            workers=1,
+        )
+
+
+def test_generate_benchmark_wikidata_mode_fails_when_class_filter_has_no_hits(monkeypatch):
+    class_name = "TestClassNoWdClassHits"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+    monkeypatch.setattr(
+        pipeline.align,
+        "extract_unique_iris_from_files",
+        lambda *args, **kwargs: (
+            {
+                "httpwwwwikidataorgentityq515": [
+                    ("https://www.wikidata.org/wiki/Q515", "http://example.org/wdc/entity1")
+                ]
+            },
+            1,
+        ),
+    )
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", lambda *args, **kwargs: {})
+
+    with pytest.raises(
+        pipeline.PipelineError,
+        match="No Wikidata entities matched class filter",
+    ):
+        pipeline.generate_benchmark(
+            {
+                "class_name": class_name,
+                "parts_spec": "all",
+                "wdc_predicate_pattern": "sameAs",
+                "wikidata_property": None,
+                "wkd_class": "Q110879422",
+                "wdc_value_is_wikidata": True,
+                "use_local_only": True,
+                "force_align": True,
+            },
+            workers=1,
+        )

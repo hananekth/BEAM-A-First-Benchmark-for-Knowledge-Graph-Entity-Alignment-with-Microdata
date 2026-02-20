@@ -30,6 +30,18 @@ def test_retryable_query_error_detection():
     assert not align._is_retryable_query_error(Exception("invalid query syntax"))
 
 
+def test_parse_strip_list_supports_named_tokens():
+    chars = align.parse_strip_list("spaces;dot;semicolon;hyphen;comma;slash;underscore")
+    assert " " in chars
+    assert "\t" in chars
+    assert "." in chars
+    assert ";" in chars
+    assert "-" in chars
+    assert "," in chars
+    assert "/" in chars
+    assert "_" in chars
+
+
 def test_fetch_wikidata_values_handles_control_chars(monkeypatch):
     payload = (
         '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q1"},'
@@ -110,6 +122,31 @@ def test_extract_unique_iris_literal_mode_ignores_iri_objects(tmp_path):
     assert all_values == {"Alpha"}
 
 
+def test_extract_unique_iris_filters_subjects_by_wdc_type(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "<http://example.org/a1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://schema.org/Airport> <http://example.org/g> .\n"
+        "<http://example.org/c1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://schema.org/City> <http://example.org/g> .\n"
+        "<http://example.org/a1> <http://schema.org/iataCode> \"ORY\" <http://example.org/g> .\n"
+        "<http://example.org/c1> <http://schema.org/iataCode> \"XXX\" <http://example.org/g> .\n",
+        encoding="utf-8",
+    )
+
+    value_map, matched_count = align.extract_unique_iris_from_files(
+        [part],
+        pattern="iatacode",
+        collect_top_props=False,
+        parallel=False,
+        progress_every=0,
+        wdc_value_is_wd_iri=False,
+        type_filter_iris=["<http://schema.org/Airport>", "<https://schema.org/Airport>"],
+    )
+
+    assert matched_count == 1
+    all_values = {v for entries in value_map.values() for (v, _s) in entries}
+    assert all_values == {"ORY"}
+
+
 def test_extract_wd_entity_iri_accepts_wiki_variants():
     assert (
         align.extract_wd_entity_iri("https://www.wikidata.org/wiki/Q174224")
@@ -166,3 +203,74 @@ def test_fetch_wikidata_values_uses_persistent_cache(monkeypatch, tmp_path):
     second = align.fetch_wikidata_values("rdfs:label", "Q5", None)
     assert second
     assert second == first
+
+
+def test_fetch_wikidata_values_batches_large_entity_values(monkeypatch):
+    monkeypatch.setenv("WIKIDATA_CACHE_DISABLED", "1")
+    monkeypatch.setenv("WIKIDATA_ENTITY_BATCH_SIZE", "2")
+
+    class _Resp:
+        def __init__(self, text):
+            self.text = text
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    calls = {"n": 0}
+
+    def _fake_post(*args, **kwargs):
+        calls["n"] += 1
+        query = str((kwargs or {}).get("data", {}).get("query", ""))
+        # Return one row per batch to verify batching path is used.
+        if "Q1" in query:
+            payload = (
+                '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q1"},'
+                '"value":{"value":"http://www.wikidata.org/entity/Q1"}}]}}'
+            )
+        elif "Q3" in query:
+            payload = (
+                '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q3"},'
+                '"value":{"value":"http://www.wikidata.org/entity/Q3"}}]}}'
+            )
+        else:
+            payload = '{"results":{"bindings":[]}}'
+        return _Resp(payload)
+
+    monkeypatch.setattr(align.requests, "post", _fake_post)
+    result = align.fetch_wikidata_values(
+        None,
+        wkd_class="Q5",
+        wkd_prop_class=None,
+        entity_iris=[
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q2",
+            "http://www.wikidata.org/entity/Q3",
+        ],
+    )
+
+    assert calls["n"] == 2  # 3 entities with batch size 2 => 2 SPARQL requests
+    q1_norm = align.normalize_for_matching("http://www.wikidata.org/entity/Q1")
+    q3_norm = align.normalize_for_matching("http://www.wikidata.org/entity/Q3")
+    assert q1_norm in result
+    assert q3_norm in result
+
+
+def test_fetch_wikidata_values_without_prop_requires_entity_list(monkeypatch):
+    monkeypatch.setenv("WIKIDATA_CACHE_DISABLED", "1")
+    calls = {"n": 0}
+
+    def _fake_post(*args, **kwargs):
+        calls["n"] += 1
+        raise AssertionError("requests.post should not be called when entity_iris is empty")
+
+    monkeypatch.setattr(align.requests, "post", _fake_post)
+    result = align.fetch_wikidata_values(
+        None,
+        wkd_class="Q5",
+        wkd_prop_class=None,
+        entity_iris=[],
+    )
+
+    assert result == {}
+    assert calls["n"] == 0

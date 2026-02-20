@@ -18,7 +18,7 @@ def test_webapp_presets_use_valid_wikidata_ids():
     assert "testclass_identifier" in presets
     assert "testclass_wikidata_url" in presets
     assert "testclass_wikidata_sameas" in presets
-    assert "property_movie" in presets
+    assert "code_movie" in presets
     assert "label_language" in presets
     assert "property_college_or_university_telephone" in presets
     assert "wikidata_link_city" in presets
@@ -26,7 +26,6 @@ def test_webapp_presets_use_valid_wikidata_ids():
     for key, preset in presets.items():
         assert preset["class_name"], f"{key} class_name should not be empty"
         assert preset.get("parts_spec") == "all", f"{key} should default to parts_spec=all"
-        assert preset.get("max_depth") == 0, f"{key} should default to max_depth=0"
         assert bool(preset.get("force_align", False)) is False, f"{key} should not force align cache bypass"
         assert bool(preset.get("use_local_only", False)) is False, f"{key} should not force local-only mode"
         if preset["wkd_class"]:
@@ -68,7 +67,7 @@ def test_webapp_presets_use_valid_wikidata_ids():
 
     label_language = presets["label_language"]
     assert label_language["wikidata_property"] == "rdfs:label"
-    assert label_language["wkd_class"] == "Q34772"
+    assert label_language["wkd_class"] == "Q33742"
 
     college_phone = presets["property_college_or_university_telephone"]
     assert college_phone["class_name"] == "CollegeOrUniversity"
@@ -85,6 +84,5 @@ def test_webapp_presets_use_valid_wikidata_ids():
     assert city_link["wikidata_property"] == ""
     assert city_link["wkd_class"] == "Q486972"
     assert city_link["wdc_value_is_wikidata"] is True
-    assert city_link["max_depth"] == 0
     assert city_link["force_align"] is False
     assert city_link["use_local_only"] is False

@@ -1558,7 +1558,7 @@ def main():
     data_dir = os.path.join("data", class_name)
     download_dir = os.path.join("Download", class_name)
 
-    # Defaults
+    # Defaults: only part_* sources (no *_full_graph fallback)
     candidates = []
     if os.path.isdir(download_dir):
         for name in sorted(os.listdir(download_dir)):
@@ -1566,16 +1566,6 @@ def main():
                 name.endswith(".nq") or name.endswith(".nt") or "." not in name
             ):
                 candidates.append(os.path.join(download_dir, name))
-        if not candidates:
-            for name in sorted(os.listdir(download_dir)):
-                if name.endswith("_full_graph.nq"):
-                    candidates.append(os.path.join(download_dir, name))
-                    break
-        if not candidates:
-            for name in sorted(os.listdir(download_dir)):
-                if name.endswith(".nq") or name.endswith(".nt"):
-                    candidates.append(os.path.join(download_dir, name))
-                    break
 
     args.wdc_nq = candidates
     args.links_tsv = os.path.join(download_dir, "wdc_wikidata_links.tsv")

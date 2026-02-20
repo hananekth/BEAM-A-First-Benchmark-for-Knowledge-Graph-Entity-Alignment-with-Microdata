@@ -26,6 +26,16 @@
     .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
     label { display:block; margin-top:12px; font-weight:600; font-size:13px; color:var(--text); }
     .label-help { display:inline-flex; align-items:center; gap:6px; }
+    .required-star {
+      display:inline-block;
+      color:#6b7280;
+      font-size:14px;
+      font-weight:800;
+      line-height:1;
+      margin-left:1px;
+      user-select:none;
+    }
+    .required-star.active { color:#ef4444; }
     .help-tip {
       display:inline-flex;
       align-items:center;
@@ -53,6 +63,39 @@
     }
     .checkrow { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:500; }
     .checkrow input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
+    .char-options { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .char-option {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#0b0f17;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .char-option input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
+    .field-disabled { opacity:0.52; }
+    .field-group { margin-top:10px; }
+    .field-group.hidden { display:none; }
+    .ready-list { display:grid; gap:6px; margin-top:6px; }
+    .ready-item {
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:flex-start;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:6px 8px;
+      background:#0b0f17;
+      font-size:12px;
+    }
+    .ready-item .state { font-weight:700; min-width:22px; text-align:center; }
+    .ready-item.ok .state { color:#22c55e; }
+    .ready-item.bad .state { color:#f59e0b; }
+    .ready-item .label { color:var(--text); }
+    .ready-item .detail { color:var(--muted); }
     input:focus, select:focus { outline:2px solid rgba(37,99,235,0.2); border-color:var(--primary); }
     .info { background:var(--primary-soft); border:1px solid #cfe2ff; padding:10px; margin:10px 0; border-radius:8px; }
     .warn { background:var(--warn); border:1px solid var(--warn-border); padding:10px; border-radius:8px; }
@@ -109,6 +152,17 @@
     .builds { margin-top:20px; }
     .build { border:1px solid var(--border); border-radius:10px; background:var(--card); padding:14px 16px; margin:10px 0; }
     .job.selectable-card, .build.selectable-card { cursor:pointer; }
+    .history-tools {
+      margin-top:8px;
+      margin-bottom:10px;
+      display:grid;
+      grid-template-columns:minmax(280px, 2fr) minmax(180px, 1fr) auto;
+      gap:8px;
+      align-items:center;
+    }
+    .history-tools input[type="search"], .history-tools select { margin-top:0; }
+    .history-tools form { margin:0; }
+    .history-tools .btn { margin-top:0; width:auto; }
     .build-body.collapsed { display:none; }
     .build-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
     .build-path { margin-top:6px; font-size:13px; }
@@ -161,6 +215,7 @@
     .toast.info { border-color:#1d4ed8; background:#0b1f3a; color:#cfe2ff; }
     .toast.hide { opacity:0; transform:translateY(-6px); }
     @media (max-width: 820px) {
+      .history-tools { grid-template-columns:1fr; }
       .cfg-row { grid-template-columns:1fr; gap:4px; }
       .build-actions { flex-wrap:wrap; }
       .build-actions .btn { width:100%; }
@@ -174,46 +229,56 @@
   <div class="page">
   <h1>BEAM Benchmark Generator</h1>
 
+  <div class="card" style="margin-bottom:12px;">
+    <h3>Start with a preset, use a recent run, or fill the form manually below</h3>
+  </div>
   <div class="row">
     <div class="col card">
-      <h3>Presets</h3>
-      <select id="preset-select" onchange="if(this.value) window.location='/?preset='+this.value;">
-        <option value="">Preset</option>
+      <h3>Preset</h3>
+      <select id="preset-select" onchange="window.location=this.value ? '/?{% if is_test_mode %}test_mode=1&{% endif %}preset='+encodeURIComponent(this.value) : '/{% if is_test_mode %}?test_mode=1{% endif %}';">
+        <option value="">No preset</option>
         {% for key, p in presets.items() %}
-          {% set is_test_preset = 1 if (p.class_name and p.class_name.startswith('TestClass')) else 0 %}
-          <option value="{{ key }}" data-test-preset="{{ is_test_preset }}" {% if selected_preset == key %}selected{% endif %}>{{ p.label }}</option>
+          <option value="{{ key }}" {% if selected_preset == key %}selected{% endif %}>{{ p.label }}</option>
         {% endfor %}
       </select>
-      <label class="checkrow" style="margin-top:8px;">
-        <input type="checkbox" id="toggle-test-presets" checked>
-        Show test presets
-      </label>
     </div>
     <div class="col card">
-      <h3>Recent runs</h3>
-      <select onchange="if(this.value) window.location='/?recent='+this.value;">
-        <option value="">Recent run</option>
+      <h3>Recent run</h3>
+      <select onchange="if(this.value) window.location='/?{% if is_test_mode %}test_mode=1&{% endif %}recent='+encodeURIComponent(this.value);">
+        <option value="">Recent run preset</option>
         {% for r in recent_presets %}
           <option value="{{ r.job_id }}">{{ r.label }}</option>
         {% endfor %}
       </select>
     </div>
-    <div class="col card">
-      <h3>Classes</h3>
-      <button class="btn secondary" onclick="window.location='/refresh_classes'">Refresh WDC classes</button>
-    </div>
   </div>
 
   <form id="generate-form" method="post" action="/jobs" class="card" style="margin-top:16px;">
-    <div class="row">
+    <div class="small">Fields marked with <span class="required-star active">*</span> are mandatory.</div>
+    <div class="field-group" id="matching-mode-group">
+      <label>
+        <span class="label-help">
+          Matching mode
+          <span class="help-tip" tabindex="0" title="Select the linking strategy. The form will show and enforce only relevant fields for this mode.">?</span>
+        </span>
+      </label>
+      <select id="matching-mode-select">
+        <option value="label">Label</option>
+        <option value="identifier">Identifier code</option>
+        <option value="telephone">Telephone</option>
+        <option value="wikidata_url">Existing Wikidata URL / sameAs</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:8px;">
       <div class="col">
         <label>
           <span class="label-help">
             Class name
-            <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language). Use Refresh WDC classes if it is missing.">?</span>
+            <span id="required-class-name" class="required-star active" aria-label="required">*</span>
+            <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language).">?</span>
           </span>
         </label>
-        <select id="class-name-select" name="class_name">
+        <select id="class-name-select" name="class_name" required>
           <option value="">(select class)</option>
           {% for name, meta in class_meta.items() %}
             <option value="{{ name }}" {% if form.class_name == name %}selected{% endif %}>{{ name }}</option>
@@ -225,58 +290,70 @@
 
         <label>
           <span class="label-help">
-            Parts spec
-            <span class="help-tip" tabindex="0" title="Choose which parts to scan. Use all, a list like 1,2,4, or a range like 1-10.">?</span>
+            Parts to process
+            <span class="help-tip" tabindex="0" title="Choose which class parts to scan: all, a list like 1,2,4, or a range like 1-10.">?</span>
           </span>
         </label>
-        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all or 1,2,4 or 1-10" />
+        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all, 1,2,4, or 1-10" />
 
-        <label>
-          <span class="label-help">
-            WDC predicate pattern
-            <span class="help-tip" tabindex="0" title="Predicate keyword used to extract WDC values (for example name, eidr, telephone, sameAs, url).">?</span>
-          </span>
-        </label>
-        <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="eidr / name / telephone / isrc" />
+        <div class="field-group" id="wdc-pattern-group">
+          <label>
+            <span class="label-help">
+              WDC property pattern
+              <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
+              <span class="help-tip" tabindex="0" title="Type a keyword from the WDC property IRI (case-insensitive). Example: isrc matches isrcCode.">?</span>
+            </span>
+          </label>
+          <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="name / sameAs / url / eidr / telephone" required />
+          <div class="small">Example: <code>isrc</code> matches <code>isrcCode</code>, <code>isrc</code>, <code>codeIsrc</code>...</div>
+        </div>
 
-        <label>
-          <span class="label-help">
-            Wikidata property
-            <span class="help-tip" tabindex="0" title="Property used to fetch comparison values from Wikidata (for example P2704, wdt:P2704, rdfs:label). Leave empty when WDC values are already Wikidata URLs.">?</span>
-          </span>
-        </label>
-        <input id="wikidata-property-input" name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="P2704 / wdt:P2704 / rdfs:label" />
+        <div class="field-group" id="wikidata-property-group">
+          <label id="wikidata-property-label">
+            <span class="label-help">
+              Equivalent Wikidata property
+              <span id="required-wikidata-property" class="required-star" aria-label="required">*</span>
+              <span class="help-tip" tabindex="0" title="Property to query on the Wikidata side. Examples: rdfs:label, P1329, P2704. In sameAs/Wikidata URL mode this field is ignored.">?</span>
+            </span>
+          </label>
+          <input id="wikidata-property-input" name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="rdfs:label / P1329 / P2704" />
+          <div class="small">Use the exact Wikidata property to query. Examples: <code>rdfs:label</code>, <code>P1329</code>, <code>P2704</code>.</div>
+        </div>
       </div>
       <div class="col">
-        <label>
-          <span class="label-help">
-            Wikidata class (QID)
-            <span class="help-tip" tabindex="0" title="Usually used when linking by label or existing links (for example sameAs/url) and you want to filter Wikidata to a target class. Example: Q486972 for City.">?</span>
-          </span>
-        </label>
-        <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q33742" />
+        <div class="field-group" id="wkd-class-group">
+          <label>
+            <span class="label-help">
+              Wikidata class (QID)
+              <span id="required-wkd-class" class="required-star" aria-label="required">*</span>
+              <span class="help-tip" tabindex="0" title="Restricts Wikidata entities to a class hierarchy. Useful with label matching or existing links (sameAs/url). Example for City: Q486972.">?</span>
+            </span>
+          </label>
+          <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q486972 (example)" />
+        </div>
 
-        <label>
-          <span class="label-help">
-            Max depth (bnodes)
-            <span class="help-tip" tabindex="0" title="Traversal depth from seed entities during graph extraction. 0 means direct triples only; higher values include neighbors; -1 means no explicit limit.">?</span>
-          </span>
-        </label>
-        <select id="max-depth-select" name="max_depth">
-          {% for d in [-1,0,1,2,3,4,5] %}
-            <option value="{{ d }}" {% if form.max_depth == d %}selected{% endif %}>{{ d }}</option>
-          {% endfor %}
-        </select>
+        <div class="field-group" id="ignore-chars-group">
+          <label id="ignore-chars-label">
+            <span class="label-help">
+              Normalization: characters to remove
+              <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and Wikidata values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
+            </span>
+          </label>
+          <div class="char-options" id="ignore-chars-options">
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="spaces">spaces</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="dot">.</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="semicolon">;</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="hyphen">-</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="comma">,</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="slash">/</label>
+            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="underscore">_</label>
+          </div>
+          <input id="ignore-chars-custom-input" value="" placeholder="Other tokens (optional), separated by ;" />
+          <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
+          <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
+        </div>
 
-        <label>
-          <span class="label-help">
-            Normalization: extra chars to strip
-            <span class="help-tip" tabindex="0" title="Characters removed before matching values. Default spaces;-;. helps normalize formatting differences.">?</span>
-          </span>
-        </label>
-        <input id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" placeholder="spaces;-;.;special-chars" />
-
-        <label class="checkrow">
+        <label class="checkrow" id="wdc-url-mode-row" style="display:none;">
           <input id="wdc-value-is-wikidata-checkbox" type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
           WDC values are Wikidata URLs
           <span class="help-tip" tabindex="0" title="Enable this when WDC values are Wikidata entity URLs (often in sameAs or url). Matching is then done directly on Wikidata entities.">?</span>
@@ -293,7 +370,6 @@
         </label>
       </div>
     </div>
-    <div id="matching-guidance" class="info small" style="display:none"></div>
     <div id="form-error-box" class="warn" {% if not form_error %}style="display:none"{% endif %}>{{ form_error or "" }}</div>
 
     <div
@@ -306,15 +382,9 @@
       <div class="small" id="class-parts-meta"></div>
       <div class="small" id="class-parts-downloaded"></div>
       <div class="small" id="class-parts-missing"></div>
-      <div class="small" id="class-parts-online-error" style="display:none"></div>
-      <div class="small" id="class-parts-local-only" style="display:none"></div>
     </div>
+    <div id="ready-checklist" class="info small"></div>
     <div id="preflight-box" class="info" style="display:none"></div>
-    <label class="checkrow" style="margin-top:6px;">
-      <input id="allow-high-risk-checkbox" type="checkbox" name="allow_high_risk">
-      Allow high-risk run
-      <span class="help-tip" tabindex="0" title="Only use this if preflight reports high risk and you still want to run.">?</span>
-    </label>
     <div class="form-actions">
       <button id="preflight-btn" class="btn secondary" type="button">Run preflight check</button>
       <button class="btn primary" type="submit">Generate benchmark</button>
@@ -322,15 +392,28 @@
   </form>
 
   <div class="jobs">
-    <h2>Builds</h2>
+    <h2>History</h2>
+    <div class="history-tools">
+      <input id="history-search-input" type="search" placeholder="Search history (class, config, stats, paths, properties...)" autocomplete="off" />
+      <select id="history-sort-select" aria-label="Sort history">
+        <option value="recent">Sort: newest first</option>
+        <option value="links_desc">Sort: entity links (high to low)</option>
+        <option value="links_asc">Sort: entity links (low to high)</option>
+      </select>
+      <form method="post" action="/builds/purge_low_links" class="js-async-form" id="purge-low-links-form">
+        <input type="hidden" name="max_links" value="10" />
+        <button class="btn danger" type="submit">Purge builds &lt; 10 links</button>
+      </form>
+    </div>
     <div id="build-list">
       {% if builds %}
       {% for b in builds %}
-      <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}">
+      {% set v = b.with_link or b.without_link %}
+      <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}" data-class-name="{{ b.class_name }}" data-links-count="{{ (v.links_count if v and v.links_count is not none else 0) }}">
         <div class="build-head">
           <div class="header-left">
             <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}">-</button>
-            <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }}</span></div>
+            <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}</span></div>
           </div>
           <div class="head-actions">
             <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
@@ -351,7 +434,6 @@
             <button class="btn danger" type="submit">Delete build</button>
           </form>
         </div>
-        {% set v = b.with_link or b.without_link %}
         {% if v %}
         <div class="build-tiles">
           <div class="tile">
@@ -449,12 +531,13 @@
       {% endif %}
     </div>
     <div class="small" id="build-empty-msg" {% if builds %}style="display:none"{% endif %}>(no completed builds found)</div>
+    <div class="small" id="build-search-empty-msg" style="display:none">(no history entries match your search)</div>
 
     <h2>Jobs</h2>
     <div id="jobs-list">
   {% if jobs %}
     {% for job in jobs %}
-      <div class="job selectable-card" id="job-card-{{ job.id }}" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}" data-job-phase="{{ job.phase or '' }}">
+      <div class="job selectable-card" id="job-card-{{ job.id }}" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}" data-job-phase="{{ job.phase or '' }}" data-class-name="{{ jobs_params[job.id].get('class_name', '') }}">
         <div class="job-header">
           <div class="header-left">
             <button type="button" class="btn-icon js-toggle-job" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">-</button>
@@ -598,7 +681,7 @@
     {% endfor %}
   {% endif %}
     </div>
-    <div class="small" id="jobs-empty-msg" {% if jobs %}style="display:none"{% endif %}>(no jobs to show; successful jobs with downloadable builds are moved to Builds)</div>
+    <div class="small" id="jobs-empty-msg" {% if jobs %}style="display:none"{% endif %}>(no jobs to show; successful jobs with downloadable builds are moved to History)</div>
   </div>
 
 <script>
@@ -616,7 +699,6 @@ const lastStatusByJob = {};
 const phaseByJob = {};
 const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
 const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
-const SHOW_TEST_PRESETS_KEY = 'beam.showTestPresets';
 const PENDING_TOAST_KEY = 'beam.pendingToast';
 const LAST_TOAST_ID_KEY = 'beam.lastToastId';
 const TERMINAL_STATUSES = new Set(['done', 'error', 'cancelled', 'interrupted']);
@@ -626,6 +708,8 @@ let dashboardReloadQueued = false;
 let lastKnownBuildCount = Number({{ builds|length }});
 let nextBuildDomId = Number({{ builds|length }});
 let lastReloadQueuedBuildCount = lastKnownBuildCount;
+let latestClassPartsInfo = null;
+const DASHBOARD_TEST_MODE = {{ (1 if is_test_mode else 0) | tojson }};
 
 function getMinimizedJobs() {
   try {
@@ -659,48 +743,6 @@ function saveMinimizedBuilds(map) {
   } catch (_) {}
 }
 
-function getShowTestPresets() {
-  try {
-    const raw = localStorage.getItem(SHOW_TEST_PRESETS_KEY);
-    if (raw === '0') return false;
-    if (raw === '1') return true;
-  } catch (_) {}
-  return true;
-}
-
-function saveShowTestPresets(value) {
-  try {
-    localStorage.setItem(SHOW_TEST_PRESETS_KEY, value ? '1' : '0');
-  } catch (_) {}
-}
-
-function applyPresetVisibility(showTestPresets) {
-  const select = document.getElementById('preset-select');
-  if (!select) return;
-  const selected = select.value;
-  Array.from(select.options).forEach((opt) => {
-    if (!opt.value) {
-      opt.hidden = false;
-      return;
-    }
-    const isTest = String(opt.dataset.testPreset || '0') === '1';
-    opt.hidden = isTest && !showTestPresets && opt.value !== selected;
-  });
-}
-
-function initPresetToggle() {
-  const toggle = document.getElementById('toggle-test-presets');
-  if (!toggle) return;
-  const initial = getShowTestPresets();
-  toggle.checked = initial;
-  applyPresetVisibility(initial);
-  toggle.addEventListener('change', () => {
-    const show = !!toggle.checked;
-    saveShowTestPresets(show);
-    applyPresetVisibility(show);
-  });
-}
-
 function escapeHtml(value) {
   return String(value || '')
     .replaceAll('&', '&amp;')
@@ -710,14 +752,48 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
+function isTestClassName(value) {
+  const name = String(value || '').trim().toLowerCase();
+  if (!name) return false;
+  return name.startsWith('testclass') || name.startsWith('uxcheckclass');
+}
+
+function shouldKeepClassForMode(className) {
+  return isTestClassName(className) === !!DASHBOARD_TEST_MODE;
+}
+
+function pruneCardsForCurrentMode() {
+  document.querySelectorAll('#build-list .build').forEach((card) => {
+    const className = String(card.dataset.className || card.dataset.buildKey || '').split('::')[0];
+    if (!shouldKeepClassForMode(className)) {
+      card.remove();
+    }
+  });
+  document.querySelectorAll('.job[data-job-id]').forEach((card) => {
+    const className = card.dataset.className || '';
+    if (!shouldKeepClassForMode(className)) {
+      const jobId = Number(card.dataset.jobId || 0);
+      if (jobId > 0) {
+        closeSocketNow(jobId);
+      }
+      card.remove();
+    }
+  });
+  applyHistorySearchFilter();
+  refreshJobsEmptyState();
+}
+
 function renderClassPartsInfo(info) {
   const box = document.getElementById('class-parts-info');
   if (!box) return;
   if (!info || !info.class_name) {
+    latestClassPartsInfo = null;
     box.style.display = 'none';
+    updateReadyChecklist();
     return;
   }
 
+  latestClassPartsInfo = info;
   box.style.display = '';
   const titleEl = document.getElementById('class-parts-title');
   const metaEl = document.getElementById('class-parts-meta');
@@ -728,46 +804,39 @@ function renderClassPartsInfo(info) {
 
   if (titleEl) titleEl.textContent = `Class: ${info.class_name}`;
   if (metaEl) {
-    const catalogParts = (info.class_num_parts !== null && info.class_num_parts !== undefined)
-      ? String(info.class_num_parts)
-      : 'N/A';
+    const catalogCountRaw = Number(info.class_num_parts);
+    const hasCatalogCount = Number.isFinite(catalogCountRaw) && catalogCountRaw > 0;
+    const catalogParts = hasCatalogCount ? String(catalogCountRaw) : 'N/A';
     const size = info.class_size_human || 'N/A';
-    const onlineCount = Number(info.online_available_count || 0);
-    const onlineRanges = info.online_available_ranges || '—';
-    metaEl.textContent = `Catalog parts: ${catalogParts} | Size: ${size} | Available online: ${onlineCount} (${onlineRanges})`;
+    const classRanges = hasCatalogCount ? `0-${Math.max(0, catalogCountRaw - 1)}` : 'unknown';
+    metaEl.textContent = `Class parts: ${classRanges} (${catalogParts} parts, ${size})`;
   }
   if (downloadedEl) {
-    const ranges = info.downloaded_part_ranges || '—';
-    downloadedEl.textContent = `Parts downloaded: ${ranges}`;
+    const localRanges = [];
+    const downloadedRanges = info.downloaded_part_ranges || '—';
+    if (downloadedRanges && downloadedRanges !== '—') {
+      localRanges.push(downloadedRanges);
+    }
+    const localOnlyCount = Number(info.local_only_parts_count || 0);
+    const localOnlyRanges = info.local_only_part_numbers_text || '—';
+    if (localOnlyCount > 0 && localOnlyRanges !== '—') {
+      localRanges.push(localOnlyRanges);
+    }
+    downloadedEl.textContent = `Local parts: ${localRanges.length ? localRanges.join(', ') : 'none'}`;
   }
   if (missingEl) {
-    const ranges = info.not_downloaded_online_part_ranges || '—';
-    missingEl.textContent = `Parts not downloaded: ${ranges}`;
+    const ranges = info.online_available_ranges || '—';
+    missingEl.textContent = `Online parts: ${ranges === '—' ? 'none' : ranges}`;
   }
   if (onlineErrEl) {
-    if (info.online_error) {
-      onlineErrEl.style.display = '';
-      onlineErrEl.textContent = `Online scan unavailable: ${info.online_error}`;
-    } else if (info.online_inferred_from_catalog) {
-      onlineErrEl.style.display = '';
-      const discoveredCount = Number(info.online_discovered_count || 0);
-      const discoveredRanges = info.online_discovered_ranges || '—';
-      onlineErrEl.textContent = `Online listing looked incomplete (${discoveredCount}: ${discoveredRanges}); completed using catalog count.`;
-    } else {
-      onlineErrEl.style.display = 'none';
-      onlineErrEl.textContent = '';
-    }
+    onlineErrEl.style.display = 'none';
+    onlineErrEl.textContent = '';
   }
   if (localOnlyEl) {
-    const count = Number(info.local_only_parts_count || 0);
-    if (count > 0) {
-      localOnlyEl.style.display = '';
-      localOnlyEl.textContent = `Local-only part numbers: ${info.local_only_part_numbers_text || '—'}`;
-    } else {
-      localOnlyEl.style.display = 'none';
-      localOnlyEl.textContent = '';
-    }
+    localOnlyEl.style.display = 'none';
+    localOnlyEl.textContent = '';
   }
+  updateReadyChecklist();
 }
 
 async function refreshClassPartsInfo(className) {
@@ -826,8 +895,310 @@ function normalizeFormText(value) {
   return String(value || '').trim();
 }
 
+function setFieldGroupVisible(groupId, visible) {
+  const el = document.getElementById(groupId);
+  if (!el) return;
+  el.classList.toggle('hidden', !visible);
+}
+
+function inferMatchingModeFromForm() {
+  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
+  const prop = normalizeFormText(document.getElementById('wikidata-property-input')?.value).toLowerCase();
+  const urlModeChecked = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
+  if (urlModeChecked || pattern.includes('sameas') || pattern === 'url') return 'wikidata_url';
+  if (pattern.includes('telephone') || prop === 'p1329' || prop === 'wdt:p1329') return 'telephone';
+  if (prop === 'rdfs:label') return 'label';
+  if (pattern || prop) return 'identifier';
+  return 'label';
+}
+
+function applyMatchingMode(mode, fromUser = false) {
+  const select = document.getElementById('matching-mode-select');
+  const normalizedMode = ['label', 'identifier', 'telephone', 'wikidata_url'].includes(String(mode || ''))
+    ? String(mode)
+    : 'label';
+  const previousMode = inferMatchingModeFromForm();
+  if (select && select.value !== normalizedMode) {
+    select.value = normalizedMode;
+  }
+
+  const patternInput = document.getElementById('wdc-pattern-input');
+  const propInput = document.getElementById('wikidata-property-input');
+  const urlModeCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
+
+  if (fromUser && patternInput) {
+    const current = normalizeFormText(patternInput.value);
+    const defaultPatternByMode = {
+      label: 'name',
+      identifier: 'eidr',
+      telephone: 'telephone',
+      wikidata_url: 'sameAs',
+    };
+    const shouldResetPattern = (
+      !current
+      || previousMode !== normalizedMode
+      || (normalizedMode === 'wikidata_url' && !/(sameas|url)/i.test(current))
+    );
+    if (shouldResetPattern) {
+      patternInput.value = defaultPatternByMode[normalizedMode] || current;
+    }
+  }
+
+  if (fromUser && propInput) {
+    const currentProp = normalizeFormText(propInput.value);
+    if (normalizedMode === 'wikidata_url') {
+      propInput.value = '';
+    } else {
+      const defaultPropertyByMode = {
+        label: 'rdfs:label',
+        identifier: 'P2704',
+        telephone: 'P1329',
+      };
+      const shouldResetProp = (!currentProp || previousMode !== normalizedMode);
+      if (shouldResetProp) {
+        propInput.value = defaultPropertyByMode[normalizedMode] || currentProp;
+      }
+    }
+  }
+
+  if (urlModeCheckbox) {
+    urlModeCheckbox.checked = normalizedMode === 'wikidata_url';
+  }
+
+  setFieldGroupVisible('wikidata-property-group', normalizedMode !== 'wikidata_url');
+  setFieldGroupVisible('ignore-chars-group', normalizedMode !== 'wikidata_url');
+
+  syncWikidataPropertyState();
+  updateMatchingGuidance();
+  updateReadyChecklist();
+}
+
+function renderChecklistItem(label, ok, detail) {
+  const cls = ok ? 'ok' : 'bad';
+  const state = ok ? 'OK' : '!';
+  return `
+    <div class="ready-item ${cls}">
+      <div>
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="detail">${escapeHtml(detail)}</div>
+      </div>
+      <div class="state">${state}</div>
+    </div>
+  `;
+}
+
+function updateReadyChecklist() {
+  const box = document.getElementById('ready-checklist');
+  if (!box) return;
+
+  const className = normalizeFormText(document.getElementById('class-name-select')?.value);
+  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const useLocalOnly = !!document.getElementById('use-local-only-checkbox')?.checked;
+  const urlMode = isEffectiveWikidataUrlMode();
+
+  const items = [];
+  items.push({
+    label: 'Class selected',
+    ok: !!className,
+    detail: className ? className : 'Choose a class name.',
+  });
+  items.push({
+    label: 'Predicate filter set',
+    ok: !!pattern,
+    detail: pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).',
+  });
+  if (urlMode) {
+    items.push({
+      label: 'Wikidata class filter set',
+      ok: !!wkdClass,
+      detail: wkdClass ? wkdClass : 'Required in URL/sameAs mode.',
+    });
+  } else {
+    items.push({
+      label: 'Equivalent Wikidata property set',
+      ok: !!wikidataProperty,
+      detail: wikidataProperty ? wikidataProperty : 'Required unless URL/sameAs mode.',
+    });
+  }
+
+  let partsOk = false;
+  let partsDetail = 'Select a class to check parts.';
+  if (className) {
+    if (!latestClassPartsInfo || String(latestClassPartsInfo.class_name || '') !== className) {
+      partsDetail = 'Checking class parts...';
+    } else {
+      const localCount = Number(latestClassPartsInfo.downloaded_parts_count || 0) + Number(latestClassPartsInfo.local_only_parts_count || 0);
+      const onlineCount = Number(latestClassPartsInfo.online_available_count || 0);
+      if (useLocalOnly) {
+        partsOk = localCount > 0;
+        partsDetail = partsOk ? `Local parts available: ${localCount}` : 'No local parts found (local-only enabled).';
+      } else {
+        partsOk = localCount > 0 || onlineCount > 0 || Number(latestClassPartsInfo.class_num_parts || 0) > 0;
+        partsDetail = partsOk ? `Local: ${localCount} | Online: ${onlineCount}` : 'No parts available locally or online.';
+      }
+    }
+  }
+  items.push({
+    label: 'Parts available',
+    ok: partsOk,
+    detail: partsDetail,
+  });
+
+  const allOk = items.every((row) => !!row.ok);
+  box.className = allOk ? 'info small' : 'warn small';
+  box.innerHTML = `
+    <div><b>Ready to run: ${allOk ? 'yes' : 'not yet'}</b></div>
+    <div class="ready-list">
+      ${items.map((row) => renderChecklistItem(row.label, row.ok, row.detail)).join('')}
+    </div>
+  `;
+}
+
+const IGNORE_CHAR_ALIAS_TO_TOKEN = {
+  spaces: 'spaces',
+  space: 'spaces',
+  '.': 'dot',
+  dot: 'dot',
+  period: 'dot',
+  ';': 'semicolon',
+  semicolon: 'semicolon',
+  semi: 'semicolon',
+  '-': 'hyphen',
+  hyphen: 'hyphen',
+  dash: 'hyphen',
+  ',': 'comma',
+  comma: 'comma',
+  '/': 'slash',
+  slash: 'slash',
+  '_': 'underscore',
+  underscore: 'underscore',
+};
+
+const IGNORE_CHAR_TOKEN_TO_SPEC = {
+  spaces: 'spaces',
+  dot: 'dot',
+  semicolon: 'semicolon',
+  hyphen: 'hyphen',
+  comma: 'comma',
+  slash: 'slash',
+  underscore: 'underscore',
+};
+
+function parseIgnoreCharsSpec(spec) {
+  const raw = String(spec || '').split(';').map((s) => String(s || '').trim()).filter(Boolean);
+  const known = [];
+  const custom = [];
+  const seenKnown = new Set();
+  const seenCustom = new Set();
+  raw.forEach((token) => {
+    const mapped = IGNORE_CHAR_ALIAS_TO_TOKEN[token.toLowerCase()] || null;
+    if (mapped) {
+      if (!seenKnown.has(mapped)) {
+        seenKnown.add(mapped);
+        known.push(mapped);
+      }
+      return;
+    }
+    if (!seenCustom.has(token)) {
+      seenCustom.add(token);
+      custom.push(token);
+    }
+  });
+  return { known, custom };
+}
+
+function syncIgnoreCharsUiFromHidden() {
+  const hidden = document.getElementById('ignore-chars-input');
+  if (!hidden) return;
+  const { known, custom } = parseIgnoreCharsSpec(hidden.value);
+  const knownSet = new Set(known);
+  document.querySelectorAll('.ignore-char-checkbox').forEach((cb) => {
+    const token = String(cb.dataset.token || '').trim();
+    cb.checked = knownSet.has(token);
+  });
+  const customInput = document.getElementById('ignore-chars-custom-input');
+  if (customInput) {
+    customInput.value = custom.join(';');
+  }
+}
+
+function syncIgnoreCharsHiddenFromUi() {
+  const hidden = document.getElementById('ignore-chars-input');
+  if (!hidden) return;
+  const selected = [];
+  const seen = new Set();
+  document.querySelectorAll('.ignore-char-checkbox').forEach((cb) => {
+    if (!cb.checked) return;
+    const token = String(cb.dataset.token || '').trim();
+    const spec = IGNORE_CHAR_TOKEN_TO_SPEC[token] || token;
+    if (!spec || seen.has(spec)) return;
+    seen.add(spec);
+    selected.push(spec);
+  });
+  const customInput = document.getElementById('ignore-chars-custom-input');
+  if (customInput) {
+    const customTokens = String(customInput.value || '')
+      .split(';')
+      .map((s) => String(s || '').trim())
+      .filter(Boolean);
+    customTokens.forEach((token) => {
+      const mapped = IGNORE_CHAR_ALIAS_TO_TOKEN[token.toLowerCase()] || token;
+      const spec = IGNORE_CHAR_TOKEN_TO_SPEC[mapped] || mapped;
+      if (!spec || seen.has(spec)) return;
+      seen.add(spec);
+      selected.push(spec);
+    });
+  }
+  hidden.value = selected.join(';');
+}
+
+function isSameAsPatternMode() {
+  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
+  return pattern.includes('sameas');
+}
+
+function isEffectiveWikidataUrlMode() {
+  return !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked || isSameAsPatternMode();
+}
+
+function setRequiredState(inputId, starId, isRequired) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.required = !!isRequired;
+    input.setAttribute('aria-required', isRequired ? 'true' : 'false');
+  }
+  const star = document.getElementById(starId);
+  if (star) {
+    star.classList.toggle('active', !!isRequired);
+  }
+}
+
+function updateRequiredIndicators() {
+  const isWikidata = isEffectiveWikidataUrlMode();
+  setRequiredState('class-name-select', 'required-class-name', true);
+  setRequiredState('wdc-pattern-input', 'required-wdc-pattern', true);
+  setRequiredState('wikidata-property-input', 'required-wikidata-property', !isWikidata);
+  setRequiredState('wkd-class-input', 'required-wkd-class', isWikidata);
+}
+
 function syncWikidataPropertyState() {
-  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
+  const patternForcesUrlMode = isSameAsPatternMode();
+  const wdcModeCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
+  if (wdcModeCheckbox) {
+    if (patternForcesUrlMode) {
+      wdcModeCheckbox.checked = true;
+      wdcModeCheckbox.disabled = true;
+      wdcModeCheckbox.setAttribute('aria-disabled', 'true');
+      wdcModeCheckbox.title = 'Auto-enabled in sameAs mode';
+    } else {
+      wdcModeCheckbox.disabled = false;
+      wdcModeCheckbox.setAttribute('aria-disabled', 'false');
+      wdcModeCheckbox.title = '';
+    }
+  }
+  const isWikidata = isEffectiveWikidataUrlMode();
   const propInput = document.getElementById('wikidata-property-input');
   if (!propInput) return;
   if (isWikidata) {
@@ -836,85 +1207,70 @@ function syncWikidataPropertyState() {
     }
     propInput.value = '';
     propInput.disabled = true;
-    propInput.placeholder = 'Disabled when WDC values are Wikidata URLs';
+    propInput.placeholder = 'Ignored in sameAs / Wikidata URL mode';
   } else {
     propInput.disabled = false;
     if (!propInput.value && propInput.dataset.cachedValue) {
       propInput.value = propInput.dataset.cachedValue;
     }
-    propInput.placeholder = 'P2704 / wdt:P2704 / rdfs:label';
+    propInput.placeholder = 'rdfs:label / P1329 / P2704';
   }
+
+  const propLabel = document.getElementById('wikidata-property-label');
+  if (propLabel) {
+    propLabel.classList.toggle('field-disabled', !!isWikidata);
+  }
+
+  const ignoreCharsLabel = document.getElementById('ignore-chars-label');
+  const ignoreCharsOptions = document.getElementById('ignore-chars-options');
+  const ignoreCharsCustom = document.getElementById('ignore-chars-custom-input');
+  const ignoreCharsChecks = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
+  if (ignoreCharsLabel) ignoreCharsLabel.classList.toggle('field-disabled', !!isWikidata);
+  if (ignoreCharsOptions) ignoreCharsOptions.classList.toggle('field-disabled', !!isWikidata);
+  ignoreCharsChecks.forEach((cb) => {
+    cb.disabled = !!isWikidata;
+    cb.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  });
+  if (ignoreCharsCustom) {
+    ignoreCharsCustom.disabled = !!isWikidata;
+    ignoreCharsCustom.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  }
+
+  const modeSelect = document.getElementById('matching-mode-select');
+  if (modeSelect) {
+    const inferredMode = inferMatchingModeFromForm();
+    if (modeSelect.value !== inferredMode) {
+      modeSelect.value = inferredMode;
+    }
+  }
+
+  updateRequiredIndicators();
+  updateReadyChecklist();
 }
 
 function updateMatchingGuidance() {
   const box = document.getElementById('matching-guidance');
   if (!box) return;
-  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
-  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
-  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
-  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
-  const tips = [];
-
-  if (!pattern) {
-    tips.push('Set a WDC predicate pattern first (example: name, sameAs, url, telephone).');
-  }
-
-  if (isWikidata) {
-    tips.push('Mode: direct matching from WDC Wikidata URLs (Wikidata property is ignored).');
-    if (!wkdClass) {
-      tips.push('Set Wikidata class (QID) to restrict candidates and improve precision.');
-    }
-    if (pattern && !/(sameas|url)/i.test(pattern)) {
-      tips.push('Tip: with URL mode, use a predicate like sameAs or url.');
-    }
-  } else {
-    tips.push('Mode: value matching against a Wikidata property.');
-    if (!wikidataProperty) {
-      tips.push('Set Wikidata property (example: rdfs:label, P1329, P2704).');
-    }
-    if (pattern && /(sameas|url)/i.test(pattern)) {
-      tips.push('Tip: if values are Wikidata links, enable "WDC values are Wikidata URLs".');
-    }
-    if (wkdClass) {
-      tips.push('Wikidata class filter is active and will narrow matching.');
-    }
-  }
-
-  if (!tips.length) {
-    box.style.display = 'none';
-    box.textContent = '';
-    return;
-  }
-  box.style.display = '';
-  box.innerHTML = tips.map((tip) => `<div>${escapeHtml(tip)}</div>`).join('');
+  box.style.display = 'none';
+  box.textContent = '';
 }
 
 function validateGenerateForm(opts = {}) {
   const requireWikidataInputs = opts.requireWikidataInputs !== false;
-  const enforcePreflightRisk = opts.enforcePreflightRisk !== false;
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
   const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
   const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
-  const isWikidata = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
-  const preflightBox = document.getElementById('preflight-box');
-  const preflightRisk = String(preflightBox?.dataset?.risk || '').toLowerCase();
-  const allowHighRisk = !!document.getElementById('allow-high-risk-checkbox')?.checked;
+  const isWikidata = isEffectiveWikidataUrlMode();
 
   if (!className) return 'Class name is required.';
-  if (!pattern) return 'WDC predicate pattern is required.';
+  if (!pattern) return 'WDC property pattern is required.';
   if (!requireWikidataInputs) return '';
   if (isWikidata) {
     if (!wkdClass) return 'Wikidata class (QID) is required when WDC values are Wikidata URLs.';
-    if (enforcePreflightRisk && preflightRisk === 'high' && !allowHighRisk) {
-      return 'Preflight risk is high. Tick "Allow high-risk run" to continue.';
-    }
     return '';
   }
-  if (!wikidataProperty) return 'Wikidata property is required when WDC values are not Wikidata URLs.';
-  if (enforcePreflightRisk && preflightRisk === 'high' && !allowHighRisk) {
-    return 'Preflight risk is high. Tick "Allow high-risk run" to continue.';
-  }
+  if (!wikidataProperty) return 'Equivalent Wikidata property is required when WDC values are not Wikidata URLs.';
   return '';
 }
 
@@ -976,7 +1332,7 @@ function renderPreflightReport(report) {
 }
 
 async function runPreflightCheck() {
-  const error = validateGenerateForm({ requireWikidataInputs: false, enforcePreflightRisk: false });
+  const error = validateGenerateForm({ requireWikidataInputs: false });
   if (error) {
     showFormError(error);
     return;
@@ -985,14 +1341,15 @@ async function runPreflightCheck() {
   const preflightBtn = document.getElementById('preflight-btn');
   if (preflightBtn) preflightBtn.disabled = true;
   try {
+    const effectiveWikidataMode = isEffectiveWikidataUrlMode();
     const query = new URLSearchParams({
       class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
       parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
       wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
       wikidata_property: normalizeFormText(document.getElementById('wikidata-property-input')?.value),
       wkd_class: normalizeFormText(document.getElementById('wkd-class-input')?.value),
-      ignore_chars: normalizeFormText(document.getElementById('ignore-chars-input')?.value),
-      wdc_value_is_wikidata: document.getElementById('wdc-value-is-wikidata-checkbox')?.checked ? 'true' : 'false',
+      ignore_chars: effectiveWikidataMode ? '' : normalizeFormText(document.getElementById('ignore-chars-input')?.value),
+      wdc_value_is_wikidata: effectiveWikidataMode ? 'true' : 'false',
       use_local_only: document.getElementById('use-local-only-checkbox')?.checked ? 'true' : 'false',
       include_wikidata_preview: 'true',
       scan_limit_lines: '30000',
@@ -1344,8 +1701,91 @@ function refreshBuildEmptyState() {
   const list = document.getElementById('build-list');
   const empty = document.getElementById('build-empty-msg');
   if (!list || !empty) return;
-  const hasBuilds = !!list.querySelector('.build[data-build-key]');
+  const cards = list.querySelectorAll('.build[data-build-key]');
+  const hasBuilds = cards.length > 0;
   empty.style.display = hasBuilds ? 'none' : '';
+  const searchEmpty = document.getElementById('build-search-empty-msg');
+  if (searchEmpty && !hasBuilds) {
+    searchEmpty.style.display = 'none';
+  }
+}
+
+function parseBuildCardLinksCount(card) {
+  if (!card) return 0;
+  const raw = String(card.dataset.linksCount || '').trim();
+  const parsed = Number.parseInt(raw.replace(/[^0-9-]/g, ''), 10);
+  if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  const text = String(card.textContent || '');
+  const m = text.match(/Links:\s*([0-9,]+)/i);
+  if (!m) return 0;
+  const fallback = Number.parseInt(String(m[1] || '').replaceAll(',', ''), 10);
+  return Number.isFinite(fallback) && fallback >= 0 ? fallback : 0;
+}
+
+function parseBuildCardId(card) {
+  const parsed = Number.parseInt(String(card?.dataset?.buildId || ''), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function applyHistorySortOrder() {
+  const list = document.getElementById('build-list');
+  if (!list) return;
+  const sortSelect = document.getElementById('history-sort-select');
+  const mode = String(sortSelect?.value || 'recent');
+  const cards = Array.from(list.querySelectorAll('.build[data-build-key]'));
+  const sorted = cards.sort((a, b) => {
+    const aId = parseBuildCardId(a);
+    const bId = parseBuildCardId(b);
+    if (mode === 'links_desc') {
+      const d = parseBuildCardLinksCount(b) - parseBuildCardLinksCount(a);
+      return d !== 0 ? d : (bId - aId);
+    }
+    if (mode === 'links_asc') {
+      const d = parseBuildCardLinksCount(a) - parseBuildCardLinksCount(b);
+      return d !== 0 ? d : (bId - aId);
+    }
+    return bId - aId;
+  });
+  sorted.forEach((card) => list.appendChild(card));
+}
+
+function applyHistorySearchFilter() {
+  const list = document.getElementById('build-list');
+  if (!list) return;
+  applyHistorySortOrder();
+  const cards = Array.from(list.querySelectorAll('.build[data-build-key]'));
+  const input = document.getElementById('history-search-input');
+  const queryRaw = String(input?.value || '').trim().toLowerCase();
+  const terms = queryRaw.split(/\s+/).filter(Boolean);
+  let visibleCount = 0;
+  cards.forEach((card) => {
+    const haystack = String(card.textContent || '').toLowerCase();
+    const match = terms.every((term) => haystack.includes(term));
+    card.style.display = match ? '' : 'none';
+    if (match) visibleCount += 1;
+  });
+  const searchEmpty = document.getElementById('build-search-empty-msg');
+  if (searchEmpty) {
+    searchEmpty.style.display = (terms.length > 0 && cards.length > 0 && visibleCount === 0) ? '' : 'none';
+  }
+  refreshBuildEmptyState();
+}
+
+function bindHistorySearch() {
+  const input = document.getElementById('history-search-input');
+  if (!input || input.dataset.bound === '1') return;
+  input.dataset.bound = '1';
+  input.addEventListener('input', () => {
+    applyHistorySearchFilter();
+  });
+  const sortSelect = document.getElementById('history-sort-select');
+  if (sortSelect && sortSelect.dataset.bound !== '1') {
+    sortSelect.dataset.bound = '1';
+    sortSelect.addEventListener('change', () => {
+      applyHistorySearchFilter();
+    });
+  }
+  applyHistorySearchFilter();
 }
 
 function refreshJobsEmptyState() {
@@ -1387,6 +1827,9 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
   const downloadAction = `/builds/${actionClass}/${actionBuild}/download`;
   const deleteAction = `/builds/${actionClass}/${actionBuild}/delete`;
   const variant = build.with_link || build.without_link || null;
+  const linksCountRaw = (variant && variant.links_count !== undefined && variant.links_count !== null) ? variant.links_count : 0;
+  const linksCountNum = Number.parseInt(String(linksCountRaw).replace(/[^0-9-]/g, ''), 10);
+  const linksCount = Number.isFinite(linksCountNum) && linksCountNum >= 0 ? linksCountNum : 0;
   let tilesHtml = '';
   let qaHtml = '';
   if (variant) {
@@ -1483,11 +1926,11 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
     `;
   }
   return `
-    <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}">
+    <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}" data-class-name="${escapeHtml(className)}" data-links-count="${linksCount}">
       <div class="build-head">
         <div class="header-left">
           <button type="button" class="btn-icon js-toggle-build" data-build-id="${buildId}">-</button>
-          <div><b>${escapeHtml(className)}</b> <span class="small">· Completed: ${doneAt}</span></div>
+          <div><b>${escapeHtml(className)}</b> <span class="small">· Completed: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span></div>
         </div>
         <div class="head-actions">
           <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
@@ -1532,7 +1975,7 @@ function reconcileBuildList(builds) {
   if (inserted > 0) {
     setupAsyncForms();
     bindBuildMinimize();
-    refreshBuildEmptyState();
+    applyHistorySearchFilter();
   }
   return inserted;
 }
@@ -1779,7 +2222,7 @@ async function pollDashboardOnce() {
   if (dashboardPollBusy || dashboardReloadQueued) return;
   dashboardPollBusy = true;
   try {
-    const res = await fetch('/api/dashboard?job_limit=80&build_limit=40', {
+    const res = await fetch(`/api/dashboard?job_limit=80&build_limit=40&test_mode=${DASHBOARD_TEST_MODE}`, {
       method: 'GET',
       cache: 'no-store',
       credentials: 'same-origin',
@@ -1787,7 +2230,10 @@ async function pollDashboardOnce() {
     });
     if (!res.ok) return;
     const payload = await res.json();
-    const jobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+    const jobs = (Array.isArray(payload.jobs) ? payload.jobs : []).filter((j) => {
+      const className = (j && j.params && j.params.class_name) ? j.params.class_name : '';
+      return shouldKeepClassForMode(className);
+    });
     jobs.forEach((j) => {
       const jobCard = document.getElementById('job-card-' + j.id);
       if (!jobCard) return;
@@ -1810,9 +2256,15 @@ async function pollDashboardOnce() {
         startLogs(j.id);
       }
     });
-    removeDoneJobsFromList(payload.visible_job_ids || payload.active_job_ids || []);
-    const insertedBuilds = reconcileBuildList(Array.isArray(payload.builds) ? payload.builds : []);
-    const nextBuildCount = Number(payload.build_count || 0);
+    const filteredJobIds = new Set(jobs.map((j) => Number(j.id || 0)));
+    const rawVisibleIds = Array.isArray(payload.visible_job_ids || payload.active_job_ids) ? (payload.visible_job_ids || payload.active_job_ids) : [];
+    const visibleIds = rawVisibleIds.filter((id) => filteredJobIds.has(Number(id || 0)));
+    removeDoneJobsFromList(visibleIds);
+    const filteredBuilds = (Array.isArray(payload.builds) ? payload.builds : []).filter((b) => {
+      return shouldKeepClassForMode((b && b.class_name) ? b.class_name : '');
+    });
+    const insertedBuilds = reconcileBuildList(filteredBuilds);
+    const nextBuildCount = filteredBuilds.length;
     if (insertedBuilds > 0) {
       const msg = insertedBuilds === 1 ? 'Build is ready to download' : `${insertedBuilds} builds are ready to download`;
       showToast(msg, 'success', 2400);
@@ -1855,9 +2307,11 @@ function setupAsyncForms() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let redirectedError = '';
+        let purgeCount = '';
         try {
           const finalUrl = new URL(res.url, window.location.href);
           redirectedError = finalUrl.searchParams.get('form_error') || '';
+          purgeCount = finalUrl.searchParams.get('purged') || '';
         } catch (_) {}
         if (redirectedError) {
           if (btn) btn.disabled = false;
@@ -1873,12 +2327,25 @@ function setupAsyncForms() {
             const wasBuild = el.classList.contains('build');
             const wasJob = el.classList.contains('job');
             el.remove();
-            if (wasBuild) refreshBuildEmptyState();
+            if (wasBuild) applyHistorySearchFilter();
             if (wasJob) refreshJobsEmptyState();
           }
         }
         if (form.action.includes('/cancel')) {
           showToast('Cancellation requested', 'info', 2200);
+        } else if (form.action.includes('/builds/purge_low_links')) {
+          const parsedPurgeCount = Number.parseInt(purgeCount, 10);
+          if (Number.isFinite(parsedPurgeCount)) {
+            const count = Math.max(0, parsedPurgeCount);
+            if (count === 0) {
+              showToast('No builds to purge (<10 links)', 'info', 2200);
+            } else {
+              showToast(`Purged ${count} build${count === 1 ? '' : 's'} (<10 links)`, 'success', 2300);
+            }
+          } else {
+            showToast('Low-link build purge completed', 'success', 2200);
+          }
+          setTimeout(() => window.location.reload(), 260);
         } else if (form.action.includes('/rerun')) {
           showToast('Job queued', 'success', 2200);
           setTimeout(() => window.location.reload(), 350);
@@ -1896,22 +2363,33 @@ function setupAsyncForms() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const ids = [{% for job in jobs %}{{ job.id }},{% endfor %}];
-  initPresetToggle();
   const formEl = document.getElementById('generate-form');
   const preflightBtn = document.getElementById('preflight-btn');
+  const matchingModeSelect = document.getElementById('matching-mode-select');
   const classNameSelect = document.getElementById('class-name-select');
   const partsSpecInput = document.getElementById('parts-spec-input');
   const patternInput = document.getElementById('wdc-pattern-input');
   const wkdClassInput = document.getElementById('wkd-class-input');
   const wikidataPropertyInput = document.getElementById('wikidata-property-input');
   const ignoreCharsInput = document.getElementById('ignore-chars-input');
+  const ignoreCharsCustomInput = document.getElementById('ignore-chars-custom-input');
+  const ignoreCharsCheckboxes = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
   const useLocalOnlyCheckbox = document.getElementById('use-local-only-checkbox');
   const wdcValueIsWikidataCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
-  const allowHighRiskCheckbox = document.getElementById('allow-high-risk-checkbox');
 
-  syncWikidataPropertyState();
-  updateMatchingGuidance();
+  syncIgnoreCharsUiFromHidden();
+  syncIgnoreCharsHiddenFromUi();
+  applyMatchingMode(inferMatchingModeFromForm(), false);
+  if (matchingModeSelect) {
+    matchingModeSelect.addEventListener('change', () => {
+      applyMatchingMode(matchingModeSelect.value, true);
+      showFormError('');
+      const preflightBox = document.getElementById('preflight-box');
+      if (preflightBox) {
+        preflightBox.dataset.risk = '';
+      }
+    });
+  }
   if (wdcValueIsWikidataCheckbox) {
     wdcValueIsWikidataCheckbox.addEventListener('change', () => {
       syncWikidataPropertyState();
@@ -1923,29 +2401,49 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  [classNameSelect, partsSpecInput, patternInput, wkdClassInput, wikidataPropertyInput, ignoreCharsInput, useLocalOnlyCheckbox].forEach((el) => {
+  [classNameSelect, partsSpecInput, patternInput, wkdClassInput, wikidataPropertyInput, useLocalOnlyCheckbox].forEach((el) => {
     if (!el) return;
     el.addEventListener('input', () => {
+      syncWikidataPropertyState();
       updateMatchingGuidance();
       showFormError('');
-      if (el !== allowHighRiskCheckbox) {
-        const preflightBox = document.getElementById('preflight-box');
-        if (preflightBox) {
-          preflightBox.dataset.risk = '';
-        }
+      const preflightBox = document.getElementById('preflight-box');
+      if (preflightBox) {
+        preflightBox.dataset.risk = '';
       }
     });
     el.addEventListener('change', () => {
+      syncWikidataPropertyState();
       updateMatchingGuidance();
       showFormError('');
-      if (el !== allowHighRiskCheckbox) {
-        const preflightBox = document.getElementById('preflight-box');
-        if (preflightBox) {
-          preflightBox.dataset.risk = '';
-        }
+      const preflightBox = document.getElementById('preflight-box');
+      if (preflightBox) {
+        preflightBox.dataset.risk = '';
       }
     });
   });
+  const onIgnoreCharsChanged = () => {
+    syncIgnoreCharsHiddenFromUi();
+    updateMatchingGuidance();
+    showFormError('');
+    const preflightBox = document.getElementById('preflight-box');
+    if (preflightBox) {
+      preflightBox.dataset.risk = '';
+    }
+  };
+  ignoreCharsCheckboxes.forEach((cb) => {
+    cb.addEventListener('change', onIgnoreCharsChanged);
+  });
+  if (ignoreCharsCustomInput) {
+    ignoreCharsCustomInput.addEventListener('input', onIgnoreCharsChanged);
+    ignoreCharsCustomInput.addEventListener('change', onIgnoreCharsChanged);
+  }
+  if (ignoreCharsInput) {
+    ignoreCharsInput.addEventListener('change', () => {
+      syncIgnoreCharsUiFromHidden();
+      updateMatchingGuidance();
+    });
+  }
   if (formEl) {
     formEl.addEventListener('submit', (event) => {
       const error = validateGenerateForm();
@@ -1991,11 +2489,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (TERMINAL_STATUSES.has(st)) terminalHandledByJob[id] = true;
   });
   showPendingToastFromStorage();
+  pruneCardsForCurrentMode();
+  bindHistorySearch();
   bindBuildMinimize();
   bindJobMinimize();
-  refreshBuildEmptyState();
+  applyHistorySearchFilter();
   refreshJobsEmptyState();
-  ids.forEach((id) => startLogs(id));
+  document.querySelectorAll('.job[data-job-id]').forEach((el) => {
+    const id = Number(el.dataset.jobId || 0);
+    if (id > 0) startLogs(id);
+  });
   setupAsyncForms();
   pollDashboardOnce();
   dashboardPollTimer = setInterval(() => pollDashboardOnce(), 3000);

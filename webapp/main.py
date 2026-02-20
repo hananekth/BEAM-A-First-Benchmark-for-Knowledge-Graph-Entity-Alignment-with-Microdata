@@ -41,7 +41,7 @@ _TRIPLE_RE = re.compile(
 
 PRESETS = {
     "testclass_large_benchmark": {
-        "label": "Bigger local benchmark (TestClassLarge / language label)",
+        "label": "TestClassLarge - label",
         "class_name": "TestClassLarge",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -49,12 +49,11 @@ PRESETS = {
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_quick": {
-        "label": "Quick local test (TestClass / language label)",
+        "label": "TestClass - label",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -62,12 +61,11 @@ PRESETS = {
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_label": {
-        "label": "TestClass label matching (name -> rdfs:label)",
+        "label": "TestClassLabel - label",
         "class_name": "TestClassLabel",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -75,12 +73,11 @@ PRESETS = {
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_identifier": {
-        "label": "TestClass identifier matching (eidr -> P2704)",
+        "label": "TestClassIdentifier - code",
         "class_name": "TestClassIdentifier",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -88,12 +85,11 @@ PRESETS = {
         "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_wikidata_url": {
-        "label": "TestClass Wikidata links (url -> P31 city)",
+        "label": "TestClassWikidataUrl - url link",
         "class_name": "TestClassWikidataUrl",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
@@ -101,12 +97,11 @@ PRESETS = {
         "wkd_class": "Q515",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_wikidata_sameas": {
-        "label": "TestClass Wikidata links (sameAs -> P31 country)",
+        "label": "TestClassWikidataSameAs - sameAs link",
         "class_name": "TestClassWikidataSameAs",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameas",
@@ -114,12 +109,11 @@ PRESETS = {
         "wkd_class": "Q6256",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
-    "property_movie": {
-        "label": "Match with property (Movie / EIDR)",
+    "code_movie": {
+        "label": "Movie - code",
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -127,25 +121,23 @@ PRESETS = {
         "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "label_language": {
-        "label": "Match with label (Language / rdfs:label)",
+        "label": "Language - label",
         "class_name": "Language",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
-        "wkd_class": "Q34772",
+        "wkd_class": "Q33742",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "property_college_or_university_telephone": {
-        "label": "Match with property (CollegeOrUniversity / telephone)",
+        "label": "CollegeOrUniversity - telephone",
         "class_name": "CollegeOrUniversity",
         "parts_spec": "all",
         "wdc_predicate_pattern": "telephone",
@@ -153,12 +145,11 @@ PRESETS = {
         "wkd_class": "Q38723",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
     "wikidata_link_city": {
-        "label": "Match with existing Wikidata link (City / sameAs)",
+        "label": "City - sameAs link",
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
@@ -166,23 +157,25 @@ PRESETS = {
         "wkd_class": "Q486972",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": True,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     },
+}
+
+LEGACY_PRESET_ALIASES = {
+    "property_movie": "code_movie",
 }
 
 
 def _default_form():
     return {
         "class_name": "",
-        "parts_spec": "",
+        "parts_spec": "all",
         "wdc_predicate_pattern": "",
         "wikidata_property": "",
         "wkd_class": "",
         "ignore_chars": "spaces;-;.",
         "wdc_value_is_wikidata": False,
-        "max_depth": 0,
         "force_align": False,
         "use_local_only": False,
     }
@@ -192,6 +185,10 @@ def _clean_text(value: Optional[str]) -> str:
     return (value or "").strip()
 
 
+def _is_sameas_mode(pattern: str) -> bool:
+    return "sameas" in _clean_text(pattern).lower()
+
+
 def _validate_and_normalize_job_params(raw_params: dict):
     params = dict(raw_params or {})
     params["class_name"] = _clean_text(params.get("class_name"))
@@ -199,32 +196,56 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["wdc_predicate_pattern"] = _clean_text(params.get("wdc_predicate_pattern"))
     params["wikidata_property"] = _clean_text(params.get("wikidata_property"))
     params["wkd_class"] = _clean_text(params.get("wkd_class"))
-    params["ignore_chars"] = _clean_text(params.get("ignore_chars")) or "spaces;-;."
+    params["ignore_chars"] = _clean_text(params.get("ignore_chars"))
     params["wdc_value_is_wikidata"] = bool(params.get("wdc_value_is_wikidata"))
     params["force_align"] = bool(params.get("force_align"))
     params["use_local_only"] = bool(params.get("use_local_only"))
-    try:
-        params["max_depth"] = int(params.get("max_depth", 0))
-    except Exception:
-        params["max_depth"] = 0
 
     if not params["class_name"]:
         return params, "Class name is required."
     if not params["wdc_predicate_pattern"]:
-        return params, "WDC predicate pattern is required."
+        return params, "WDC property pattern is required."
+
+    sameas_mode = _is_sameas_mode(params["wdc_predicate_pattern"])
+    if sameas_mode:
+        params["wdc_value_is_wikidata"] = True
+        params["wikidata_property"] = ""
+        params["ignore_chars"] = ""
+    elif not params["ignore_chars"]:
+        params["ignore_chars"] = "spaces;-;."
 
     if params["wdc_value_is_wikidata"]:
         params["wikidata_property"] = ""
+        params["ignore_chars"] = ""
         if not params["wkd_class"]:
             return params, "Wikidata class (QID) is required when WDC values are Wikidata URLs."
     else:
         if not params["wikidata_property"]:
-            return params, "Wikidata property is required when WDC values are not Wikidata URLs."
+            return params, "Equivalent Wikidata property is required when WDC values are not Wikidata URLs."
 
     return params, None
 
 
-def _get_recent_presets(limit=50):
+def _is_test_class_name(class_name: Optional[str]) -> bool:
+    name = _clean_text(class_name)
+    if not name:
+        return False
+    lowered = name.lower()
+    return lowered.startswith("testclass") or lowered.startswith("uxcheckclass")
+
+
+def _is_test_preset(preset: dict) -> bool:
+    if not isinstance(preset, dict):
+        return False
+    return _is_test_class_name(preset.get("class_name"))
+
+
+def _filter_presets_by_mode(test_mode: bool):
+    desired = bool(test_mode)
+    return {k: v for k, v in PRESETS.items() if _is_test_preset(v) == desired}
+
+
+def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
     rows = db.list_jobs(limit=limit)
     recent = []
     seen = set()
@@ -232,6 +253,8 @@ def _get_recent_presets(limit=50):
         try:
             params = json.loads(r["params_json"])
         except Exception:
+            continue
+        if test_mode is not None and _is_test_class_name(params.get("class_name")) != bool(test_mode):
             continue
         key = tuple(
             params.get(k, "")
@@ -243,7 +266,6 @@ def _get_recent_presets(limit=50):
                 "wkd_class",
                 "ignore_chars",
                 "wdc_value_is_wikidata",
-                "max_depth",
             )
         )
         if key in seen:
@@ -583,7 +605,7 @@ def _build_preflight_report(
         report["summary"] = "Class name is required."
         return report
     if not pattern:
-        report["summary"] = "WDC predicate pattern is required."
+        report["summary"] = "WDC property pattern is required."
         return report
 
     selected_files, select_warnings = _select_local_part_files(class_name, parts_spec)
@@ -679,7 +701,7 @@ def _build_preflight_report(
             for pred, cnt in predicate_counts.most_common(8)
         ]
         report["risk"] = "high"
-        report["summary"] = "No triple matched this predicate pattern in sampled local data."
+        report["summary"] = "No triple matched this WDC property pattern in sampled local data."
     elif wdc_value_is_wikidata and wikidata_like_values == 0:
         report["risk"] = "high"
         report["summary"] = "Pattern matched, but no Wikidata URL-like values were found."
@@ -1042,7 +1064,7 @@ def _build_config_groups(cfg: dict):
     ordered = [
         ("Input", ["class_name"]),
         ("Matching", ["wdc_predicate_pattern", "wikidata_property", "wkd_class", "wdc_value_is_wikidata", "ignore_chars"]),
-        ("Build", ["max_depth", "force_align", "use_local_only", "build_name", "result_path"]),
+        ("Build", ["force_align", "use_local_only", "build_name", "result_path"]),
     ]
     used = set()
     groups = []
@@ -1088,6 +1110,79 @@ def _resolve_build_dir(class_name: str, build_name: str):
     return base
 
 
+def _normalized_path_text(value: str) -> str:
+    raw = _clean_text(value)
+    if not raw:
+        return ""
+    try:
+        # Normalize both relative and absolute paths to the same canonical form.
+        return str(Path(raw).expanduser().resolve())
+    except Exception:
+        return os.path.normpath(raw)
+
+
+def _build_result_path_aliases(build_dir: Path):
+    aliases = set()
+    try:
+        resolved = build_dir.resolve()
+    except Exception:
+        resolved = build_dir
+
+    for candidate in (build_dir, resolved):
+        txt = _clean_text(str(candidate))
+        if not txt:
+            continue
+        aliases.add(txt)
+        aliases.add(os.path.normpath(txt))
+
+    try:
+        cwd_resolved = Path.cwd().resolve()
+        rel = resolved.relative_to(cwd_resolved)
+        rel_txt = str(rel)
+        aliases.add(rel_txt)
+        aliases.add(os.path.normpath(rel_txt))
+        aliases.add(f"./{rel_txt}")
+    except Exception:
+        pass
+
+    normalized = {_clean_text(a.rstrip("/\\")) for a in aliases if _clean_text(a)}
+    return {a for a in normalized if a}
+
+
+def _delete_jobs_for_build_dir(build_dir: Path, scan_limit: int = 50000) -> int:
+    aliases = _build_result_path_aliases(build_dir)
+    target_norm = _normalized_path_text(str(build_dir))
+    to_delete_ids = set()
+
+    # Delete exact-path variants without relying on recency limits.
+    for alias in aliases:
+        try:
+            db.delete_jobs_by_result_path(alias)
+        except Exception:
+            continue
+
+    # Fallback for unusual historical path spellings that still point to the same directory.
+    for row in db.list_jobs(limit=scan_limit):
+        try:
+            rp = _clean_text(row["result_path"])
+        except Exception:
+            rp = ""
+        if not rp:
+            continue
+        if rp in aliases or os.path.normpath(rp) in aliases or _normalized_path_text(rp) == target_norm:
+            try:
+                to_delete_ids.add(int(row["id"]))
+            except Exception:
+                continue
+
+    for jid in to_delete_ids:
+        try:
+            db.delete_job(jid)
+        except Exception:
+            continue
+    return len(to_delete_ids)
+
+
 def _bool_from_any(value):
     if isinstance(value, bool):
         return value
@@ -1095,13 +1190,6 @@ def _bool_from_any(value):
         return bool(value)
     text = str(value or "").strip().lower()
     return text in {"1", "true", "yes", "on"}
-
-
-def _int_from_any(value, default=0):
-    try:
-        return int(value)
-    except Exception:
-        return int(default)
 
 
 def _find_job_params_by_result_path(result_path: str, limit: int = 4000):
@@ -1143,7 +1231,6 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "wkd_class": _clean_text(str(_pick("wkd_class", ""))),
         "ignore_chars": _clean_text(str(_pick("ignore_chars", "spaces;-;."))),
         "wdc_value_is_wikidata": _bool_from_any(_pick("wdc_value_is_wikidata", False)),
-        "max_depth": _int_from_any(_pick("max_depth", 0), default=0),
         "force_align": _bool_from_any(_pick("force_align", False)),
         "use_local_only": _bool_from_any(_pick("use_local_only", False)),
     }
@@ -1179,7 +1266,7 @@ def _looks_like_skipped_build_reason(text: Optional[str]) -> bool:
     return ("build skipped" in msg) or ("no alignments found" in msg)
 
 
-def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
+def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40, test_mode: Optional[bool] = None):
     all_jobs = [dict(j) for j in db.list_jobs(limit=job_limit)]
     jobs_by_id = {j["id"]: j for j in all_jobs}
     # Always include truly active jobs even if they are outside the recency window.
@@ -1189,8 +1276,18 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
             if jid not in jobs_by_id:
                 jobs_by_id[jid] = dict(row)
     all_jobs = sorted(jobs_by_id.values(), key=lambda r: int(r.get("id") or 0), reverse=True)
+    all_jobs_params = {j["id"]: _safe_json_loads(j.get("params_json")) for j in all_jobs}
+    if test_mode is not None:
+        desired = bool(test_mode)
+        all_jobs = [
+            j for j in all_jobs
+            if _is_test_class_name(all_jobs_params.get(j["id"], {}).get("class_name")) == desired
+        ]
     active_jobs = [j for j in all_jobs if j["status"] in {"running", "queued"}]
     builds = _scan_builds(limit=build_limit)
+    if test_mode is not None:
+        desired = bool(test_mode)
+        builds = [b for b in builds if _is_test_class_name(b.get("class_name")) == desired]
 
     build_params = {}
     for j in all_jobs:
@@ -1232,7 +1329,7 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
             "started": _fmt_ts(j.get("started_at")),
             "ended": _fmt_ts(j.get("ended_at")),
         }
-        jobs_params[jid] = _safe_json_loads(j.get("params_json"))
+        jobs_params[jid] = all_jobs_params.get(jid, {})
         jobs_subjobs[jid] = [dict(s) for s in db.list_subjobs(jid)]
 
     # Legacy safety: some old rows can be persisted as "done" even when build was skipped
@@ -1261,11 +1358,24 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40):
         j["phase"] = j.get("phase") or "build"
         j["error_message"] = reason
 
-    # Keep done jobs visible when there is no downloadable build output.
-    jobs_for_panel = [
-        j for j in all_jobs
-        if j["status"] != "done" or not jobs_outputs.get(j["id"], {}).get("build_done")
-    ]
+    # Keep done jobs visible when there is no downloadable build output,
+    # except dangling rows where result_path points to a deleted/non-existent build dir.
+    jobs_for_panel = []
+    for j in all_jobs:
+        if j["status"] != "done":
+            jobs_for_panel.append(j)
+            continue
+        out = jobs_outputs.get(j["id"], {})
+        if out.get("build_done"):
+            continue
+        result_path = _clean_text(j.get("result_path"))
+        if result_path:
+            try:
+                if not Path(result_path).exists():
+                    continue
+            except Exception:
+                pass
+        jobs_for_panel.append(j)
 
     return {
         "all_jobs": all_jobs,
@@ -1290,7 +1400,9 @@ def index(
     preset: Optional[str] = None,
     recent: Optional[int] = None,
     form_error: Optional[str] = None,
+    test_mode: Optional[str] = None,
 ):
+    is_test_mode = _bool_from_any(test_mode)
     # Ensure classes cached
     if not db.list_wdc_classes():
         try:
@@ -1307,17 +1419,21 @@ def index(
             pass
 
     form = _default_form()
+    visible_presets = _filter_presets_by_mode(is_test_mode)
     selected_preset = ""
-    if preset and preset in PRESETS:
-        form.update(PRESETS[preset])
-        selected_preset = preset
+    if preset:
+        canonical_preset = LEGACY_PRESET_ALIASES.get(preset, preset)
+        if canonical_preset in visible_presets:
+            form.update(visible_presets[canonical_preset])
+            selected_preset = canonical_preset
 
     if recent:
         job = db.get_job(recent)
         if job:
             try:
                 params = json.loads(job["params_json"])
-                form.update(params)
+                if _is_test_class_name(params.get("class_name")) == is_test_mode:
+                    form.update(params)
             except Exception:
                 pass
 
@@ -1328,8 +1444,8 @@ def index(
     if form.get("class_name"):
         class_parts_info = _build_class_parts_info(form["class_name"])
 
-    recent_presets = _get_recent_presets()
-    dashboard = _build_dashboard_state(job_limit=50, build_limit=40)
+    recent_presets = _get_recent_presets(test_mode=is_test_mode)
+    dashboard = _build_dashboard_state(job_limit=50, build_limit=40, test_mode=is_test_mode)
     jobs = dashboard["jobs_for_panel"]
     builds = dashboard["builds"]
     jobs_outputs = {j["id"]: dashboard["jobs_outputs"][j["id"]] for j in jobs}
@@ -1342,7 +1458,7 @@ def index(
         "index.html",
         {
             "form": form,
-            "presets": PRESETS,
+            "presets": visible_presets,
             "selected_preset": selected_preset,
             "recent_presets": recent_presets,
             "jobs": jobs,
@@ -1354,15 +1470,16 @@ def index(
             "class_meta": class_meta,
             "class_parts_info": class_parts_info,
             "form_error": _clean_text(form_error),
+            "is_test_mode": is_test_mode,
         },
     )
 
 
 @app.get("/api/dashboard")
-def dashboard_api(job_limit: int = 80, build_limit: int = 40):
+def dashboard_api(job_limit: int = 80, build_limit: int = 40, test_mode: Optional[bool] = None):
     job_limit = max(1, min(int(job_limit), 200))
     build_limit = max(1, min(int(build_limit), 200))
-    dashboard = _build_dashboard_state(job_limit=job_limit, build_limit=build_limit)
+    dashboard = _build_dashboard_state(job_limit=job_limit, build_limit=build_limit, test_mode=test_mode)
 
     jobs = []
     for j in dashboard["all_jobs"]:
@@ -1567,10 +1684,8 @@ def create_job(
     wkd_class: str = Form(""),
     ignore_chars: str = Form(""),
     wdc_value_is_wikidata: Optional[str] = Form(None),
-    max_depth: int = Form(0),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
-    allow_high_risk: Optional[str] = Form(None),
 ):
     raw_params = {
         "class_name": _clean_text(class_name),
@@ -1580,36 +1695,12 @@ def create_job(
         "wkd_class": _clean_text(wkd_class),
         "ignore_chars": _clean_text(ignore_chars),
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
-        "max_depth": int(max_depth),
         "force_align": bool(force_align),
         "use_local_only": bool(use_local_only),
     }
     params, validation_error = _validate_and_normalize_job_params(raw_params)
     if validation_error:
         return RedirectResponse(url=f"/?form_error={quote_plus(validation_error)}", status_code=303)
-    try:
-        create_scan_limit = int(os.environ.get("JOB_CREATE_PREFLIGHT_SCAN_LIMIT", "12000"))
-    except Exception:
-        create_scan_limit = 12000
-    preflight = _build_preflight_report(
-        class_name=params["class_name"],
-        parts_spec=params["parts_spec"],
-        wdc_predicate_pattern=params["wdc_predicate_pattern"],
-        wikidata_property=params["wikidata_property"],
-        wkd_class=params["wkd_class"],
-        ignore_chars=params["ignore_chars"],
-        wdc_value_is_wikidata=params["wdc_value_is_wikidata"],
-        use_local_only=params["use_local_only"],
-        include_wikidata_preview=False,
-        scan_limit_lines=create_scan_limit,
-    )
-    if preflight.get("ok") and preflight.get("risk") == "high" and not bool(allow_high_risk):
-        summary = _clean_text(preflight.get("summary")) or "high-risk preflight"
-        msg = (
-            f"High-risk preflight: {summary} "
-            f"Run preflight and tick 'Allow high-risk run' to continue."
-        )
-        return RedirectResponse(url=f"/?form_error={quote_plus(msg)}", status_code=303)
     db.insert_job(params)
     return RedirectResponse(url="/", status_code=303)
 
@@ -1649,11 +1740,47 @@ def delete_build(class_name: str, build_name: str):
     if not build_dir:
         return RedirectResponse(url="/", status_code=303)
     try:
-        db.delete_jobs_by_result_path(str(build_dir))
+        _delete_jobs_for_build_dir(build_dir)
     except Exception:
         pass
     shutil.rmtree(build_dir, ignore_errors=True)
     return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/builds/purge_low_links")
+def purge_low_link_builds(max_links: int = Form(10)):
+    try:
+        threshold = int(max_links)
+    except Exception:
+        threshold = 10
+    threshold = max(0, threshold)
+
+    purged = 0
+    # Use a high scan limit so this action can clean the full history.
+    for build in _scan_builds(limit=100000):
+        class_name = str(build.get("class_name") or "").strip()
+        build_name = str(build.get("build_name") or "").strip()
+        if not class_name or not build_name:
+            continue
+        variant = build.get("with_link") or build.get("without_link")
+        if not isinstance(variant, dict):
+            continue
+        try:
+            links_count = int(variant.get("links_count") or 0)
+        except Exception:
+            links_count = 0
+        if links_count >= threshold:
+            continue
+        build_dir = _resolve_build_dir(class_name, build_name)
+        if not build_dir:
+            continue
+        try:
+            _delete_jobs_for_build_dir(build_dir)
+        except Exception:
+            pass
+        shutil.rmtree(build_dir, ignore_errors=True)
+        purged += 1
+    return RedirectResponse(url=f"/?purged={purged}", status_code=303)
 
 
 @app.post("/builds/{class_name}/{build_name}/rerun")

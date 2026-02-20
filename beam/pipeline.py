@@ -22,16 +22,6 @@ def _discover_wdc_files(download_dir):
                 name.endswith(".nq") or name.endswith(".nt") or "." not in name
             ):
                 candidates.append(os.path.join(download_dir, name))
-        if not candidates:
-            for name in sorted(os.listdir(download_dir)):
-                if name.endswith("_full_graph.nq"):
-                    candidates.append(os.path.join(download_dir, name))
-                    break
-        if not candidates:
-            for name in sorted(os.listdir(download_dir)):
-                if name.endswith(".nq") or name.endswith(".nt"):
-                    candidates.append(os.path.join(download_dir, name))
-                    break
     return candidates
 
 
@@ -42,9 +32,6 @@ def _count_local_parts(download_dir):
     for name in os.listdir(download_dir):
         if name.startswith("part_") and (name.endswith(".nq") or name.endswith(".nt") or "." not in name):
             count += 1
-    for name in os.listdir(download_dir):
-        if name.endswith("_full_graph.nq"):
-            return max(count, 1)
     return count
 
 
@@ -155,56 +142,43 @@ def generate_benchmark(
 
     lock_path = Path("Download") / ".workers.lock"
 
-    full_graph_file = work_dir / f"{class_name}_full_graph.nq"
-    use_full_graph = full_graph_file.exists()
-    if not use_full_graph:
-        candidates = sorted(work_dir.glob("*full_graph.nq"))
-        if candidates:
-            full_graph_file = candidates[0]
-            use_full_graph = True
-
+    # Always use part_* sources. Do not fallback to *_full_graph.nq files.
     decompressed_files = []
-    if use_full_graph:
-        decompressed_files = [full_graph_file]
-        graph_file = full_graph_file
+    available_parts = None
+    if use_local_only:
+        decompressed_files = _select_local_part_files(str(work_dir), parts_spec)
+        if not decompressed_files:
+            raise PipelineError(f"No local parts matched '{parts_spec}' in Download/; download is disabled.")
     else:
-        available_parts = None
-        if use_local_only:
-            decompressed_files = _select_local_part_files(str(work_dir), parts_spec)
-            if not decompressed_files:
-                raise PipelineError(f"No local parts matched '{parts_spec}' in Download/; download is disabled.")
+        if parts_spec.lower() == "all":
+            available_parts = align.discover_parts(class_name)
+            if not available_parts:
+                raise PipelineError("No parts available for class")
         else:
-            if parts_spec.lower() == "all":
-                available_parts = align.discover_parts(class_name)
-                if not available_parts:
-                    raise PipelineError("No parts available for class")
-            else:
-                available_parts = align.discover_parts(class_name)
-                if not available_parts:
-                    available_parts = None
-            parts_to_download = align.parse_parts_spec(parts_spec, available_parts)
-            if not parts_to_download:
-                raise PipelineError(f"No valid parts for '{parts_spec}'")
-            decompressed_files = align.download_and_decompress(
-                class_name,
-                parts_to_download,
-                work_dir,
-                parallel_decompress=True,
-                workers=workers,
-                lock_path=lock_path,
-            )
-            if len(decompressed_files) < len(parts_to_download):
-                missing = len(parts_to_download) - len(decompressed_files)
-                raise PipelineError(f"Missing {missing} part(s). Download/decompress incomplete.")
-        graph_file = work_dir / f"{class_name}.nq"
+            available_parts = align.discover_parts(class_name)
+            if not available_parts:
+                available_parts = None
+        parts_to_download = align.parse_parts_spec(parts_spec, available_parts)
+        if not parts_to_download:
+            raise PipelineError(f"No valid parts for '{parts_spec}'")
+        decompressed_files = align.download_and_decompress(
+            class_name,
+            parts_to_download,
+            work_dir,
+            parallel_decompress=True,
+            workers=workers,
+            lock_path=lock_path,
+        )
+        if len(decompressed_files) < len(parts_to_download):
+            missing = len(parts_to_download) - len(decompressed_files)
+            raise PipelineError(f"Missing {missing} part(s). Download/decompress incomplete.")
 
     if not decompressed_files:
         raise PipelineError("No decompressed files available")
 
-    if not use_full_graph:
-        local_parts = _count_local_parts(str(work_dir))
-        if local_parts <= 0:
-            raise PipelineError("No local parts found after download.")
+    local_parts = _count_local_parts(str(work_dir))
+    if local_parts <= 0:
+        raise PipelineError("No local parts found after download.")
 
     align_params = {
         "class_name": class_name,
@@ -235,6 +209,7 @@ def generate_benchmark(
     links_tsv = cache_dir / "wdc_wikidata_links.tsv"
     align_done = cache_dir / "ALIGN_DONE"
     align_pairs = 0
+    type_filter_iris = align.default_type_filter_iris_for_class(class_name)
 
     if links_tsv.exists() and align_done.exists() and not force_align:
         reused_align = True
@@ -247,55 +222,33 @@ def generate_benchmark(
         _check_cancel()
 
         try:
-            if use_full_graph:
-                wdc_map, matched_count = align.extract_unique_iris_from_graph(
-                    graph_file,
-                    pattern,
-                    collect_top_props=False,
-                    parallel=True,
-                    workers=workers,
-                    lock_path=lock_path,
-                    progress_every=100,
-                    wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                )
-            else:
-                wdc_map, matched_count = align.extract_unique_iris_from_files(
-                    decompressed_files,
-                    pattern,
-                    collect_top_props=False,
-                    parallel=True,
-                    workers=workers,
-                    lock_path=lock_path,
-                    progress_every=100,
-                    wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                )
+            wdc_map, matched_count = align.extract_unique_iris_from_files(
+                decompressed_files,
+                pattern,
+                collect_top_props=False,
+                parallel=True,
+                workers=workers,
+                lock_path=lock_path,
+                progress_every=100,
+                wdc_value_is_wd_iri=wdc_value_is_wikidata,
+                type_filter_iris=type_filter_iris,
+            )
         except Exception as e:
             if not _is_too_many_open_files(e):
                 raise
             # Automatic degraded retry for low-FD environments.
             print("[WARN] Too many open files detected during align extraction; retrying in low-FD mode (parallel disabled).")
-            if use_full_graph:
-                wdc_map, matched_count = align.extract_unique_iris_from_graph(
-                    graph_file,
-                    pattern,
-                    collect_top_props=False,
-                    parallel=False,
-                    workers=1,
-                    lock_path=lock_path,
-                    progress_every=100,
-                    wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                )
-            else:
-                wdc_map, matched_count = align.extract_unique_iris_from_files(
-                    decompressed_files,
-                    pattern,
-                    collect_top_props=False,
-                    parallel=False,
-                    workers=1,
-                    lock_path=lock_path,
-                    progress_every=100,
-                    wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                )
+            wdc_map, matched_count = align.extract_unique_iris_from_files(
+                decompressed_files,
+                pattern,
+                collect_top_props=False,
+                parallel=False,
+                workers=1,
+                lock_path=lock_path,
+                progress_every=100,
+                wdc_value_is_wd_iri=wdc_value_is_wikidata,
+                type_filter_iris=type_filter_iris,
+            )
         if matched_count == 0:
             raise PipelineError("No WDC values matched the predicate pattern")
 
@@ -307,6 +260,8 @@ def generate_benchmark(
                     wd_iri = align.extract_wd_entity_iri(value)
                     if wd_iri:
                         wd_entity_iris.add(wd_iri)
+            if not wd_entity_iris:
+                raise PipelineError("No Wikidata URLs extracted from WDC values")
             wikidata_map = align.fetch_wikidata_values(
                 wikidata_property=None,
                 wkd_class=wkd_class,
@@ -320,6 +275,12 @@ def generate_benchmark(
                 wkd_prop_class,
             )
         if not wikidata_map:
+            if wdc_value_is_wikidata:
+                raise PipelineError(
+                    "No Wikidata entities matched class filter "
+                    f"({wkd_class}) for extracted WDC Wikidata URLs "
+                    f"({len(wd_entity_iris):,} entities)"
+                )
             raise PipelineError("Failed to fetch Wikidata values")
 
         _check_cancel()
