@@ -43,6 +43,7 @@ def _make_build_tree(build_root: Path, links_count: int = 2, class_name: str = "
                 "wdc_value_is_wikidata": False,
                 "force_align": False,
                 "use_local_only": True,
+                "force_one_to_one_links": False,
                 "build_name": build_root.name,
                 "result_path": str(build_root),
                 "parts_count": 2,
@@ -75,12 +76,11 @@ def test_index_populates_testclass_list(monkeypatch, test_wdc_classes):
         resp = client.get("/")
 
     assert resp.status_code == 200
-    assert "TestClass" in resp.text
     soup = BeautifulSoup(resp.text, "html.parser")
     mode_select = soup.find("select", {"id": "matching-mode-select"})
     assert mode_select is not None
     mode_values = {opt.get("value", "") for opt in mode_select.find_all("option")}
-    assert {"label", "identifier", "telephone", "wikidata_url"} <= mode_values
+    assert {"property", "identifier", "sameas"} <= mode_values
     assert soup.find("div", {"id": "ready-checklist"}) is not None
     assert soup.find("input", {"id": "history-search-input"}) is not None
     assert soup.find("select", {"id": "history-sort-select"}) is not None
@@ -89,6 +89,10 @@ def test_index_populates_testclass_list(monkeypatch, test_wdc_classes):
     assert preset_select is not None
     preset_values = {opt.get("value", "") for opt in preset_select.find_all("option")}
     assert "testclass_quick" not in preset_values
+    class_select = soup.find("select", {"id": "class-name-select"})
+    assert class_select is not None
+    class_values = {opt.get("value", "") for opt in class_select.find_all("option")}
+    assert "TestClass" not in class_values
 
     rows = [dict(r) for r in web_main.db.list_wdc_classes()]
     assert any(row["class_name"] == "TestClass" for row in rows)
@@ -132,6 +136,10 @@ def test_index_test_mode_shows_test_presets_only(monkeypatch, test_wdc_classes):
     preset_values = {opt.get("value", "") for opt in preset_select.find_all("option")}
     assert "testclass_quick" in preset_values
     assert "code_movie" not in preset_values
+    class_select = soup.find("select", {"id": "class-name-select"})
+    assert class_select is not None
+    class_values = {opt.get("value", "") for opt in class_select.find_all("option")}
+    assert "TestClass" in class_values
 
 
 def test_index_normal_mode_hides_test_jobs_and_history(monkeypatch, test_wdc_classes):
@@ -165,6 +173,10 @@ def test_index_normal_mode_hides_test_jobs_and_history(monkeypatch, test_wdc_cla
     job_classes = [c.get("data-class-name", "") for c in job_cards]
     assert all(not cls.lower().startswith("testclass") for cls in job_classes)
     assert any(cls == "City" for cls in job_classes)
+    class_select = soup.find("select", {"id": "class-name-select"})
+    assert class_select is not None
+    class_values = {opt.get("value", "") for opt in class_select.find_all("option")}
+    assert "TestClass" not in class_values
 
 
 def test_refresh_classes_updates_cache(monkeypatch, test_wdc_classes):
@@ -197,7 +209,7 @@ def test_index_discovers_local_testclass_parts(monkeypatch):
     monkeypatch.setattr(web_main, "fetch_wdc_classes", lambda: [])
     client = TestClient(web_main.app)
     with client:
-        resp = client.get("/")
+        resp = client.get("/?test_mode=1")
 
     assert resp.status_code == 200
     assert "TestClass" in resp.text
@@ -219,6 +231,7 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
         "wdc_value_is_wikidata": "",
         "force_align": "",
         "use_local_only": "",
+        "force_one_to_one_links": "on",
     }
     with client:
         resp = client.post("/jobs", data=form, follow_redirects=False)
@@ -231,6 +244,7 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
     assert params["parts_spec"] == "all"
     assert params["wdc_predicate_pattern"] == "name"
     assert params["wikidata_property"] == "P31"
+    assert params["force_one_to_one_links"] is True
 
 
 def test_create_job_requires_wikidata_property_when_not_url_mode(monkeypatch, test_wdc_classes):

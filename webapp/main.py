@@ -41,7 +41,7 @@ _TRIPLE_RE = re.compile(
 
 PRESETS = {
     "testclass_large_benchmark": {
-        "label": "TestClassLarge - label",
+        "label": "TestClassLarge - property (label)",
         "class_name": "TestClassLarge",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -53,7 +53,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_quick": {
-        "label": "TestClass - label",
+        "label": "TestClass - property (label)",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -65,7 +65,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_label": {
-        "label": "TestClassLabel - label",
+        "label": "TestClassLabel - property (label)",
         "class_name": "TestClassLabel",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -77,7 +77,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_identifier": {
-        "label": "TestClassIdentifier - code",
+        "label": "TestClassIdentifier - identifier code",
         "class_name": "TestClassIdentifier",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -89,7 +89,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_wikidata_url": {
-        "label": "TestClassWikidataUrl - url link",
+        "label": "TestClassWikidataUrl - sameAs",
         "class_name": "TestClassWikidataUrl",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
@@ -101,7 +101,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_wikidata_sameas": {
-        "label": "TestClassWikidataSameAs - sameAs link",
+        "label": "TestClassWikidataSameAs - sameAs",
         "class_name": "TestClassWikidataSameAs",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameas",
@@ -113,7 +113,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "code_movie": {
-        "label": "Movie - code",
+        "label": "Movie - via code (EIDR)",
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -125,7 +125,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "label_language": {
-        "label": "Language - label",
+        "label": "Language - property (label)",
         "class_name": "Language",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -137,7 +137,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "property_college_or_university_telephone": {
-        "label": "CollegeOrUniversity - telephone",
+        "label": "CollegeOrUniversity - property (telephone)",
         "class_name": "CollegeOrUniversity",
         "parts_spec": "all",
         "wdc_predicate_pattern": "telephone",
@@ -149,7 +149,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "wikidata_link_city": {
-        "label": "City - sameAs link",
+        "label": "City - sameAs",
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
@@ -178,6 +178,7 @@ def _default_form():
         "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
+        "force_one_to_one_links": False,
     }
 
 
@@ -200,6 +201,7 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["wdc_value_is_wikidata"] = bool(params.get("wdc_value_is_wikidata"))
     params["force_align"] = bool(params.get("force_align"))
     params["use_local_only"] = bool(params.get("use_local_only"))
+    params["force_one_to_one_links"] = bool(params.get("force_one_to_one_links"))
 
     if not params["class_name"]:
         return params, "Class name is required."
@@ -266,6 +268,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
                 "wkd_class",
                 "ignore_chars",
                 "wdc_value_is_wikidata",
+                "force_one_to_one_links",
             )
         )
         if key in seen:
@@ -1064,7 +1067,7 @@ def _build_config_groups(cfg: dict):
     ordered = [
         ("Input", ["class_name"]),
         ("Matching", ["wdc_predicate_pattern", "wikidata_property", "wkd_class", "wdc_value_is_wikidata", "ignore_chars"]),
-        ("Build", ["force_align", "use_local_only", "build_name", "result_path"]),
+        ("Build", ["force_align", "use_local_only", "force_one_to_one_links", "build_name", "result_path"]),
     ]
     used = set()
     groups = []
@@ -1233,6 +1236,7 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "wdc_value_is_wikidata": _bool_from_any(_pick("wdc_value_is_wikidata", False)),
         "force_align": _bool_from_any(_pick("force_align", False)),
         "use_local_only": _bool_from_any(_pick("use_local_only", False)),
+        "force_one_to_one_links": _bool_from_any(_pick("force_one_to_one_links", False)),
     }
     return _validate_and_normalize_job_params(raw_params)
 
@@ -1438,10 +1442,11 @@ def index(
                 pass
 
     wdc_classes = [dict(r) for r in db.list_wdc_classes()]
+    wdc_classes = [r for r in wdc_classes if _is_test_class_name(r.get("class_name")) == is_test_mode]
     class_meta = {r["class_name"]: r for r in wdc_classes}
 
     class_parts_info = None
-    if form.get("class_name"):
+    if form.get("class_name") and form.get("class_name") in class_meta:
         class_parts_info = _build_class_parts_info(form["class_name"])
 
     recent_presets = _get_recent_presets(test_mode=is_test_mode)
@@ -1686,6 +1691,7 @@ def create_job(
     wdc_value_is_wikidata: Optional[str] = Form(None),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
+    force_one_to_one_links: Optional[str] = Form(None),
 ):
     raw_params = {
         "class_name": _clean_text(class_name),
@@ -1697,6 +1703,7 @@ def create_job(
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
         "force_align": bool(force_align),
         "use_local_only": bool(use_local_only),
+        "force_one_to_one_links": bool(force_one_to_one_links),
     }
     params, validation_error = _validate_and_normalize_job_params(raw_params)
     if validation_error:

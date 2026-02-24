@@ -90,6 +90,97 @@ def _count_alignment_pairs(links_tsv: Path) -> int:
     return max(0, total - 1)  # minus header
 
 
+def _canonical_wdc_link_entity(value) -> str:
+    return str(value or "").strip().strip("<>")
+
+
+def _canonical_wd_link_entity(value) -> str:
+    raw = str(value or "").strip()
+    try:
+        return build.canonical_wd_link_entity_uri(build.normalize_wd_uri(raw, True))
+    except Exception:
+        return raw
+
+
+def _filter_links_one_to_one(wdc_entities, wd_entities_raw, wdc_values=None, wd_values=None):
+    """
+    Keep only links that are one-to-one on endpoints.
+
+    Any link is removed if its WDC entity or Wikidata entity appears in more than one pair.
+    Values are kept in sync when provided.
+    """
+    total = min(len(wdc_entities), len(wd_entities_raw))
+    if total <= 0:
+        return list(wdc_entities), list(wd_entities_raw), list(wdc_values or []), list(wd_values or []), {
+            "enabled": True,
+            "links_before": 0,
+            "links_after": 0,
+            "removed_links": 0,
+            "ambiguous_wdc_entities": 0,
+            "ambiguous_wikidata_entities": 0,
+            "max_links_per_wdc_entity": 0,
+            "max_links_per_wikidata_entity": 0,
+            "examples_removed": [],
+        }
+
+    wdc_values = list(wdc_values or [])
+    wd_values = list(wd_values or [])
+    wdc_entities = list(wdc_entities[:total])
+    wd_entities_raw = list(wd_entities_raw[:total])
+
+    wdc_keys = [_canonical_wdc_link_entity(v) for v in wdc_entities]
+    wd_keys = [_canonical_wd_link_entity(v) for v in wd_entities_raw]
+
+    wdc_counts = {}
+    wd_counts = {}
+    for key in wdc_keys:
+        wdc_counts[key] = wdc_counts.get(key, 0) + 1
+    for key in wd_keys:
+        wd_counts[key] = wd_counts.get(key, 0) + 1
+
+    keep_idx = []
+    removed_examples = []
+    for i, (wdc_key, wd_key) in enumerate(zip(wdc_keys, wd_keys)):
+        keep = (wdc_counts.get(wdc_key, 0) == 1) and (wd_counts.get(wd_key, 0) == 1)
+        if keep:
+            keep_idx.append(i)
+            continue
+        if len(removed_examples) < 20:
+            removed_examples.append(
+                {
+                    "wdc_entity": wdc_entities[i],
+                    "wikidata_entity": wd_entities_raw[i],
+                    "wdc_entity_count": int(wdc_counts.get(wdc_key, 0)),
+                    "wikidata_entity_count": int(wd_counts.get(wd_key, 0)),
+                    "wdc_value": wdc_values[i] if i < len(wdc_values) else "",
+                    "wikidata_value": wd_values[i] if i < len(wd_values) else "",
+                }
+            )
+
+    def _pick(values):
+        if not values:
+            return []
+        return [values[i] for i in keep_idx if i < len(values)]
+
+    filtered_wdc = [wdc_entities[i] for i in keep_idx]
+    filtered_wd = [wd_entities_raw[i] for i in keep_idx]
+    filtered_wdc_values = _pick(wdc_values)
+    filtered_wd_values = _pick(wd_values)
+
+    report = {
+        "enabled": True,
+        "links_before": int(total),
+        "links_after": int(len(filtered_wdc)),
+        "removed_links": int(total - len(filtered_wdc)),
+        "ambiguous_wdc_entities": int(sum(1 for v in wdc_counts.values() if v > 1)),
+        "ambiguous_wikidata_entities": int(sum(1 for v in wd_counts.values() if v > 1)),
+        "max_links_per_wdc_entity": int(max(wdc_counts.values()) if wdc_counts else 0),
+        "max_links_per_wikidata_entity": int(max(wd_counts.values()) if wd_counts else 0),
+        "examples_removed": removed_examples,
+    }
+    return filtered_wdc, filtered_wd, filtered_wdc_values, filtered_wd_values, report
+
+
 def generate_benchmark(
     params,
     workers=None,
@@ -108,10 +199,13 @@ def generate_benchmark(
     wkd_prop_class = params.get("wkd_prop_class") or None
     ignore_chars = params.get("ignore_chars") or None
     wdc_value_is_wikidata = bool(params.get("wdc_value_is_wikidata"))
-    max_depth = params.get("max_depth", -1)
+    # WDC traversal depth is fixed to "full traversal" for web builds.
+    # Keep this internal and stop exposing/persisting it as a user parameter.
+    max_depth = -1
     match_min_length = int(params.get("match_min_length", 1))
     force_align = bool(params.get("force_align"))
     use_local_only = bool(params.get("use_local_only"))
+    force_one_to_one_links = bool(params.get("force_one_to_one_links"))
     require_cached_align = bool(params.get("require_cached_align"))
     resume_build = bool(params.get("resume_build")) and require_cached_align
     resume_out_dir_raw = str(params.get("resume_out_dir") or "").strip()
@@ -372,9 +466,9 @@ def generate_benchmark(
         "wkd_class": wkd_class,
         "wdc_value_is_wikidata": wdc_value_is_wikidata,
         "ignore_chars": ignore_chars,
-        "max_depth": max_depth,
         "force_align": force_align,
         "use_local_only": use_local_only,
+        "force_one_to_one_links": force_one_to_one_links,
         "build_name": out_dir.name,
         "result_path": str(out_dir),
         "parts_count": len(parts_manifest),
@@ -436,6 +530,48 @@ def generate_benchmark(
         None,
         None,
     )
+
+    one_to_one_report = None
+    if force_one_to_one_links:
+        (
+            wdc_entities,
+            wd_entities_raw,
+            wdc_values,
+            wd_values,
+            one_to_one_report,
+        ) = _filter_links_one_to_one(
+            wdc_entities,
+            wd_entities_raw,
+            wdc_values,
+            wd_values,
+        )
+        print(
+            "[INFO] 1-to-1 link filter: "
+            f"kept {one_to_one_report['links_after']:,}/{one_to_one_report['links_before']:,} "
+            f"links (removed {one_to_one_report['removed_links']:,})."
+        )
+        try:
+            (out_dir / "LINK_FILTER_1TO1.json").write_text(
+                json.dumps(one_to_one_report, indent=2, ensure_ascii=False, sort_keys=True),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+        if not wdc_entities or not wd_entities_raw:
+            reason = "No 1-to-1 links left after filtering; build skipped."
+            print(f"[INFO] {reason}")
+            return {
+                "class_name": class_name,
+                "links_tsv": str(links_tsv),
+                "align_dir": str(cache_dir),
+                "reused_align": reused_align,
+                "out_dir": None,
+                "build_cancelled": False,
+                "build_skipped": True,
+                "build_skip_reason": reason,
+                "started_at": start_ts,
+                "ended_at": time.time(),
+            }
 
     wdc_mask_values = set(v for v in wdc_values if v)
     wd_mask_values = set(v for v in wd_values if v)

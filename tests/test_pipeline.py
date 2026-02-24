@@ -132,7 +132,6 @@ def test_generate_benchmark_with_local_test_parts(monkeypatch):
             "wkd_class": "Q515",
             "ignore_chars": "spaces;-;.",
             "wdc_value_is_wikidata": False,
-            "max_depth": -1,
             "use_local_only": True,
             "force_align": True,
         },
@@ -165,6 +164,40 @@ def test_generate_benchmark_with_local_test_parts(monkeypatch):
     assert with_link["wdc_exclude_prop_patterns"] == set()
     assert with_link["wd_exclude_props"] == set()
     assert with_link["wd_raw_cache_path"] == without["wd_raw_cache_path"]
+
+
+def test_filter_links_one_to_one_drops_ambiguous_endpoints():
+    wdc_entities = [
+        "wdc:1",
+        "wdc:2",
+        "wdc:3",
+        "wdc:4",
+    ]
+    wd_entities = [
+        "http://www.wikidata.org/entity/Q10",
+        "http://www.wikidata.org/entity/Q10",  # duplicate WD endpoint
+        "http://www.wikidata.org/entity/Q11",
+        "http://www.wikidata.org/entity/Q12",
+    ]
+    wdc_values = ["A", "B", "C", "D"]
+    wd_values = ["A", "B", "C", "D"]
+
+    out_wdc, out_wd, out_wdc_vals, out_wd_vals, report = pipeline._filter_links_one_to_one(
+        wdc_entities, wd_entities, wdc_values, wd_values
+    )
+
+    assert out_wdc == ["wdc:3", "wdc:4"]
+    assert out_wd == [
+        "http://www.wikidata.org/entity/Q11",
+        "http://www.wikidata.org/entity/Q12",
+    ]
+    assert out_wdc_vals == ["C", "D"]
+    assert out_wd_vals == ["C", "D"]
+    assert report["links_before"] == 4
+    assert report["links_after"] == 2
+    assert report["removed_links"] == 2
+    assert report["ambiguous_wikidata_entities"] == 1
+    assert report["ambiguous_wdc_entities"] == 0
 
 
 def test_generate_benchmark_rejects_missing_required_values():

@@ -547,11 +547,11 @@ def get_shared_workers(lock_path, share=0.8, override=None):
 
 def normalize_for_matching(text):
     """
-    Normalisation agressive pour matching:
+    Normalisation pour matching:
     - Lowercase
     - Suppression accents/diacritiques
-    - Suppression caractères spéciaux
-    - Garde seulement alphanumériques
+    - Suppression uniquement des tokens configurés via --ignore-chars
+    - Si "special-chars" est demandé: garde seulement [a-z0-9]
     """
     if not text:
         return ""
@@ -559,17 +559,48 @@ def normalize_for_matching(text):
         return text
     special_chars = "__SPECIAL_CHARS__" in _EXTRA_STRIP_CHARS
     if _EXTRA_STRIP_CHARS:
-        text = "".join(ch for ch in text if ch not in _EXTRA_STRIP_CHARS)
-    if special_chars:
-        # Strip all non-alphanumeric characters
-        text = re.sub(r"[^A-Za-z0-9]", "", text)
+        # Remove only configured tokens (single chars and optional multi-char tokens).
+        tokens = [tok for tok in _EXTRA_STRIP_CHARS if tok and tok != "__SPECIAL_CHARS__"]
+        for tok in sorted(tokens, key=len, reverse=True):
+            text = text.replace(tok, "")
     # 1) Lowercase
     text = text.lower()
     # 2) Remove accents/diacritics (NFKD)
     text = unicodedata.normalize("NFKD", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch))
-    # 3) Keep only a-z0-9
-    return re.sub(r'[^a-z0-9]', '', text)
+    # Drop control/format characters that may break downstream parsing.
+    text = "".join(ch for ch in text if not unicodedata.category(ch).startswith("C"))
+    # 3) Optional aggressive mode
+    if special_chars:
+        return re.sub(r'[^a-z0-9]', '', text)
+    return text
+
+def _looks_like_phone_mode(value):
+    p = str(value or "").strip().lower()
+    if not p:
+        return False
+    return (
+        "telephone" in p
+        or "phone" in p
+        or "phonenumber" in p
+        or "p1329" in p
+    )
+
+def normalize_for_phone_matching(text):
+    """
+    Phone normalization:
+    - Apply configured token stripping and base normalization
+    - Keep only '+' and digits
+    """
+    base = normalize_for_matching(text)
+    if not base:
+        return ""
+    return "".join(ch for ch in base if ch == "+" or ch.isdigit())
+
+def normalize_value_for_matching(text, phone_mode=False):
+    if phone_mode:
+        return normalize_for_phone_matching(text)
+    return normalize_for_matching(text)
 
 def prepare_predicate_pattern(pattern):
     """
@@ -1129,7 +1160,7 @@ def _extract_batch(lines):
     return value_map, all_raw_values, all_iris, country_code_changes, line_count
 
 def _extract_batch_with_pattern(args):
-    lines, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri = args
+    lines, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode = args
     value_map = defaultdict(list)
     all_raw_values = set()
     all_iris = set()
@@ -1171,7 +1202,7 @@ def _extract_batch_with_pattern(args):
 
         all_raw_values.add(value)
         all_iris.add(subject)
-        value_normalized = normalize_for_matching(value_for_norm)
+        value_normalized = normalize_value_for_matching(value_for_norm, phone_mode=phone_mode)
         value_normalized_original = value_normalized
         value_normalized = normalize_country_code(value_normalized)
         if value_normalized != value_normalized_original:
@@ -1291,11 +1322,11 @@ def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=2
     
     return value_map
 
-def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, executor):
+def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, executor):
     futures = [
         executor.submit(
             _extract_batch_with_pattern,
-            (b, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri),
+            (b, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode),
         )
         for b in window_batches
     ]
@@ -1310,6 +1341,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     """
     print_color(f"\n📊 Extraction directe depuis le graphe (sans fichier filtré)...", Colors.BLUE)
     pattern_normalized, pattern_raw = prepare_predicate_pattern(pattern)
+    phone_mode = _looks_like_phone_mode(pattern)
     if pattern_raw:
         print(f"   Pattern brut: '{pattern}'")
     else:
@@ -1363,7 +1395,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
 
                     if len(window_batches) >= window_size:
                         for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                            window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
+                            window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                         ):
                             matched_lines += matched
                             all_raw_values.update(raw_vals)
@@ -1386,7 +1418,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     window_batches.append(buffer)
                 if window_batches:
                     for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                        window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
+                        window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                     ):
                         matched_lines += matched
                         all_raw_values.update(raw_vals)
@@ -1439,7 +1471,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     continue
                 all_raw_values.add(value)
                 all_iris.add(subject)
-                value_normalized = normalize_for_matching(value_for_norm)
+                value_normalized = normalize_value_for_matching(value_for_norm, phone_mode=phone_mode)
                 value_normalized_original = value_normalized
                 value_normalized = normalize_country_code(value_normalized)
                 if value_normalized != value_normalized_original:
@@ -1511,6 +1543,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
     """
     print_color(f"\n📊 Extraction directe depuis les parts (sans graphe fusionné)...", Colors.BLUE)
     pattern_normalized, pattern_raw = prepare_predicate_pattern(pattern)
+    phone_mode = _looks_like_phone_mode(pattern)
     if pattern_raw:
         print(f"   Pattern brut: '{pattern}'")
     else:
@@ -1572,7 +1605,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
 
                         if len(window_batches) >= window_size:
                             for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                                window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
+                                window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                             ):
                                 matched_lines += matched
                                 all_raw_values.update(raw_vals)
@@ -1601,7 +1634,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                 window_batches.append(buffer)
             if window_batches:
                 for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                    window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, ex
+                    window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                 ):
                     matched_lines += matched
                     all_raw_values.update(raw_vals)
@@ -1658,7 +1691,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                         continue
                     all_raw_values.add(value)
                     all_iris.add(subject)
-                    value_normalized = normalize_for_matching(value_for_norm)
+                    value_normalized = normalize_value_for_matching(value_for_norm, phone_mode=phone_mode)
                     value_normalized_original = value_normalized
                     value_normalized = normalize_country_code(value_normalized)
                     if value_normalized != value_normalized_original:
@@ -1894,6 +1927,7 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     print_color(f"\n🌐 Récupération des valeurs Wikidata ({wikidata_property})...", Colors.BLUE)
     
     prop = normalize_wikidata_property(wikidata_property)
+    phone_mode = _looks_like_phone_mode(wikidata_property)
     
     class_filter = ""
     wkd_class_norm = normalize_wkd_class(wkd_class)
@@ -2037,7 +2071,7 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
             
             all_raw_values.add(value)
             
-            value_normalized = normalize_for_matching(value)
+            value_normalized = normalize_value_for_matching(value, phone_mode=phone_mode)
             
             # Appliquer la normalisation des codes pays
             value_normalized = normalize_country_code(value_normalized)
@@ -2278,7 +2312,12 @@ def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_di
         matched_wdc_values_raw = {m["wdc_value"] for m in matches}
         matched_wd_values_raw = {m["wiki_value"] for m in matches}
         matched_wdc_values_norm = set(wdc_values_matched)
-        matched_wd_values_norm = set(normalize_for_matching(v) for v in matched_wd_values_raw if v)
+        phone_mode = _looks_like_phone_mode(pattern) or _looks_like_phone_mode(wikidata_property)
+        matched_wd_values_norm = set(
+            normalize_value_for_matching(v, phone_mode=phone_mode)
+            for v in matched_wd_values_raw
+            if v
+        )
 
         f.write("Matches:\n")
         f.write(f"  Pairs (exact): {exact_count}\n")

@@ -234,7 +234,7 @@
   </div>
   <div class="row">
     <div class="col card">
-      <h3>Preset</h3>
+      <h3>Example preset</h3>
       <select id="preset-select" onchange="window.location=this.value ? '/?{% if is_test_mode %}test_mode=1&{% endif %}preset='+encodeURIComponent(this.value) : '/{% if is_test_mode %}?test_mode=1{% endif %}';">
         <option value="">No preset</option>
         {% for key, p in presets.items() %}
@@ -245,7 +245,7 @@
     <div class="col card">
       <h3>Recent run</h3>
       <select onchange="if(this.value) window.location='/?{% if is_test_mode %}test_mode=1&{% endif %}recent='+encodeURIComponent(this.value);">
-        <option value="">Recent run preset</option>
+        <option value="">Select a recent run</option>
         {% for r in recent_presets %}
           <option value="{{ r.job_id }}">{{ r.label }}</option>
         {% endfor %}
@@ -263,10 +263,9 @@
         </span>
       </label>
       <select id="matching-mode-select">
-        <option value="label">Label</option>
+        <option value="property">Property (label, telephone...)</option>
         <option value="identifier">Identifier code</option>
-        <option value="telephone">Telephone</option>
-        <option value="wikidata_url">Existing Wikidata URL / sameAs</option>
+        <option value="sameas">sameAs</option>
       </select>
     </div>
     <div class="row" style="margin-top:8px;">
@@ -367,6 +366,11 @@
           <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
           Use local parts only (no downloads)
           <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
+        </label>
+        <label class="checkrow">
+          <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
+          Keep only 1-to-1 links (drop ambiguous links)
+          <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the Wikidata entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
         </label>
       </div>
     </div>
@@ -905,18 +909,18 @@ function inferMatchingModeFromForm() {
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
   const prop = normalizeFormText(document.getElementById('wikidata-property-input')?.value).toLowerCase();
   const urlModeChecked = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
-  if (urlModeChecked || pattern.includes('sameas') || pattern === 'url') return 'wikidata_url';
-  if (pattern.includes('telephone') || prop === 'p1329' || prop === 'wdt:p1329') return 'telephone';
-  if (prop === 'rdfs:label') return 'label';
+  if (urlModeChecked || pattern.includes('sameas') || pattern === 'url') return 'sameas';
+  if (pattern.includes('telephone') || prop === 'p1329' || prop === 'wdt:p1329') return 'property';
+  if (prop === 'rdfs:label') return 'property';
   if (pattern || prop) return 'identifier';
-  return 'label';
+  return 'property';
 }
 
 function applyMatchingMode(mode, fromUser = false) {
   const select = document.getElementById('matching-mode-select');
-  const normalizedMode = ['label', 'identifier', 'telephone', 'wikidata_url'].includes(String(mode || ''))
+  const normalizedMode = ['property', 'identifier', 'sameas'].includes(String(mode || ''))
     ? String(mode)
-    : 'label';
+    : 'property';
   const previousMode = inferMatchingModeFromForm();
   if (select && select.value !== normalizedMode) {
     select.value = normalizedMode;
@@ -929,15 +933,14 @@ function applyMatchingMode(mode, fromUser = false) {
   if (fromUser && patternInput) {
     const current = normalizeFormText(patternInput.value);
     const defaultPatternByMode = {
-      label: 'name',
+      property: 'name',
       identifier: 'eidr',
-      telephone: 'telephone',
-      wikidata_url: 'sameAs',
+      sameas: 'sameAs',
     };
     const shouldResetPattern = (
       !current
       || previousMode !== normalizedMode
-      || (normalizedMode === 'wikidata_url' && !/(sameas|url)/i.test(current))
+      || (normalizedMode === 'sameas' && !/(sameas|url)/i.test(current))
     );
     if (shouldResetPattern) {
       patternInput.value = defaultPatternByMode[normalizedMode] || current;
@@ -946,13 +949,12 @@ function applyMatchingMode(mode, fromUser = false) {
 
   if (fromUser && propInput) {
     const currentProp = normalizeFormText(propInput.value);
-    if (normalizedMode === 'wikidata_url') {
+    if (normalizedMode === 'sameas') {
       propInput.value = '';
     } else {
       const defaultPropertyByMode = {
-        label: 'rdfs:label',
+        property: 'rdfs:label',
         identifier: 'P2704',
-        telephone: 'P1329',
       };
       const shouldResetProp = (!currentProp || previousMode !== normalizedMode);
       if (shouldResetProp) {
@@ -962,11 +964,11 @@ function applyMatchingMode(mode, fromUser = false) {
   }
 
   if (urlModeCheckbox) {
-    urlModeCheckbox.checked = normalizedMode === 'wikidata_url';
+    urlModeCheckbox.checked = normalizedMode === 'sameas';
   }
 
-  setFieldGroupVisible('wikidata-property-group', normalizedMode !== 'wikidata_url');
-  setFieldGroupVisible('ignore-chars-group', normalizedMode !== 'wikidata_url');
+  setFieldGroupVisible('wikidata-property-group', normalizedMode !== 'sameas');
+  setFieldGroupVisible('ignore-chars-group', normalizedMode !== 'sameas');
 
   syncWikidataPropertyState();
   updateMatchingGuidance();
@@ -1207,7 +1209,7 @@ function syncWikidataPropertyState() {
     }
     propInput.value = '';
     propInput.disabled = true;
-    propInput.placeholder = 'Ignored in sameAs / Wikidata URL mode';
+    propInput.placeholder = 'Ignored in sameAs mode';
   } else {
     propInput.disabled = false;
     if (!propInput.value && propInput.dataset.cachedValue) {
@@ -1738,13 +1740,13 @@ function applyHistorySortOrder() {
     const bId = parseBuildCardId(b);
     if (mode === 'links_desc') {
       const d = parseBuildCardLinksCount(b) - parseBuildCardLinksCount(a);
-      return d !== 0 ? d : (bId - aId);
+      return d !== 0 ? d : (aId - bId);
     }
     if (mode === 'links_asc') {
       const d = parseBuildCardLinksCount(a) - parseBuildCardLinksCount(b);
-      return d !== 0 ? d : (bId - aId);
+      return d !== 0 ? d : (aId - bId);
     }
-    return bId - aId;
+    return aId - bId;
   });
   sorted.forEach((card) => list.appendChild(card));
 }

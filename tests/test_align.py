@@ -42,6 +42,30 @@ def test_parse_strip_list_supports_named_tokens():
     assert "_" in chars
 
 
+def test_normalize_for_matching_removes_only_configured_tokens():
+    align.set_extra_strip_chars(align.parse_strip_list("spaces;-;."))
+    try:
+        assert align.normalize_for_matching("+33 (0)4 78-03.47;00") == "+33(0)4780347;00"
+    finally:
+        align.set_extra_strip_chars([])
+
+
+def test_normalize_for_matching_special_chars_keeps_only_alnum():
+    align.set_extra_strip_chars(align.parse_strip_list("special-chars"))
+    try:
+        assert align.normalize_for_matching("+33 (0)4 78-03.47;AB") == "3304780347ab"
+    finally:
+        align.set_extra_strip_chars([])
+
+
+def test_normalize_for_phone_matching_keeps_plus_and_digits_only():
+    align.set_extra_strip_chars(align.parse_strip_list("spaces;-;."))
+    try:
+        assert align.normalize_for_phone_matching("+33 (0)4 78-03.47;00") == "+330478034700"
+    finally:
+        align.set_extra_strip_chars([])
+
+
 def test_fetch_wikidata_values_handles_control_chars(monkeypatch):
     payload = (
         '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q1"},'

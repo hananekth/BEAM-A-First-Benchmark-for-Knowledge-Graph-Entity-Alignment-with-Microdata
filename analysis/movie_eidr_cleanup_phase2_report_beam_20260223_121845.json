@@ -1,0 +1,138 @@
+{
+  "build": "data/Movie/beam_20260223_121845",
+  "backup_dir": "analysis/backup_movie_beam_20260223_121845_phase2_20260224_131212",
+  "before": {
+    "ent_links": 1176,
+    "problem_pairs_removed": 115,
+    "keep_links": 1061,
+    "keep_wdc_roots": 1061,
+    "keep_wd_roots": 1061
+  },
+  "folders": {
+    "with_link_code": {
+      "ent_links_after": 1061,
+      "wdc": {
+        "subjects_all": 18285,
+        "subjects_keep": 16366,
+        "missing_keep_roots_in_graph": 0,
+        "removed_roots_still_reachable_from_kept_roots": 0,
+        "removed_roots_still_reachable_examples": [],
+        "depth_expansion": [
+          {
+            "depth": 0,
+            "new_subjects": 12711
+          },
+          {
+            "depth": 1,
+            "new_subjects": 1421
+          },
+          {
+            "depth": 2,
+            "new_subjects": 782
+          },
+          {
+            "depth": 3,
+            "new_subjects": 391
+          },
+          {
+            "depth": 4,
+            "new_subjects": 0
+          }
+        ],
+        "attr_triples_1_lines_after": 28837,
+        "rel_triples_1_lines_after": 42545,
+        "prop_stats_predicates_distinct": 57
+      },
+      "wd": {
+        "rel_triples_2_lines_after": 185309,
+        "attr_triples_2_lines_after": 385260,
+        "attr_triples_2_total_lines_scanned": 409079,
+        "rel_subjects_kept_distinct": 1061,
+        "attr_root_subjects_seen_distinct": 1061,
+        "support_subjects_distinct": 151382,
+        "support_nonroot_label_subjects_distinct": 150314,
+        "removed_wd_roots_kept_as_support_labels_distinct": 3,
+        "removed_wd_roots_kept_as_support_labels_examples": [
+          "http://www.wikidata.org/entity/q118313105",
+          "http://www.wikidata.org/entity/q31271369",
+          "http://www.wikidata.org/entity/q64145552"
+        ],
+        "missing_keep_roots_in_rel2": 0,
+        "missing_keep_roots_in_attr2": 0,
+        "prop_stats_predicates_distinct": 1235
+      },
+      "removed_wd_state_json": false
+    },
+    "without_link_code": {
+      "ent_links_after": 1061,
+      "wdc": {
+        "subjects_all": 18285,
+        "subjects_keep": 16366,
+        "missing_keep_roots_in_graph": 0,
+        "removed_roots_still_reachable_from_kept_roots": 0,
+        "removed_roots_still_reachable_examples": [],
+        "depth_expansion": [
+          {
+            "depth": 0,
+            "new_subjects": 12711
+          },
+          {
+            "depth": 1,
+            "new_subjects": 1421
+          },
+          {
+            "depth": 2,
+            "new_subjects": 782
+          },
+          {
+            "depth": 3,
+            "new_subjects": 391
+          },
+          {
+            "depth": 4,
+            "new_subjects": 0
+          }
+        ],
+        "attr_triples_1_lines_after": 27776,
+        "rel_triples_1_lines_after": 42545,
+        "prop_stats_predicates_distinct": 56
+      },
+      "wd": {
+        "rel_triples_2_lines_after": 184245,
+        "attr_triples_2_lines_after": 382068,
+        "attr_triples_2_total_lines_scanned": 405715,
+        "rel_subjects_kept_distinct": 1061,
+        "attr_root_subjects_seen_distinct": 1061,
+        "support_subjects_distinct": 150317,
+        "support_nonroot_label_subjects_distinct": 149249,
+        "removed_wd_roots_kept_as_support_labels_distinct": 3,
+        "removed_wd_roots_kept_as_support_labels_examples": [
+          "http://www.wikidata.org/entity/q118313105",
+          "http://www.wikidata.org/entity/q31271369",
+          "http://www.wikidata.org/entity/q64145552"
+        ],
+        "missing_keep_roots_in_rel2": 0,
+        "missing_keep_roots_in_attr2": 0,
+        "prop_stats_predicates_distinct": 1233
+      },
+      "removed_wd_state_json": true
+    }
+  },
+  "validation": {
+    "with_link_code_ent_links_count": 1061,
+    "with_link_code_ent_links_sha256": "46657d6c8ccfc3fdec3fc0358a8460e3d664b27cd9cf760a5d532ad91ab806f2",
+    "with_link_code_multi_wdc_entities": 0,
+    "with_link_code_multi_wd_entities": 0,
+    "with_link_code_remaining_problem_pairs": 0,
+    "with_link_code_missing_wdc_roots_in_graph": 0,
+    "with_link_code_missing_wd_roots_in_graph": 0,
+    "without_link_code_ent_links_count": 1061,
+    "without_link_code_ent_links_sha256": "46657d6c8ccfc3fdec3fc0358a8460e3d664b27cd9cf760a5d532ad91ab806f2",
+    "without_link_code_multi_wdc_entities": 0,
+    "without_link_code_multi_wd_entities": 0,
+    "without_link_code_remaining_problem_pairs": 0,
+    "without_link_code_missing_wdc_roots_in_graph": 0,
+    "without_link_code_missing_wd_roots_in_graph": 0,
+    "with_without_ent_links_identical": true
+  }
+}

@@ -1,0 +1,1240 @@
+predicate	count	label	description
+http://www.w3.org/2000/01/rdf-schema#label	161360		
+http://schema.org/description	161019		
+http://www.wikidata.org/prop/p161	15124	cast member	actor in the subject production [use 
+http://www.wikidata.org/prop/direct/p161	15097	cast member	actor in the subject production [use 
+http://www.wikidata.org/prop/p136	3463	genre	creative work's genre or an artist's field of work (P101). Use main subject (P921) to relate creative works to their topic
+http://www.wikidata.org/prop/direct/p136	3446	genre	creative work's genre or an artist's field of work (P101). Use main subject (P921) to relate creative works to their topic
+http://www.wikidata.org/prop/p577	3348	publication date	date or point in time when a work or product was first published or released
+http://www.wikidata.org/prop/direct/p577	3151	publication date	date or point in time when a work or product was first published or released
+http://www.wikidata.org/prop/p444	2506	review score	review score received by a creative work or other entity
+http://www.wikidata.org/prop/p6398	2504	iTunes movie ID	U.S. version identifier for a film in the iTunes Store
+http://www.wikidata.org/prop/direct/p444	2498	review score	review score received by a creative work or other entity
+http://www.wikidata.org/prop/direct/p6398	2497	iTunes movie ID	U.S. version identifier for a film in the iTunes Store
+http://www.wikidata.org/prop/p750	1950	distributed by	distributor of a creative work; distributor for a record label; news agency; film distributor
+http://www.wikidata.org/prop/direct/p750	1940	distributed by	distributor of a creative work; distributor for a record label; news agency; film distributor
+http://www.wikidata.org/prop/p162	1766	producer	person(s) who produced the film, musical work, theatrical production, etc. (for film, this does not include executive producers, associate producers, etc.) [for production company, use P272, video games - use P178]
+http://www.wikidata.org/prop/direct/p162	1758	producer	person(s) who produced the film, musical work, theatrical production, etc. (for film, this does not include executive producers, associate producers, etc.) [for production company, use P272, video games - use P178]
+http://www.wikidata.org/prop/p58	1683	screenwriter	person(s) who wrote the script for subject item
+http://www.wikidata.org/prop/p5021	1670	assessment	subject took the test or exam, or was assessed per test or method
+http://www.wikidata.org/prop/direct/p5021	1665	assessment	subject took the test or exam, or was assessed per test or method
+http://www.wikidata.org/prop/direct/p58	1660	screenwriter	person(s) who wrote the script for subject item
+http://www.wikidata.org/prop/p495	1565	country of origin	country of origin of this item (creative work, food, phrase, product, etc.)
+http://www.wikidata.org/prop/direct/p495	1558	country of origin	country of origin of this item (creative work, food, phrase, product, etc.)
+http://www.wikidata.org/prop/direct/p13707	1520	dvdcompare.net film ID	ID of the film or TV series season on dvdcompare.net
+http://www.wikidata.org/prop/p13707	1520	dvdcompare.net film ID	ID of the film or TV series season on dvdcompare.net
+http://www.wikidata.org/prop/p272	1423	production company	company that produced this film, audio or performing arts work
+http://www.wikidata.org/prop/direct/p272	1416	production company	company that produced this film, audio or performing arts work
+http://www.wikidata.org/prop/p364	1286	original language of film or TV show	language in which a film or a performance work was originally created. Deprecated for written works and songs; use P407 (
+http://www.wikidata.org/prop/direct/p364	1237	original language of film or TV show	language in which a film or a performance work was originally created. Deprecated for written works and songs; use P407 (
+http://www.wikidata.org/prop/p57	1208	director	director(s) of film, TV-series, stageplay, video game or similar
+http://www.wikidata.org/prop/direct/p57	1207	director	director(s) of film, TV-series, stageplay, video game or similar
+http://www.wikidata.org/prop/p1476	1188	title	published name of a work, such as a newspaper article, a literary work, piece of music, a website, or a performance work
+http://www.wikidata.org/prop/direct/p674	1183	characters	characters which appear in this item (like plays, operas, operettas, books, comics, films, TV series, video games)
+http://www.wikidata.org/prop/p674	1183	characters	characters which appear in this item (like plays, operas, operettas, books, comics, films, TV series, video games)
+http://www.wikidata.org/prop/p31	1128	instance of	type to which this subject corresponds/belongs. Different from P279 (subclass of); for example: K2 is an instance of mountain; volcano is a subclass of mountain
+http://www.wikidata.org/prop/direct/p31	1127	instance of	type to which this subject corresponds/belongs. Different from P279 (subclass of); for example: K2 is an instance of mountain; volcano is a subclass of mountain
+http://www.wikidata.org/prop/p915	1127	filming location	actual place where this scene/film was shot. For the setting, use 
+http://www.wikidata.org/prop/p345	1121	IMDb ID	identifier for the IMDb (with prefix 'tt', 'nm', 'co', 'ev', 'ch' or 'ni')
+http://www.wikidata.org/prop/direct/p915	1120	filming location	actual place where this scene/film was shot. For the setting, use 
+http://schema.org/dateModified	1117		
+http://schema.org/version	1117		
+http://wikiba.se/ontology#identifiers	1117		
+http://wikiba.se/ontology#sitelinks	1117		
+http://wikiba.se/ontology#statements	1117		
+http://www.wikidata.org/prop/direct/p345	1117	IMDb ID	identifier for the IMDb (with prefix 'tt', 'nm', 'co', 'ev', 'ch' or 'ni')
+http://www.wikidata.org/prop/p4947	1117	TMDB movie ID	identifier for a movie at The Movie Database
+http://www.wikidata.org/prop/p840	1117	narrative location	the narrative of the work is set in this location
+http://www.wikidata.org/prop/direct/p4947	1116	TMDB movie ID	identifier for a movie at The Movie Database
+http://www.wikidata.org/prop/p6127	1115	Letterboxd film ID	identifier for a film on the website Letterboxd
+http://www.wikidata.org/prop/direct/p2529	1114	ČSFD film ID	identifier for a movie in the Czech-Slovak film database ČSFD
+http://www.wikidata.org/prop/direct/p6127	1114	Letterboxd film ID	identifier for a film on the website Letterboxd
+http://www.wikidata.org/prop/p2529	1114	ČSFD film ID	identifier for a movie in the Czech-Slovak film database ČSFD
+http://www.wikidata.org/prop/direct/p11460	1112	Plex media key	24 hex character identifier for media item on Plex; different than watch.plex.tv url slug
+http://www.wikidata.org/prop/p11460	1112	Plex media key	24 hex character identifier for media item on Plex; different than watch.plex.tv url slug
+http://www.wikidata.org/prop/p2047	1112	duration	length of time of an event or process
+http://www.wikidata.org/prop/direct/p840	1111	narrative location	the narrative of the work is set in this location
+http://www.wikidata.org/prop/direct/p2047	1101	duration	length of time of an event or process
+http://www.wikidata.org/prop/direct/p2603	1071	Kinopoisk film ID	identifier for a film/movie in the Russian Kinopoisk.ru database
+http://www.wikidata.org/prop/p2603	1071	Kinopoisk film ID	identifier for a film/movie in the Russian Kinopoisk.ru database
+http://www.wikidata.org/prop/direct/p8013	1069	Trakt.tv ID	identifier for a work or person on the website Trakt.tv
+http://www.wikidata.org/prop/p8013	1069	Trakt.tv ID	identifier for a work or person on the website Trakt.tv
+http://www.wikidata.org/prop/p1258	1062	Rotten Tomatoes ID	identifier on Rotten Tomatoes
+http://www.wikidata.org/prop/p4282	1045	LUMIERE film ID	ID of a film or TV series in the LUMIERE database of the European Audiovisual Observatory
+http://www.wikidata.org/prop/direct/p4282	1043	LUMIERE film ID	ID of a film or TV series in the LUMIERE database of the European Audiovisual Observatory
+http://www.wikidata.org/prop/p480	1041	FilmAffinity film ID	FilmAffinity identification number of a creative work
+http://www.wikidata.org/prop/direct/p480	1040	FilmAffinity film ID	FilmAffinity identification number of a creative work
+http://www.wikidata.org/prop/direct/p12096	1033	Kinobox film ID	identifier for a film on the Kinobox.cz website
+http://www.wikidata.org/prop/direct/p1258	1033	Rotten Tomatoes ID	identifier on Rotten Tomatoes
+http://www.wikidata.org/prop/p12096	1033	Kinobox film ID	identifier for a film on the Kinobox.cz website
+http://www.wikidata.org/prop/p1411	1030	nominated for	award nomination received by a person, organisation or creative work (inspired from 
+http://www.wikidata.org/prop/direct/p12683	1028	FilmVandaag ID	identifier for a movie or TV show on FilmVandaag
+http://www.wikidata.org/prop/p12683	1028	FilmVandaag ID	identifier for a movie or TV show on FilmVandaag
+http://www.wikidata.org/prop/p725	1019	voice actor	performer of a spoken role in a creative work such as animation, video game, radio drama, or dubbing over [use 
+http://www.wikidata.org/prop/direct/p725	1016	voice actor	performer of a spoken role in a creative work such as animation, video game, radio drama, or dubbing over [use 
+http://www.wikidata.org/prop/direct/p1411	1006	nominated for	award nomination received by a person, organisation or creative work (inspired from 
+http://www.wikidata.org/prop/direct/p12492	993	Trakt.tv film ID	identifier for a film in the Trakt.tv database
+http://www.wikidata.org/prop/p12492	993	Trakt.tv film ID	identifier for a film in the Trakt.tv database
+http://www.wikidata.org/prop/direct/p12196	989	TheTVDB movie ID	identifier for a movie at TheTVDB.com
+http://www.wikidata.org/prop/p12196	989	TheTVDB movie ID	identifier for a movie at TheTVDB.com
+http://www.wikidata.org/prop/p86	988	composer	person(s) who wrote the music [for lyricist, use 
+http://www.wikidata.org/prop/direct/p86	983	composer	person(s) who wrote the music [for lyricist, use 
+http://www.wikidata.org/prop/p1265	976	AlloCiné film ID	identifier for a film in the French AlloCiné database
+http://www.wikidata.org/prop/direct/p1265	975	AlloCiné film ID	identifier for a film in the French AlloCiné database
+http://www.wikidata.org/prop/p437	969	distribution format	method (or type) of distribution for the subject
+http://www.wikidata.org/prop/direct/p437	964	distribution format	method (or type) of distribution for the subject
+http://www.wikidata.org/prop/p9586	951	Apple TV movie ID	identifier for a movie on Apple TV
+http://www.wikidata.org/prop/direct/p12241	947	Schnittberichte.com title ID	identifier in the Schnittberichte.com database
+http://www.wikidata.org/prop/p12241	947	Schnittberichte.com title ID	identifier in the Schnittberichte.com database
+http://www.wikidata.org/prop/direct/p9586	932	Apple TV movie ID	identifier for a movie on Apple TV
+http://www.wikidata.org/prop/p462	918	color	color of subject
+http://www.wikidata.org/prop/direct/p462	917	color	color of subject
+http://www.wikidata.org/prop/direct/p12222	893	Filmweb.no film ID	identifier for a film or TV series on the Norwegian online database Filmweb
+http://www.wikidata.org/prop/p12222	893	Filmweb.no film ID	identifier for a film or TV series on the Norwegian online database Filmweb
+http://www.wikidata.org/prop/direct/p1476	853	title	published name of a work, such as a newspaper article, a literary work, piece of music, a website, or a performance work
+http://www.wikidata.org/prop/p1562	853	AllMovie title ID	identifier for a work on the website AllMovie
+http://www.wikidata.org/prop/direct/p4529	851	Douban film ID	identifier for a film (movie) or TV series at the website Douban
+http://www.wikidata.org/prop/p4529	851	Douban film ID	identifier for a film (movie) or TV series at the website Douban
+http://www.wikidata.org/prop/p344	850	director of photography	person responsible for the framing, lighting, and filtration of the subject work
+http://www.wikidata.org/prop/direct/p344	849	director of photography	person responsible for the framing, lighting, and filtration of the subject work
+http://www.wikidata.org/prop/direct/p1562	848	AllMovie title ID	identifier for a work on the website AllMovie
+http://www.wikidata.org/prop/direct/p1970	845	MovieMeter film ID	identifier for a film on the website MovieMeter
+http://www.wikidata.org/prop/p1970	845	MovieMeter film ID	identifier for a film on the website MovieMeter
+http://www.wikidata.org/prop/direct/p3138	842	OFDb film ID	identifier for a film (movie) in the German Online-Filmdatenbank website
+http://www.wikidata.org/prop/p3138	842	OFDb film ID	identifier for a film (movie) in the German Online-Filmdatenbank website
+http://www.wikidata.org/prop/direct/p5327	835	fernsehserien.de ID	identifier for television series on the website fernsehserien.de
+http://www.wikidata.org/prop/p5327	835	fernsehserien.de ID	identifier for television series on the website fernsehserien.de
+http://www.wikidata.org/prop/p1712	828	Metacritic ID	identifier for Metacritic
+http://www.wikidata.org/prop/direct/p1712	827	Metacritic ID	identifier for Metacritic
+http://www.wikidata.org/prop/direct/p5786	798	Moviepilot.de film ID	identifier for films on Moviepilot.de
+http://www.wikidata.org/prop/p5786	798	Moviepilot.de film ID	identifier for films on Moviepilot.de
+http://www.wikidata.org/prop/p2684	794	Kijkwijzer rating	Dutch media content rating system
+http://www.wikidata.org/prop/p921	789	main subject	primary topic of a work or act of communication
+http://www.wikidata.org/prop/direct/p921	788	main subject	primary topic of a work or act of communication
+http://www.wikidata.org/prop/direct/p1040	780	film editor	person who works with the raw footage, selecting shots and combining them into sequences to create a finished motion picture
+http://www.wikidata.org/prop/p1040	780	film editor	person who works with the raw footage, selecting shots and combining them into sequences to create a finished motion picture
+http://www.wikidata.org/prop/p4780	763	MYmovies audiovisual work ID	identifier for a film or a TV series in MYmovies.it
+http://www.wikidata.org/prop/direct/p4780	762	MYmovies audiovisual work ID	identifier for a film or a TV series in MYmovies.it
+http://www.w3.org/2004/02/skos/core#altLabel	757		
+http://www.wikidata.org/prop/direct/p905	757	PORT film ID	PORT-network film database: identifier for a film or television program
+http://www.wikidata.org/prop/p905	757	PORT film ID	PORT-network film database: identifier for a film or television program
+http://www.wikidata.org/prop/direct/p2684	750	Kijkwijzer rating	Dutch media content rating system
+http://www.wikidata.org/prop/p2758	724	CNC film rating (France)	category assigned to a film by the Board of Film Classification (CNC) which what audiences may view it in France
+http://www.wikidata.org/prop/direct/p2758	723	CNC film rating (France)	category assigned to a film by the Board of Film Classification (CNC) which what audiences may view it in France
+http://www.wikidata.org/prop/p1804	708	DNF film ID	identifier for a film in the Danish National Filmography
+http://www.wikidata.org/prop/direct/p1804	703	DNF film ID	identifier for a film in the Danish National Filmography
+http://www.wikidata.org/prop/p166	697	award received	award or recognition received by a person, organization or creative work
+http://www.wikidata.org/prop/direct/p166	696	award received	award or recognition received by a person, organization or creative work
+http://www.wikidata.org/prop/direct/p3107	682	LdiF ID	identifier of a film (movie) in the Lexikon des Internationalen Films (Lexicon of International Films)
+http://www.wikidata.org/prop/direct/p3844	682	Deutsche Synchronkartei film ID	identifier for films in the synchronisation database Deutsche Synchronkartei
+http://www.wikidata.org/prop/p3107	682	LdiF ID	identifier of a film (movie) in the Lexikon des Internationalen Films (Lexicon of International Films)
+http://www.wikidata.org/prop/p3844	682	Deutsche Synchronkartei film ID	identifier for films in the synchronisation database Deutsche Synchronkartei
+http://www.wikidata.org/prop/direct/p3143	664	elFilm film ID	identifier for a movie at the Arabic movie database elFilm
+http://www.wikidata.org/prop/p3143	664	elFilm film ID	identifier for a movie at the Arabic movie database elFilm
+http://www.wikidata.org/prop/direct/p2346	662	Elonet movie ID	identifier for a movie in the Elonet database
+http://www.wikidata.org/prop/p2346	662	Elonet movie ID	identifier for a movie in the Elonet database
+http://www.wikidata.org/prop/p2755	659	exploitation mark number	number of the exploitation mark of a movie in France
+http://www.wikidata.org/prop/direct/p2755	658	exploitation mark number	number of the exploitation mark of a movie in France
+http://www.wikidata.org/prop/p2334	640	Swedish Film Database ID	identifier for a movie on the Swedish Film Database (SFDb)
+http://www.wikidata.org/prop/direct/p1874	639	Netflix ID	identifier for a creative work on Netflix
+http://www.wikidata.org/prop/direct/p2334	639	Swedish Film Database ID	identifier for a movie on the Swedish Film Database (SFDb)
+http://www.wikidata.org/prop/p1874	639	Netflix ID	identifier for a creative work on Netflix
+http://www.wikidata.org/prop/direct/p646	633	Freebase ID	identifier for a page in the Freebase database. Format: 
+http://www.wikidata.org/prop/p646	633	Freebase ID	identifier for a page in the Freebase database. Format: 
+http://www.wikidata.org/prop/direct/p1237	613	Box Office Mojo film ID (former scheme)	former identifier for a movie at the website Box Office Mojo
+http://www.wikidata.org/prop/p1237	613	Box Office Mojo film ID (former scheme)	former identifier for a movie at the website Box Office Mojo
+http://www.wikidata.org/prop/direct/p5099	607	Il mondo dei doppiatori ID	identifier for a creative work or person at Il mondo dei doppiatori
+http://www.wikidata.org/prop/p5099	607	Il mondo dei doppiatori ID	identifier for a creative work or person at Il mondo dei doppiatori
+http://www.wikidata.org/prop/p2142	606	box office	box office takings accumulated by a film
+http://www.wikidata.org/prop/direct/p3302	601	OMDb film ID	identifier for a movie at the Open Movie Database
+http://www.wikidata.org/prop/p3302	601	OMDb film ID	identifier for a movie at the Open Movie Database
+http://www.wikidata.org/prop/direct/p2508	599	KINENOTE film ID	identifier of a film in the KINENOTE movie database
+http://www.wikidata.org/prop/p2508	599	KINENOTE film ID	identifier of a film in the KINENOTE movie database
+http://www.wikidata.org/prop/direct/p3129	596	Cine.gr film ID (archived)	identifier for a movie at the Greek movie database Cine.gr
+http://www.wikidata.org/prop/p1981	596	FSK film rating	permitted audience of a film, according to the German film-rating system (add Prüfnummer with qualifier 
+http://www.wikidata.org/prop/p3129	596	Cine.gr film ID (archived)	identifier for a movie at the Greek movie database Cine.gr
+http://www.wikidata.org/prop/p856	594	official website	URL of the official page of an item (current or former). Usage: If a listed URL no longer points to the official website, do not remove it, but see the 
+http://www.wikidata.org/prop/direct/p1981	590	FSK film rating	permitted audience of a film, according to the German film-rating system (add Prüfnummer with qualifier 
+http://www.wikidata.org/prop/direct/p2142	580	box office	box office takings accumulated by a film
+http://www.wikidata.org/prop/direct/p2631	578	TCM Movie Database film ID	identifier for a film in the Turner Classic Movies movie database
+http://www.wikidata.org/prop/p2631	578	TCM Movie Database film ID	identifier for a film in the Turner Classic Movies movie database
+http://www.wikidata.org/prop/p3808	572	The Numbers movie ID	ID of a film at The Numbers
+http://www.wikidata.org/prop/direct/p3808	569	The Numbers movie ID	ID of a film at The Numbers
+http://www.wikidata.org/prop/p3077	557	Cineplex Germany film ID	identifier for films in the Cineplex database
+http://www.wikidata.org/prop/p7299	556	MUBI film ID	identifier for a film at MUBI
+http://www.wikidata.org/prop/direct/p7299	555	MUBI film ID	identifier for a film at MUBI
+http://www.wikidata.org/prop/direct/p3077	553	Cineplex Germany film ID	identifier for films in the Cineplex database
+http://www.wikidata.org/prop/direct/p856	552	official website	URL of the official page of an item (current or former). Usage: If a listed URL no longer points to the official website, do not remove it, but see the 
+http://www.wikidata.org/prop/direct/p7975	549	Filmfront film ID (archived)	identifiers for films in the Filmfront, a Norwegian movie database
+http://www.wikidata.org/prop/p7975	549	Filmfront film ID (archived)	identifiers for films in the Filmfront, a Norwegian movie database
+http://www.wikidata.org/prop/p6562	547	Google Play Movies & TV ID	identifier of films and television series on Google Play
+http://www.wikidata.org/prop/direct/p6562	546	Google Play Movies & TV ID	identifier of films and television series on Google Play
+http://www.wikidata.org/prop/direct/p2465	539	Allcinema film ID	film IDs on Allcinema Movie Database
+http://www.wikidata.org/prop/p2465	539	Allcinema film ID	film IDs on Allcinema Movie Database
+http://www.wikidata.org/prop/direct/p3135	531	elCinema film ID	identifier for a movie at elCinema
+http://www.wikidata.org/prop/p3135	531	elCinema film ID	identifier for a movie at elCinema
+http://www.wikidata.org/prop/p3212	526	ISAN	unique identifier for audiovisual works and related versions, similar to ISBN for books
+http://www.wikidata.org/prop/direct-normalized/p3212	524	ISAN	unique identifier for audiovisual works and related versions, similar to ISBN for books
+http://www.wikidata.org/prop/direct/p3212	524	ISAN	unique identifier for audiovisual works and related versions, similar to ISBN for books
+http://www.wikidata.org/prop/direct/p5032	519	Filmweb.pl film ID	identifier for a movie or series at filmweb.pl
+http://www.wikidata.org/prop/p5032	519	Filmweb.pl film ID	identifier for a movie or series at filmweb.pl
+http://www.wikidata.org/prop/p4632	506	Bechdel Test Movie List ID	identifier for a film on bechdeltest.com
+http://www.wikidata.org/prop/direct/p4632	505	Bechdel Test Movie List ID	identifier for a film on bechdeltest.com
+http://www.wikidata.org/prop/p2518	493	Scope.dk film ID	identifier for a film on the website Scope.dk
+http://www.wikidata.org/prop/direct/p2518	492	Scope.dk film ID	identifier for a film on the website Scope.dk
+http://www.wikidata.org/prop/direct/p6262	488	Fandom article ID	identifier of an article on Fandom (Wikia). Format: subdomain:Page_title (language-code.subdomain:Page_title for non-English wikis)
+http://www.wikidata.org/prop/p6262	488	Fandom article ID	identifier of an article on Fandom (Wikia). Format: subdomain:Page_title (language-code.subdomain:Page_title for non-English wikis)
+http://www.wikidata.org/prop/direct/p2638	483	TV.com ID	identifier for an entry on TV.com for movies, people and TV series
+http://www.wikidata.org/prop/p2638	483	TV.com ID	identifier for an entry on TV.com for movies, people and TV series
+http://www.wikidata.org/prop/direct/p3933	479	Cinema.de ID	identifier for a film or person in the German film website cinema.de
+http://www.wikidata.org/prop/p3933	479	Cinema.de ID	identifier for a film or person in the German film website cinema.de
+http://www.wikidata.org/prop/direct/p3141	477	EDb film ID	identifier for a movie at the Israeli movie database EDb
+http://www.wikidata.org/prop/p3141	477	EDb film ID	identifier for a movie at the Israeli movie database EDb
+http://www.wikidata.org/prop/direct/p12347	475	NientePopCorn movie ID	identifier for a movie at NientePopCorn.it
+http://www.wikidata.org/prop/p12347	475	NientePopCorn movie ID	identifier for a movie at NientePopCorn.it
+http://www.wikidata.org/prop/p1657	470	MPA film rating	US film classification administered by the Motion Picture Association
+http://www.wikidata.org/prop/direct/p3306	465	ICAA rating	rating in the Spanish motion picture content rating system
+http://www.wikidata.org/prop/p3306	465	ICAA rating	rating in the Spanish motion picture content rating system
+http://www.wikidata.org/prop/direct/p9821	463	Unconsenting Media ID	identifier for a film, television show, or literary work in the Unconsenting Media database, which provides information about rape and sexual assault in TV, movies, and books
+http://www.wikidata.org/prop/p9821	463	Unconsenting Media ID	identifier for a film, television show, or literary work in the Unconsenting Media database, which provides information about rape and sexual assault in TV, movies, and books
+http://www.wikidata.org/prop/direct/p1657	459	MPA film rating	US film classification administered by the Motion Picture Association
+http://www.wikidata.org/prop/p4276	458	Cinémathèque québécoise work ID	Cinémathèque québécoise identifier for a work
+http://www.wikidata.org/prop/direct-normalized/p4276	457	Cinémathèque québécoise work ID	Cinémathèque québécoise identifier for a work
+http://www.wikidata.org/prop/direct/p4276	457	Cinémathèque québécoise work ID	Cinémathèque québécoise identifier for a work
+http://www.wikidata.org/prop/p3092	442	film crew member	member of the crew creating an audiovisual work, used for miscellaneous roles qualified with the job title when no specific property exists. Don't use if such a property is available: notably for cast member (P161), director (P57), etc.
+http://www.wikidata.org/prop/direct/p3092	432	film crew member	member of the crew creating an audiovisual work, used for miscellaneous roles qualified with the job title when no specific property exists. Don't use if such a property is available: notably for cast member (P161), director (P57), etc.
+http://www.wikidata.org/prop/direct/p8033	431	Movie Review Query Engine ID	identifier for a movie on the Movie Review Query Engine website
+http://www.wikidata.org/prop/p8033	431	Movie Review Query Engine ID	identifier for a movie on the Movie Review Query Engine website
+http://www.wikidata.org/prop/direct/p5128	430	ICAA film catalogue ID	ID of a film in the film catalogue of Instituto de la Cinematografía y de las Artes Audiovisuales
+http://www.wikidata.org/prop/p5128	430	ICAA film catalogue ID	ID of a film in the film catalogue of Instituto de la Cinematografía y de las Artes Audiovisuales
+http://www.wikidata.org/prop/direct-normalized/p2671	420	Google Knowledge Graph ID	identifier for Google Knowledge Graph API, starting with 
+http://www.wikidata.org/prop/direct/p2671	420	Google Knowledge Graph ID	identifier for Google Knowledge Graph API, starting with 
+http://www.wikidata.org/prop/p2671	420	Google Knowledge Graph ID	identifier for Google Knowledge Graph API, starting with 
+http://www.wikidata.org/prop/direct/p5970	415	Medierådet rating	rating of a film in the Danish movie content rating system
+http://www.wikidata.org/prop/p5970	415	Medierådet rating	rating of a film in the Danish movie content rating system
+http://www.wikidata.org/prop/direct/p2509	404	Movie Walker Press film ID	identifier of a film in the Movie Walker Press Database. Format: 
+http://www.wikidata.org/prop/p2509	404	Movie Walker Press film ID	identifier of a film in the Movie Walker Press Database. Format: 
+http://www.wikidata.org/prop/direct/p3593	380	AFI Catalog of Feature Films ID	identifier of a film (movie) in the American Film Institute Catalog of Feature Film
+http://www.wikidata.org/prop/p3593	380	AFI Catalog of Feature Films ID	identifier of a film (movie) in the American Film Institute Catalog of Feature Film
+http://www.wikidata.org/prop/p2130	376	capital cost	amount of money spent on building or producing an object
+http://www.wikidata.org/prop/direct/p2130	375	capital cost	amount of money spent on building or producing an object
+http://www.wikidata.org/prop/direct/p8958	369	ClassInd audiovisual work ID	identifier of an audiovisual work in the Classificação Indicativa database
+http://www.wikidata.org/prop/p8958	369	ClassInd audiovisual work ID	identifier of an audiovisual work in the Classificação Indicativa database
+http://www.wikidata.org/prop/direct/p3203	368	Ciné-Ressources film ID	page of a movie on the website 
+http://www.wikidata.org/prop/p3203	368	Ciné-Ressources film ID	page of a movie on the website 
+http://www.wikidata.org/prop/direct/p3804	367	TV Guide show ID (former scheme)	ID of a television program at TV Guide
+http://www.wikidata.org/prop/direct/p6942	367	animator	person creating animated sequences out of still images
+http://www.wikidata.org/prop/p3804	367	TV Guide show ID (former scheme)	ID of a television program at TV Guide
+http://www.wikidata.org/prop/p6942	367	animator	person creating animated sequences out of still images
+http://www.wikidata.org/prop/direct/p5749	355	Amazon Standard Identification Number	identifier for a product on Amazon.com websites
+http://www.wikidata.org/prop/p5749	355	Amazon Standard Identification Number	identifier for a product on Amazon.com websites
+http://www.wikidata.org/prop/p1651	349	YouTube video ID	identifier of a video on YouTube; qualify trailers with 
+http://www.wikidata.org/prop/direct/p4665	348	CineMagia title ID	identifier for a movie on the Cinemagia.ro website
+http://www.wikidata.org/prop/p4665	348	CineMagia title ID	identifier for a movie on the Cinemagia.ro website
+http://www.wikidata.org/prop/direct/p1651	347	YouTube video ID	identifier of a video on YouTube; qualify trailers with 
+http://www.wikidata.org/prop/direct/p7978	343	Decine21 film ID	identifier for a film or TV series on the website decine21.com
+http://www.wikidata.org/prop/p7978	343	Decine21 film ID	identifier for a film or TV series on the website decine21.com
+http://www.wikidata.org/prop/p2756	339	EIRIN film rating	category in the Japanese film rating system (add EIRIN number with qualifier P2676)
+http://www.wikidata.org/prop/p7970	338	FandangoNow ID (deprecated scheme)	historic identifier for a film or other similar visual work used by the defunct FandangoNow website
+http://www.wikidata.org/prop/direct/p7970	337	FandangoNow ID (deprecated scheme)	historic identifier for a film or other similar visual work used by the defunct FandangoNow website
+http://www.wikidata.org/prop/direct/p2756	336	EIRIN film rating	category in the Japanese film rating system (add EIRIN number with qualifier P2676)
+http://www.wikidata.org/prop/p2363	326	NMHH film rating	rating of a film in the Hungarian film rating system
+http://www.wikidata.org/prop/p3216	325	ClassInd rating	rating of an audiovisual work, video game or RPG in the Brazilian Advisory Rating System (ClassInd)
+http://www.wikidata.org/prop/direct/p3216	322	ClassInd rating	rating of an audiovisual work, video game or RPG in the Brazilian Advisory Rating System (ClassInd)
+http://www.wikidata.org/prop/p144	321	based on	the work(s) or inputs used as the basis for subject item; for fictional analog use P1074
+http://www.wikidata.org/prop/direct/p144	317	based on	the work(s) or inputs used as the basis for subject item; for fictional analog use P1074
+http://www.wikidata.org/prop/direct/p2363	317	NMHH film rating	rating of a film in the Hungarian film rating system
+http://www.wikidata.org/prop/p2747	315	Filmiroda rating	rating of a film in the former (2004–2011) Hungarian film rating system
+http://www.wikidata.org/prop/direct/p2061	313	aspect ratio (W:H)	image width to height ratio of flags, films, photographs, and other images
+http://www.wikidata.org/prop/p2061	313	aspect ratio (W:H)	image width to height ratio of flags, films, photographs, and other images
+http://www.wikidata.org/prop/p1431	312	executive producer	executive producer of a movie, TV show, or other piece of media or entertainment
+http://www.wikidata.org/prop/direct/p1431	311	executive producer	executive producer of a movie, TV show, or other piece of media or entertainment
+http://www.wikidata.org/prop/direct/p2747	309	Filmiroda rating	rating of a film in the former (2004–2011) Hungarian film rating system
+http://www.wikidata.org/prop/p3402	308	CNC film rating (Romania)	rating of a movie in the Romanian content rating system
+http://www.wikidata.org/prop/direct/p3402	306	CNC film rating (Romania)	rating of a movie in the Romanian content rating system
+http://www.wikidata.org/prop/direct/p4783	305	Movieplayer film ID	identifier for film in movieplayer.it
+http://www.wikidata.org/prop/p4783	305	Movieplayer film ID	identifier for film in movieplayer.it
+http://www.wikidata.org/prop/p8687	302	social media followers	number of subscribers on a particular social media website (use as main statement only; see P3744 instead for qualifier). Qualify with 
+http://www.wikidata.org/prop/direct/p373	299	Commons category	name of the Wikimedia Commons category containing files related to this item (without the prefix 
+http://www.wikidata.org/prop/p373	299	Commons category	name of the Wikimedia Commons category containing files related to this item (without the prefix 
+http://www.wikidata.org/prop/direct-normalized/p1617	279	BBC Things ID	identifier in the BBC Things database, automatically enriched with Wikipedia and MusicBrainz content
+http://www.wikidata.org/prop/direct/p1617	279	BBC Things ID	identifier in the BBC Things database, automatically enriched with Wikipedia and MusicBrainz content
+http://www.wikidata.org/prop/p1617	279	BBC Things ID	identifier in the BBC Things database, automatically enriched with Wikipedia and MusicBrainz content
+http://www.wikidata.org/prop/direct/p6196	277	BadTaste ID	identifier of a movie from the website BadTaste.it
+http://www.wikidata.org/prop/p6196	277	BadTaste ID	identifier of a movie from the website BadTaste.it
+http://www.wikidata.org/prop/direct-normalized/p214	262	VIAF cluster ID	identifier for the Virtual International Authority File database [format: up to 22 digits]; please note: VIAF is a cluster, the ID can include multiple items
+http://www.wikidata.org/prop/direct/p214	262	VIAF cluster ID	identifier for the Virtual International Authority File database [format: up to 22 digits]; please note: VIAF is a cluster, the ID can include multiple items
+http://www.wikidata.org/prop/p214	262	VIAF cluster ID	identifier for the Virtual International Authority File database [format: up to 22 digits]; please note: VIAF is a cluster, the ID can include multiple items
+http://www.wikidata.org/prop/direct/p2703	261	BFI National Archive work ID	identifier for (creative) works and objects (moving image, documents, stills, posters, designs, books, articles) in the BFI's Collections Information Database (CID)
+http://www.wikidata.org/prop/p2703	261	BFI National Archive work ID	identifier for (creative) works and objects (moving image, documents, stills, posters, designs, books, articles) in the BFI's Collections Information Database (CID)
+http://www.wikidata.org/prop/direct/p12879	257	Filmová databáze film ID	identifier for a movie in the Filmová databáze (FDb)
+http://www.wikidata.org/prop/p12879	257	Filmová databáze film ID	identifier for a movie in the Filmová databáze (FDb)
+http://www.wikidata.org/prop/direct/p11346	255	Cinematografo.it film ID (new)	identifier for a film in the Italian website Cinematografo.it
+http://www.wikidata.org/prop/p11346	255	Cinematografo.it film ID (new)	identifier for a film in the Italian website Cinematografo.it
+http://www.wikidata.org/prop/direct/p3145	252	Sratim ID	identifier for a movie or person at the Israeli movie database Sratim (sratim.co.il)
+http://www.wikidata.org/prop/p1552	252	has characteristic	inherent or distinguishing quality or feature of the entity. Use a more specific property when possible
+http://www.wikidata.org/prop/p3145	252	Sratim ID	identifier for a movie or person at the Israeli movie database Sratim (sratim.co.il)
+http://www.wikidata.org/prop/direct/p1552	250	has characteristic	inherent or distinguishing quality or feature of the entity. Use a more specific property when possible
+http://www.wikidata.org/prop/direct/p5253	246	FilmTv.it movie ID	identifier for a movie at FilmTv.it
+http://www.wikidata.org/prop/p5253	246	FilmTv.it movie ID	identifier for a movie at FilmTv.it
+http://www.wikidata.org/prop/direct/p7777	235	AdoroCinema film ID	identifier for a film in AdoroCinema database
+http://www.wikidata.org/prop/p7777	235	AdoroCinema film ID	identifier for a film in AdoroCinema database
+http://www.wikidata.org/prop/p3834	234	RTC film rating	rating of a film in the Mexican film classification system
+http://www.wikidata.org/prop/direct/p3834	233	RTC film rating	rating of a film in the Mexican film classification system
+http://www.wikidata.org/prop/p179	232	part of the series	series which contains the subject
+http://www.wikidata.org/prop/direct/p179	229	part of the series	series which contains the subject
+http://www.wikidata.org/prop/direct/p6458	227	Mtime movie ID	identifier for a movie/film at the website Mtimemovie.com
+http://www.wikidata.org/prop/p6458	227	Mtime movie ID	identifier for a movie/film at the website Mtimemovie.com
+http://www.wikidata.org/prop/direct/p1889	224	different from	item that is different from another item, with which it may be confused
+http://www.wikidata.org/prop/p1889	224	different from	item that is different from another item, with which it may be confused
+http://www.wikidata.org/prop/p2629	223	BBFC rating	British media content rating (add BBFC reference with qualifier 
+http://www.wikidata.org/prop/direct/p2629	215	BBFC rating	British media content rating (add BBFC reference with qualifier 
+http://www.wikidata.org/prop/direct/p406	213	soundtrack release	music release that incorporates music directly recorded from the soundtrack of an audiovisual work
+http://www.wikidata.org/prop/p406	213	soundtrack release	music release that incorporates music directly recorded from the soundtrack of an audiovisual work
+http://www.wikidata.org/prop/p1417	211	Encyclopædia Britannica Online ID	identifier for an article in the online version of Encyclopædia Britannica
+http://www.wikidata.org/prop/direct/p1417	210	Encyclopædia Britannica Online ID	identifier for an article in the online version of Encyclopædia Britannica
+http://www.wikidata.org/prop/p154	207	logo image	graphic mark or emblem commonly used by commercial enterprises, organizations and products
+http://www.wikidata.org/prop/direct/p2554	206	production designer	person(s) responsible for overall aesthetic of the story of this motion picture, play, video game or similar; responsible for visual concept, producing interior, exterior, location, graphics, etc; deals with many and varied logistic related to this
+http://www.wikidata.org/prop/direct/p7285	206	Writers Guild of America project ID	identifier for a film or television project in the Writers Guild of America's Find a Writer database
+http://www.wikidata.org/prop/p2554	206	production designer	person(s) responsible for overall aesthetic of the story of this motion picture, play, video game or similar; responsible for visual concept, producing interior, exterior, location, graphics, etc; deals with many and varied logistic related to this
+http://www.wikidata.org/prop/p7285	206	Writers Guild of America project ID	identifier for a film or television project in the Writers Guild of America's Find a Writer database
+http://www.wikidata.org/prop/direct/p3650	204	JMK film rating	rating of a film in the Austrian film rating system
+http://www.wikidata.org/prop/p3650	204	JMK film rating	rating of a film in the Austrian film rating system
+http://www.wikidata.org/prop/p3417	202	Quora topic ID	identifier for a topic on Quora (English language version)
+http://www.wikidata.org/prop/direct/p3417	201	Quora topic ID	identifier for a topic on Quora (English language version)
+http://www.wikidata.org/prop/direct/p4786	199	cinematografo.it film ID	identifier for a film in cinematografo.it
+http://www.wikidata.org/prop/p4786	199	cinematografo.it film ID	identifier for a film in cinematografo.it
+http://www.wikidata.org/prop/direct-normalized/p244	193	Library of Congress authority ID	Library of Congress name authority (persons, families, corporate bodies, events, places, works and expressions) and subject authority identifier [Format: 1-2 specific letters followed by 8-10 digits (see regex). For manifestations, use P1144]
+http://www.wikidata.org/prop/direct/p244	193	Library of Congress authority ID	Library of Congress name authority (persons, families, corporate bodies, events, places, works and expressions) and subject authority identifier [Format: 1-2 specific letters followed by 8-10 digits (see regex). For manifestations, use P1144]
+http://www.wikidata.org/prop/p244	193	Library of Congress authority ID	Library of Congress name authority (persons, families, corporate bodies, events, places, works and expressions) and subject authority identifier [Format: 1-2 specific letters followed by 8-10 digits (see regex). For manifestations, use P1144]
+http://www.wikidata.org/prop/direct/p3110	192	ISzDb film ID	identifier of a film in the ISzDb (a Hungarian dub database)
+http://www.wikidata.org/prop/direct/p7573	192	IFCO rating	rating certificate of a film in the Irish content classification system
+http://www.wikidata.org/prop/p3110	192	ISzDb film ID	identifier of a film in the ISzDb (a Hungarian dub database)
+http://www.wikidata.org/prop/p7573	192	IFCO rating	rating certificate of a film in the Irish content classification system
+http://www.wikidata.org/prop/direct/p154	191	logo image	graphic mark or emblem commonly used by commercial enterprises, organizations and products
+http://www.wikidata.org/prop/direct/p2515	188	costume designer	person who designed the costumes for a film, television programme, etc.
+http://www.wikidata.org/prop/p2515	188	costume designer	person who designed the costumes for a film, television programme, etc.
+http://www.wikidata.org/prop/direct/p6145	187	Academy Awards Database film ID	identifier for a film in the official Academy Awards database
+http://www.wikidata.org/prop/p6145	187	Academy Awards Database film ID	identifier for a film in the official Academy Awards database
+http://www.wikidata.org/prop/direct-normalized/p827	186	BBC programme ID	identifier for the corresponding item on the BBC website and internal systems
+http://www.wikidata.org/prop/direct/p12034	186	Médiathèque Numérique CVS ID	identifier on a creative work on the Médiathèque Numérique CVS platform
+http://www.wikidata.org/prop/direct/p827	186	BBC programme ID	identifier for the corresponding item on the BBC website and internal systems
+http://www.wikidata.org/prop/p12034	186	Médiathèque Numérique CVS ID	identifier on a creative work on the Médiathèque Numérique CVS platform
+http://www.wikidata.org/prop/p827	186	BBC programme ID	identifier for the corresponding item on the BBC website and internal systems
+http://www.wikidata.org/prop/direct/p8796	184	FilmPolski ID	ідэнтыфікатар асобы, фільмы і да т. п. у базе зьвестак „Фільм у польскай прэсе“
+http://www.wikidata.org/prop/p8796	184	FilmPolski ID	ідэнтыфікатар асобы, фільмы і да т. п. у базе зьвестак „Фільм у польскай прэсе“
+http://www.wikidata.org/prop/direct/p5150	182	IGAC rating	rating of a film or theatrical production in the Portuguese classification system
+http://www.wikidata.org/prop/direct/p6839	182	TV Tropes ID	identifier in the TV Tropes online wiki
+http://www.wikidata.org/prop/p2002	182	X (Twitter) username	username on X (formerly Twitter); do not include the '@' symbol
+http://www.wikidata.org/prop/p5150	182	IGAC rating	rating of a film or theatrical production in the Portuguese classification system
+http://www.wikidata.org/prop/p6839	182	TV Tropes ID	identifier in the TV Tropes online wiki
+http://www.wikidata.org/prop/p18	180	image	image of relevant illustration of the subject; if available, also use more specific properties (sample: coat of arms image, locator map, flag image, signature image, logo image, collage image)
+http://www.wikidata.org/prop/direct/p2002	179	X (Twitter) username	username on X (formerly Twitter); do not include the '@' symbol
+http://www.wikidata.org/prop/direct/p2408	177	set in period	historical, contemporary, or future period, year, century or day the work or genre is set in or event featured in the story of the work
+http://www.wikidata.org/prop/p2408	177	set in period	historical, contemporary, or future period, year, century or day the work or genre is set in or event featured in the story of the work
+http://www.wikidata.org/prop/direct/p1877	175	after a work by	artist whose work strongly inspired / was copied in this item
+http://www.wikidata.org/prop/p1877	175	after a work by	artist whose work strongly inspired / was copied in this item
+http://www.wikidata.org/prop/direct/p7003	172	ACMI ID	public identifiers used by the Australian Centre for the Moving Image
+http://www.wikidata.org/prop/p7003	172	ACMI ID	public identifiers used by the Australian Centre for the Moving Image
+http://www.wikidata.org/prop/direct/p18	169	image	image of relevant illustration of the subject; if available, also use more specific properties (sample: coat of arms image, locator map, flag image, signature image, logo image, collage image)
+http://www.wikidata.org/prop/direct/p10100	168	SensCritique work ID	numerical identifier of a work in the SensCritique database
+http://www.wikidata.org/prop/p10100	168	SensCritique work ID	numerical identifier of a work in the SensCritique database
+http://www.wikidata.org/prop/p8411	164	set in environment	environment (geographic feature, building type, etc.) the narrative work is set in
+http://www.wikidata.org/prop/direct/p8411	163	set in environment	environment (geographic feature, building type, etc.) the narrative work is set in
+http://www.wikidata.org/prop/direct/p5905	162	Comic Vine ID	identifier at the Comic Vine database of comic books, fictional characters, people, films and television series/episodes
+http://www.wikidata.org/prop/p5905	162	Comic Vine ID	identifier at the Comic Vine database of comic books, fictional characters, people, films and television series/episodes
+http://www.wikidata.org/prop/direct/p7222	161	Eiga.com movie ID	identifier of movie on Eiga.com database
+http://www.wikidata.org/prop/p7222	161	Eiga.com movie ID	identifier of movie on Eiga.com database
+http://www.wikidata.org/prop/direct/p6658	159	RCQ classification	movie classification for the Régie du Cinéma Québécois
+http://www.wikidata.org/prop/p6658	159	RCQ classification	movie classification for the Régie du Cinéma Québécois
+http://www.wikidata.org/prop/direct/p8531	155	Filmstarts title ID	identifier of a movie on www.filmstarts.de
+http://www.wikidata.org/prop/p8531	155	Filmstarts title ID	identifier of a movie on www.filmstarts.de
+http://www.wikidata.org/prop/direct/p7334	139	Fandango at Home video ID (formerly Vudu video ID)	identifier for a film, television episode, or television series season at athome.fandango.com
+http://www.wikidata.org/prop/p156	139	followed by	immediately following item in a series of which the subject is a part, preferably use as qualifier of P179 [if the subject has been replaced, e.g. political offices, use 
+http://www.wikidata.org/prop/p7334	139	Fandango at Home video ID (formerly Vudu video ID)	identifier for a film, television episode, or television series season at athome.fandango.com
+http://www.wikidata.org/prop/direct/p156	138	followed by	immediately following item in a series of which the subject is a part, preferably use as qualifier of P179 [if the subject has been replaced, e.g. political offices, use 
+http://www.wikidata.org/prop/p2013	131	Facebook username	identifier for an official (preferably) Facebook person, product or organization page (everything that follows URL part 'https://www.facebook.com/')
+http://www.wikidata.org/prop/direct/p2013	130	Facebook username	identifier for an official (preferably) Facebook person, product or organization page (everything that follows URL part 'https://www.facebook.com/')
+http://www.wikidata.org/prop/direct/p4839	129	Wolfram Language entity code	input form for an entity in Wolfram Language
+http://www.wikidata.org/prop/p4839	129	Wolfram Language entity code	input form for an entity in Wolfram Language
+http://www.wikidata.org/prop/direct/p7132	128	ComingSoon.it film ID	identifier for a film in the website ComingSoon.it
+http://www.wikidata.org/prop/p7132	128	ComingSoon.it film ID	identifier for a film in the website ComingSoon.it
+http://www.wikidata.org/prop/direct/p13902	126	Disney+ browse ID	identifier for an item on Disney+
+http://www.wikidata.org/prop/direct/p6584	126	Scripts.com script ID	ID of film scripts, screenplays and transcripts from famous and not-so-famous screen writers from around the world
+http://www.wikidata.org/prop/p13902	126	Disney+ browse ID	identifier for an item on Disney+
+http://www.wikidata.org/prop/p6584	126	Scripts.com script ID	ID of film scripts, screenplays and transcripts from famous and not-so-famous screen writers from around the world
+http://www.wikidata.org/prop/direct-normalized/p227	125	GND ID	identifier from the Gemeinsame Normdatei authority file of names, subjects, and organizations
+http://www.wikidata.org/prop/direct/p227	125	GND ID	identifier from the Gemeinsame Normdatei authority file of names, subjects, and organizations
+http://www.wikidata.org/prop/direct/p9022	125	Mediafilm ID	identifier for Mediafilm for movies
+http://www.wikidata.org/prop/p227	125	GND ID	identifier from the Gemeinsame Normdatei authority file of names, subjects, and organizations
+http://www.wikidata.org/prop/p7595	125	Disney+ movie ID	identifier for a film on Disney+
+http://www.wikidata.org/prop/p9022	125	Mediafilm ID	identifier for Mediafilm for movies
+http://www.wikidata.org/prop/direct/p4277	124	Daum movie ID	identifier for a film in the Daum database
+http://www.wikidata.org/prop/direct/p4437	124	FPB rating	rating of a film or video game in the South African media content rating system
+http://www.wikidata.org/prop/p4277	124	Daum movie ID	identifier for a film in the Daum database
+http://www.wikidata.org/prop/p4437	124	FPB rating	rating of a film or video game in the South African media content rating system
+http://www.wikidata.org/prop/direct/p7595	123	Disney+ movie ID	identifier for a film on Disney+
+http://www.wikidata.org/prop/direct/p3340	122	Kvikmyndir film ID	identifier of a film (movie) in the Icelandic film database kvikmyndir.is
+http://www.wikidata.org/prop/p3340	122	Kvikmyndir film ID	identifier of a film (movie) in the Icelandic film database kvikmyndir.is
+http://www.wikidata.org/prop/direct/p5693	121	Fandango film ID	identifier for a film on Fandango.com
+http://www.wikidata.org/prop/p5693	121	Fandango film ID	identifier for a film on Fandango.com
+http://www.wikidata.org/prop/direct/p4438	118	BFI Films, TV and people ID	identifier for a person or movie at BFI Film & TV Database. Format: 13 digits and lowercase letters
+http://www.wikidata.org/prop/p4438	118	BFI Films, TV and people ID	identifier for a person or movie at BFI Film & TV Database. Format: 13 digits and lowercase letters
+http://www.wikidata.org/prop/p5201	118	IMDA rating	rating in the Singaporean film and video game rating system
+http://www.wikidata.org/prop/direct/p5201	117	IMDA rating	rating in the Singaporean film and video game rating system
+http://www.wikidata.org/prop/direct/p8687	114	social media followers	number of subscribers on a particular social media website (use as main statement only; see P3744 instead for qualifier). Qualify with 
+http://www.wikidata.org/prop/direct/p9979	113	NRK TV ID	identifier for subjects in NRK TV, the Norwegian national public television broadcaster
+http://www.wikidata.org/prop/p9979	113	NRK TV ID	identifier for subjects in NRK TV, the Norwegian national public television broadcaster
+http://www.wikidata.org/prop/direct/p5990	112	Movies Anywhere ID	identifier for a film on the Movies Anywhere service
+http://www.wikidata.org/prop/p5990	112	Movies Anywhere ID	identifier for a film on the Movies Anywhere service
+http://www.wikidata.org/prop/direct/p5311	105	Kino-teatr.ua film ID	identifier for a movie at Kino-teatr.ua
+http://www.wikidata.org/prop/p5311	105	Kino-teatr.ua film ID	identifier for a movie at Kino-teatr.ua
+http://www.wikidata.org/prop/p7118	103	AMPAS collections film ID	identifier for a film in Academy of Motion Picture Arts and Sciences (AMPAS) collections catalog
+http://www.wikidata.org/prop/direct/p3961	102	Unifrance film ID	identifier of a film on unifrance.org
+http://www.wikidata.org/prop/p2003	102	Instagram username	item's username on Instagram
+http://www.wikidata.org/prop/p3961	102	Unifrance film ID	identifier of a film on unifrance.org
+http://www.wikidata.org/prop/direct/p2003	101	Instagram username	item's username on Instagram
+http://www.wikidata.org/prop/direct/p4515	101	Prisma ID	identifier for a film (movie) or person, in prisma.de
+http://www.wikidata.org/prop/direct/p7985	101	Kanopy ID	identifier for a creative work on Kanopy
+http://www.wikidata.org/prop/p4515	101	Prisma ID	identifier for a film (movie) or person, in prisma.de
+http://www.wikidata.org/prop/p7985	101	Kanopy ID	identifier for a creative work on Kanopy
+http://www.wikidata.org/prop/direct/p2637	98	RARS rating	rating in the Russian media content rating system
+http://www.wikidata.org/prop/p2637	98	RARS rating	rating in the Russian media content rating system
+http://www.wikidata.org/prop/p3854	95	Soundtrack Collector title ID	ID for a film at Soundtrack Collector (soundtrackcollector.com)
+http://www.wikidata.org/prop/p8889	95	MTRCB rating	rating of a film or television program in the Philippines
+http://www.wikidata.org/prop/direct/p3854	94	Soundtrack Collector title ID	ID for a film at Soundtrack Collector (soundtrackcollector.com)
+http://www.wikidata.org/prop/direct/p3995	92	Filmweb.pl ID	identifier for film (movie), TV series or videogame, in the filmweb.pl database
+http://www.wikidata.org/prop/p3995	92	Filmweb.pl ID	identifier for film (movie), TV series or videogame, in the filmweb.pl database
+http://www.wikidata.org/prop/direct/p1434	90	takes place in fictional universe	the subject is a work describing a fictional universe, i.e. whose plot occurs in this universe
+http://www.wikidata.org/prop/p1434	90	takes place in fictional universe	the subject is a work describing a fictional universe, i.e. whose plot occurs in this universe
+http://www.wikidata.org/prop/p268	90	Bibliothèque nationale de France ID	identifier for the subject issued by BNF (Bibliothèque nationale de France). Format: 8 digits followed by a check-digit or letter, do not include the initial 'cb'.
+http://www.wikidata.org/prop/direct-normalized/p268	88	Bibliothèque nationale de France ID	identifier for the subject issued by BNF (Bibliothèque nationale de France). Format: 8 digits followed by a check-digit or letter, do not include the initial 'cb'.
+http://www.wikidata.org/prop/direct/p175	88	performer	actor, musician, band or other performer associated with this role or musical work
+http://www.wikidata.org/prop/direct/p268	88	Bibliothèque nationale de France ID	identifier for the subject issued by BNF (Bibliothèque nationale de France). Format: 8 digits followed by a check-digit or letter, do not include the initial 'cb'.
+http://www.wikidata.org/prop/p175	88	performer	actor, musician, band or other performer associated with this role or musical work
+http://www.wikidata.org/prop/p155	87	follows	immediately prior item in a series of which the subject is a part, preferably use as qualifier of P179 [if the subject has replaced the preceding item, e.g. political offices, use 
+http://www.wikidata.org/prop/p3156	87	Australian Classification	content rating of an audiovisual work or video game in the Australian Classification system
+http://www.wikidata.org/prop/direct/p180	86	depicts	entity visually depicted in an image, literarily described in a work, or otherwise incorporated into an audiovisual or other medium; see also P921, 'main subject'
+http://www.wikidata.org/prop/direct/p4969	86	derivative work	new work of art (film, book, software, etc.) derived from major part of this work
+http://www.wikidata.org/prop/direct/p8889	86	MTRCB rating	rating of a film or television program in the Philippines
+http://www.wikidata.org/prop/p180	86	depicts	entity visually depicted in an image, literarily described in a work, or otherwise incorporated into an audiovisual or other medium; see also P921, 'main subject'
+http://www.wikidata.org/prop/p4969	86	derivative work	new work of art (film, book, software, etc.) derived from major part of this work
+http://www.wikidata.org/prop/direct/p155	85	follows	immediately prior item in a series of which the subject is a part, preferably use as qualifier of P179 [if the subject has replaced the preceding item, e.g. political offices, use 
+http://www.wikidata.org/prop/direct/p11137	84	Reddit topic ID	identifier of a topic on Reddit
+http://www.wikidata.org/prop/p11137	84	Reddit topic ID	identifier of a topic on Reddit
+http://www.wikidata.org/prop/direct/p8847	83	Kinorium movie ID	movie identifier on kinorium.com
+http://www.wikidata.org/prop/p8847	83	Kinorium movie ID	movie identifier on kinorium.com
+http://www.wikidata.org/prop/direct/p3156	82	Australian Classification	content rating of an audiovisual work or video game in the Australian Classification system
+http://www.wikidata.org/prop/direct/p10688	81	Personality Database work ID	identifier of an audiovisual work on the Personality Database website
+http://www.wikidata.org/prop/direct/p13888	81	Does the Dog Die? media ID	identifier for the media content warning site doesthedogdie.com
+http://www.wikidata.org/prop/direct/p3428	81	INCAA film rating	rating of a movie in the Argentinian content rating system
+http://www.wikidata.org/prop/p10688	81	Personality Database work ID	identifier of an audiovisual work on the Personality Database website
+http://www.wikidata.org/prop/p13888	81	Does the Dog Die? media ID	identifier for the media content warning site doesthedogdie.com
+http://www.wikidata.org/prop/p3428	81	INCAA film rating	rating of a movie in the Argentinian content rating system
+http://www.wikidata.org/prop/direct/p3275	80	storyboard artist	person credited as the storyboard artist of this work
+http://www.wikidata.org/prop/direct/p8921	80	KOBIS film ID	identifier for a film the database of the Korea Box-Office Information System (KOBIS) provided by the Korean Film Council
+http://www.wikidata.org/prop/p3275	80	storyboard artist	person credited as the storyboard artist of this work
+http://www.wikidata.org/prop/p8921	80	KOBIS film ID	identifier for a film the database of the Korea Box-Office Information System (KOBIS) provided by the Korean Film Council
+http://www.wikidata.org/prop/direct/p13773	78	LSF rating	Indonesia film classification administered by the Film Censorship Board
+http://www.wikidata.org/prop/direct/p7502	78	Golden ID	ID page in Golden knowledge base
+http://www.wikidata.org/prop/p13773	78	LSF rating	Indonesia film classification administered by the Film Censorship Board
+http://www.wikidata.org/prop/p7502	78	Golden ID	ID page in Golden knowledge base
+http://www.wikidata.org/prop/direct/p3414	77	Yle Areena item ID	program or series ID in Yle Areena service
+http://www.wikidata.org/prop/p3414	77	Yle Areena item ID	program or series ID in Yle Areena service
+http://www.wikidata.org/prop/direct/p1110	76	attendance	number of people (spectators, ticket holders) at an event or exhibition
+http://www.wikidata.org/prop/p1110	76	attendance	number of people (spectators, ticket holders) at an event or exhibition
+http://www.wikidata.org/prop/direct/p5233	75	Filmow ID	identifier at the Filmow database of films and TV shows
+http://www.wikidata.org/prop/direct/p6466	75	Hulu movie ID	movie identifier in Hulu
+http://www.wikidata.org/prop/p5233	75	Filmow ID	identifier at the Filmow database of films and TV shows
+http://www.wikidata.org/prop/p6466	75	Hulu movie ID	movie identifier in Hulu
+http://www.wikidata.org/prop/direct/p7937	74	form of creative work	structure of a creative work
+http://www.wikidata.org/prop/p7937	74	form of creative work	structure of a creative work
+http://www.wikidata.org/prop/direct-normalized/p950	72	National Library of Spain SpMaBN ID (BNE v1.0)	semi-deprecated control number of the National Library of Spain catalog powered by Symphony. Format for persons: 
+http://www.wikidata.org/prop/direct/p950	72	National Library of Spain SpMaBN ID (BNE v1.0)	semi-deprecated control number of the National Library of Spain catalog powered by Symphony. Format for persons: 
+http://www.wikidata.org/prop/p7091	72	Common Sense Media ID	identifier for a website or work of fiction on Common Sense Media
+http://www.wikidata.org/prop/p950	72	National Library of Spain SpMaBN ID (BNE v1.0)	semi-deprecated control number of the National Library of Spain catalog powered by Symphony. Format for persons: 
+http://www.wikidata.org/prop/direct/p7236	70	Dove.org work ID	identifier for a movie, book, television show or album on Dove.org
+http://www.wikidata.org/prop/p7236	70	Dove.org work ID	identifier for a movie, book, television show or album on Dove.org
+http://www.wikidata.org/prop/direct/p11948	69	NFSA title ID	identifier for a creative work in the National Film and Sound Archive database
+http://www.wikidata.org/prop/direct/p5357	69	Encyclopedia of Science Fiction ID	identifier for an entry on the Encyclopedia of Science Fiction website
+http://www.wikidata.org/prop/direct/p7091	69	Common Sense Media ID	identifier for a website or work of fiction on Common Sense Media
+http://www.wikidata.org/prop/direct/p7118	69	AMPAS collections film ID	identifier for a film in Academy of Motion Picture Arts and Sciences (AMPAS) collections catalog
+http://www.wikidata.org/prop/p11948	69	NFSA title ID	identifier for a creative work in the National Film and Sound Archive database
+http://www.wikidata.org/prop/p5357	69	Encyclopedia of Science Fiction ID	identifier for an entry on the Encyclopedia of Science Fiction website
+http://www.wikidata.org/prop/direct/p8189	68	National Library of Israel J9U ID	identifier used by the National Library of Israel
+http://www.wikidata.org/prop/p2826	68	Megogo ID	identifier for the film in the database Megogo
+http://www.wikidata.org/prop/p8189	68	National Library of Israel J9U ID	identifier used by the National Library of Israel
+http://www.wikidata.org/prop/direct/p2826	67	Megogo ID	identifier for the film in the database Megogo
+http://www.wikidata.org/prop/direct/p2970	67	Kinopolis film ID	identifier for films in the German Kinopolis database
+http://www.wikidata.org/prop/direct/p5028	67	sound designer	person responsible for the sound on a stage, in a film or in a radio drama
+http://www.wikidata.org/prop/p2970	67	Kinopolis film ID	identifier for films in the German Kinopolis database
+http://www.wikidata.org/prop/p5028	67	sound designer	person responsible for the sound on a stage, in a film or in a radio drama
+http://www.wikidata.org/prop/direct/p13225	66	myCast work ID	identifier of this creative work on myCast
+http://www.wikidata.org/prop/p13225	66	myCast work ID	identifier of this creative work on myCast
+http://www.wikidata.org/prop/direct/p10045	65	Vokrug.tv show ID	identify for a creative work in Vokrug.tv
+http://www.wikidata.org/prop/direct/p10167	65	Kinobaza film ID	identifier for a film at the site Kinobaza.com.ua
+http://www.wikidata.org/prop/direct/p10239	65	Filmovamista.cz film ID	identifier of a film in a Czech database of films and their filming locations
+http://www.wikidata.org/prop/p10045	65	Vokrug.tv show ID	identify for a creative work in Vokrug.tv
+http://www.wikidata.org/prop/p10167	65	Kinobaza film ID	identifier for a film at the site Kinobaza.com.ua
+http://www.wikidata.org/prop/p10239	65	Filmovamista.cz film ID	identifier of a film in a Czech database of films and their filming locations
+http://www.wikidata.org/prop/direct/p5384	64	Behind The Voice Actors film ID	identifier of a film on the website Behind The Voice Actors
+http://www.wikidata.org/prop/direct/p6133	64	Siamzone film ID	identifier for a movie at siamzone.com
+http://www.wikidata.org/prop/p11686	64	University of Barcelona authority ID	register of authorities of the University of Barcelona
+http://www.wikidata.org/prop/p5384	64	Behind The Voice Actors film ID	identifier of a film on the website Behind The Voice Actors
+http://www.wikidata.org/prop/p6133	64	Siamzone film ID	identifier for a movie at siamzone.com
+http://www.wikidata.org/prop/direct/p11686	63	University of Barcelona authority ID	register of authorities of the University of Barcelona
+http://www.wikidata.org/prop/direct/p10303	60	Film.ru film ID	identifier for films in the Russian film database on film.ru
+http://www.wikidata.org/prop/direct/p6383	60	TV Spielfilm film ID	identifier for films on tv-spielfilm.de
+http://www.wikidata.org/prop/p10303	60	Film.ru film ID	identifier for films in the Russian film database on film.ru
+http://www.wikidata.org/prop/p6383	60	TV Spielfilm film ID	identifier for films on tv-spielfilm.de
+http://www.wikidata.org/prop/p436	59	MusicBrainz release group ID	identifier for a release group per the MusicBrainz open music encyclopedia (album, single, etc.)
+http://www.wikidata.org/prop/direct-normalized/p269	58	IdRef ID	identifier for authority control in the French collaborative library catalog (see also P1025). Format: 8 digits followed by a digit or 
+http://www.wikidata.org/prop/direct-normalized/p436	58	MusicBrainz release group ID	identifier for a release group per the MusicBrainz open music encyclopedia (album, single, etc.)
+http://www.wikidata.org/prop/direct/p269	58	IdRef ID	identifier for authority control in the French collaborative library catalog (see also P1025). Format: 8 digits followed by a digit or 
+http://www.wikidata.org/prop/direct/p436	58	MusicBrainz release group ID	identifier for a release group per the MusicBrainz open music encyclopedia (album, single, etc.)
+http://www.wikidata.org/prop/direct/p747	58	has edition or translation	item that is an edition or translation of this item
+http://www.wikidata.org/prop/p269	58	IdRef ID	identifier for authority control in the French collaborative library catalog (see also P1025). Format: 8 digits followed by a digit or 
+http://www.wikidata.org/prop/p747	58	has edition or translation	item that is an edition or translation of this item
+http://www.wikidata.org/prop/p793	58	significant event	significant or notable events associated with the subject
+http://www.wikidata.org/prop/direct/p13904	57	Filmarks ID	ID for Filmarks database
+http://www.wikidata.org/prop/direct/p2079	57	fabrication method	method, process or technique used to grow, cook, weave, build, assemble, manufacture the item
+http://www.wikidata.org/prop/direct/p361	57	part of	object of which the subject is a part (if this subject is already part of object A which is a part of object B, then please only make the subject part of object A), inverse property of 
+http://www.wikidata.org/prop/direct/p793	57	significant event	significant or notable events associated with the subject
+http://www.wikidata.org/prop/p13904	57	Filmarks ID	ID for Filmarks database
+http://www.wikidata.org/prop/p2079	57	fabrication method	method, process or technique used to grow, cook, weave, build, assemble, manufacture the item
+http://www.wikidata.org/prop/p361	57	part of	object of which the subject is a part (if this subject is already part of object A which is a part of object B, then please only make the subject part of object A), inverse property of 
+http://www.wikidata.org/prop/direct/p5865	56	IGN film ID	identifier for films at the IGN website
+http://www.wikidata.org/prop/direct/p8918	56	Max Movie film ID	identifier for films in the database of the magazine Max Movie
+http://www.wikidata.org/prop/p2639	56	Filmportal ID	identifier of the German Filmportal.de
+http://www.wikidata.org/prop/p5865	56	IGN film ID	identifier for films at the IGN website
+http://www.wikidata.org/prop/p8918	56	Max Movie film ID	identifier for films in the database of the magazine Max Movie
+http://www.wikidata.org/prop/direct/p2639	55	Filmportal ID	identifier of the German Filmportal.de
+http://www.wikidata.org/prop/direct/p6181	55	Disney A to Z ID	ID of article in online version of Disney A to Z
+http://www.wikidata.org/prop/direct/p6359	55	Crew United title ID	identifier for films and series on Crew united
+http://www.wikidata.org/prop/direct/p8885	55	Namuwiki ID	identifier of an article on Namuwiki
+http://www.wikidata.org/prop/direct/p9984	55	CANTIC ID	identifier for authority control managed by the Library of Catalonia
+http://www.wikidata.org/prop/p6181	55	Disney A to Z ID	ID of article in online version of Disney A to Z
+http://www.wikidata.org/prop/p6359	55	Crew United title ID	identifier for films and series on Crew united
+http://www.wikidata.org/prop/p8885	55	Namuwiki ID	identifier of an article on Namuwiki
+http://www.wikidata.org/prop/p9984	55	CANTIC ID	identifier for authority control managed by the Library of Catalonia
+http://www.wikidata.org/prop/direct/p10537	54	1905.com film ID	identifier for a film in 1905.com movie database
+http://www.wikidata.org/prop/p10537	54	1905.com film ID	identifier for a film in 1905.com movie database
+http://www.wikidata.org/prop/p8345	54	media franchise	this creative work belongs to this media franchise
+http://www.wikidata.org/prop/direct/p8345	53	media franchise	this creative work belongs to this media franchise
+http://www.wikidata.org/prop/direct/p138	52	named after	entity or event that inspired the subject's name, or namesake (in at least one language). Qualifier 
+http://www.wikidata.org/prop/direct/p5680	52	Hoopla title ID	an audiobook, film, music album, comic, ebook, or television series on Hoopla
+http://www.wikidata.org/prop/p138	52	named after	entity or event that inspired the subject's name, or namesake (in at least one language). Qualifier 
+http://www.wikidata.org/prop/p5680	52	Hoopla title ID	an audiobook, film, music album, comic, ebook, or television series on Hoopla
+http://www.wikidata.org/prop/p8874	52	Hong Kong film rating	Hong Kong film classification system
+http://www.wikidata.org/prop/p9086	52	BAMID film rating	rating in the Taiwanese movie content rating system
+http://www.wikidata.org/prop/direct-normalized/p2581	51	BabelNet ID	ID in BabelNet encyclopedic dictionary
+http://www.wikidata.org/prop/direct/p13028	51	Norwegian Media Authority's film rating ID	identifier for a film in the Norwegian Medietilsynets database
+http://www.wikidata.org/prop/direct/p2581	51	BabelNet ID	ID in BabelNet encyclopedic dictionary
+http://www.wikidata.org/prop/p13028	51	Norwegian Media Authority's film rating ID	identifier for a film in the Norwegian Medietilsynets database
+http://www.wikidata.org/prop/p2581	51	BabelNet ID	ID in BabelNet encyclopedic dictionary
+http://www.wikidata.org/prop/direct/p8920	50	Movist film ID	identifier for a film in the Movist database
+http://www.wikidata.org/prop/direct/p9205	50	Sinemalar title ID	identifier of a movie on sinemalar.com
+http://www.wikidata.org/prop/p8920	50	Movist film ID	identifier for a film in the Movist database
+http://www.wikidata.org/prop/p9205	50	Sinemalar title ID	identifier of a movie on sinemalar.com
+http://www.wikidata.org/prop/direct/p8419	49	Archive of Our Own tag	tag for this item on Archive of Our Own
+http://www.wikidata.org/prop/p8419	49	Archive of Our Own tag	tag for this item on Archive of Our Own
+http://www.wikidata.org/prop/direct/p12320	48	Moviebuff ID	identifier for films and film persons from the Moviebuff website
+http://www.wikidata.org/prop/direct/p8874	48	Hong Kong film rating	Hong Kong film classification system
+http://www.wikidata.org/prop/direct/p9086	48	BAMID film rating	rating in the Taiwanese movie content rating system
+http://www.wikidata.org/prop/p12320	48	Moviebuff ID	identifier for films and film persons from the Moviebuff website
+http://www.wikidata.org/prop/direct/p10164	46	Kinomania.ru film ID	ідэнтыфікатар фільму на бачыне Kinomania.ru
+http://www.wikidata.org/prop/direct/p1344	46	participant in	event in which a person, organization or creative work was/is a participant; inverse of P710 or P1923
+http://www.wikidata.org/prop/direct/p3174	46	art director	person credited as the art director/artistic director of this work; manages the process of making the visuals, which is done by concept artists, graphic designers, set designers, costume designers, lighting designers; See also P8938 for organizations
+http://www.wikidata.org/prop/p10164	46	Kinomania.ru film ID	ідэнтыфікатар фільму на бачыне Kinomania.ru
+http://www.wikidata.org/prop/p1344	46	participant in	event in which a person, organization or creative work was/is a participant; inverse of P710 or P1923
+http://www.wikidata.org/prop/p3174	46	art director	person credited as the art director/artistic director of this work; manages the process of making the visuals, which is done by concept artists, graphic designers, set designers, costume designers, lighting designers; See also P8938 for organizations
+http://www.wikidata.org/prop/direct/p12684	45	FBW ID	identifier for films with a certification mark on the website of the 
+http://www.wikidata.org/prop/p12684	45	FBW ID	identifier for films with a certification mark on the website of the 
+http://www.wikidata.org/prop/direct/p9215	43	set during recurring event	recurring event (e.g. time of day, season, month, holiday) during which this fictional work is set
+http://www.wikidata.org/prop/p3818	43	KMRB film rating	rating of a film in the South Korean film/video rating system
+http://www.wikidata.org/prop/p9215	43	set during recurring event	recurring event (e.g. time of day, season, month, holiday) during which this fictional work is set
+http://www.wikidata.org/prop/direct/p3818	42	KMRB film rating	rating of a film in the South Korean film/video rating system
+http://www.wikidata.org/prop/direct/p12800	41	Vikidia article ID	identifier for an article on Vikidia (format 
+http://www.wikidata.org/prop/direct/p4933	41	Big Cartoon Database ID (archived)	identifier for the Big Cartoon Database
+http://www.wikidata.org/prop/direct/p910	41	topic's main category	main Wikimedia category
+http://www.wikidata.org/prop/p12800	41	Vikidia article ID	identifier for an article on Vikidia (format 
+http://www.wikidata.org/prop/p4933	41	Big Cartoon Database ID (archived)	identifier for the Big Cartoon Database
+http://www.wikidata.org/prop/p910	41	topic's main category	main Wikimedia category
+http://www.wikidata.org/prop/direct/p11682	40	Ivi work ID	identifier of a creative work on Ivi.ru
+http://www.wikidata.org/prop/direct/p5791	40	Cineuropa film ID	identifier for a movie at Cineuropa
+http://www.wikidata.org/prop/p11682	40	Ivi work ID	identifier of a creative work on Ivi.ru
+http://www.wikidata.org/prop/p5791	40	Cineuropa film ID	identifier for a movie at Cineuropa
+http://www.wikidata.org/prop/p8055	40	Amazon Prime Video ID	identifier for a video in Amazon Prime Video (US)
+http://www.wikidata.org/prop/direct/p12264	39	Moviefone movie ID	identifier of a movie in Moviefone
+http://www.wikidata.org/prop/direct/p2636	39	Minkultury film ID	identifier for a movie in the Russian Ministry of culture's public register of films
+http://www.wikidata.org/prop/direct/p6256	39	SinemaTürk film ID	identifier for a movie, in the SinemaTürk database
+http://www.wikidata.org/prop/direct/p7293	39	National Library of Poland MMS ID	National Library of Poland record no. identifier. Format: 
+http://www.wikidata.org/prop/direct/p8055	39	Amazon Prime Video ID	identifier for a video in Amazon Prime Video (US)
+http://www.wikidata.org/prop/p12264	39	Moviefone movie ID	identifier of a movie in Moviefone
+http://www.wikidata.org/prop/p2636	39	Minkultury film ID	identifier for a movie in the Russian Ministry of culture's public register of films
+http://www.wikidata.org/prop/p6256	39	SinemaTürk film ID	identifier for a movie, in the SinemaTürk database
+http://www.wikidata.org/prop/p7293	39	National Library of Poland MMS ID	National Library of Poland record no. identifier. Format: 
+http://www.wikidata.org/prop/direct/p7760	38	Tubi movie ID	identifier for a film at video streaming site Tubi (tubitv.com)
+http://www.wikidata.org/prop/p7760	38	Tubi movie ID	identifier for a film at video streaming site Tubi (tubitv.com)
+http://www.wikidata.org/prop/direct/p10267	37	Kinofilms.ua film ID	sinii dalinli Kinofilms.ua website zuɣu
+http://www.wikidata.org/prop/direct/p941	37	inspired by	work, human, place or event which inspired this creative work or fictional entity
+http://www.wikidata.org/prop/p10267	37	Kinofilms.ua film ID	sinii dalinli Kinofilms.ua website zuɣu
+http://www.wikidata.org/prop/p2014	37	Museum of Modern Art work ID	identifier for a work held at the Museum of Modern Art (MoMA)
+http://www.wikidata.org/prop/p941	37	inspired by	work, human, place or event which inspired this creative work or fictional entity
+http://www.wikidata.org/prop/direct/p2014	36	Museum of Modern Art work ID	identifier for a work held at the Museum of Modern Art (MoMA)
+http://www.wikidata.org/prop/direct/p6058	36	Larousse ID	identifier for a subject on the 'Encyclopédie Larousse'
+http://www.wikidata.org/prop/p6058	36	Larousse ID	identifier for a subject on the 'Encyclopédie Larousse'
+http://www.wikidata.org/prop/direct/p10454	35	CineCartaz film ID	identifier at the Cinecartaz database of films of Portuguese daily Público
+http://www.wikidata.org/prop/direct/p10699	35	FamousFix topic ID	identifier for a subject in the topic on FamousFix
+http://www.wikidata.org/prop/direct/p10773	35	Afisha movie ID	identifier of movie in Afisha database
+http://www.wikidata.org/prop/direct/p10821	35	Kino.mail.ru film ID	identifier for a film on the Russian film portal Kino.mail.ru
+http://www.wikidata.org/prop/direct/p7204	35	Mafab.hu film ID	film ID in the Mafab.hu movie database
+http://www.wikidata.org/prop/direct/p8908	35	CINE21 film ID	identifier for a film in the database of the film magazine CINE21
+http://www.wikidata.org/prop/p10454	35	CineCartaz film ID	identifier at the Cinecartaz database of films of Portuguese daily Público
+http://www.wikidata.org/prop/p10699	35	FamousFix topic ID	identifier for a subject in the topic on FamousFix
+http://www.wikidata.org/prop/p10773	35	Afisha movie ID	identifier of movie in Afisha database
+http://www.wikidata.org/prop/p10821	35	Kino.mail.ru film ID	identifier for a film on the Russian film portal Kino.mail.ru
+http://www.wikidata.org/prop/p7204	35	Mafab.hu film ID	film ID in the Mafab.hu movie database
+http://www.wikidata.org/prop/p8908	35	CINE21 film ID	identifier for a film in the database of the film magazine CINE21
+http://www.wikidata.org/prop/direct/p10269	34	kino-teatr.ru film ID	identifier for a film at the kino-teatr.ru
+http://www.wikidata.org/prop/direct/p5337	34	Google News topics ID	identifier for a subject in the news on Google News
+http://www.wikidata.org/prop/direct/p691	34	NL CR AUT ID	identifier in the Czech National Authority Database of National Library of the Czech Republic (NL CR)
+http://www.wikidata.org/prop/direct/p6932	34	RogerEbert.com film ID	identifier for a film in the website RogerEbert.com
+http://www.wikidata.org/prop/p10269	34	kino-teatr.ru film ID	identifier for a film at the kino-teatr.ru
+http://www.wikidata.org/prop/p5337	34	Google News topics ID	identifier for a subject in the news on Google News
+http://www.wikidata.org/prop/p691	34	NL CR AUT ID	identifier in the Czech National Authority Database of National Library of the Czech Republic (NL CR)
+http://www.wikidata.org/prop/p6932	34	RogerEbert.com film ID	identifier for a film in the website RogerEbert.com
+http://www.wikidata.org/prop/direct/p1085	33	LibraryThing work ID	LibraryThing (LT) control number
+http://www.wikidata.org/prop/direct/p11598	33	Rate Your Music film ID	identifier for a film on Rate Your Music
+http://www.wikidata.org/prop/direct/p12059	33	Encyclociné ID	numeric identifier for a movie on Encyclociné.com
+http://www.wikidata.org/prop/direct/p13984	33	neodb.social ID	identifier of items in neodb.social database
+http://www.wikidata.org/prop/p1085	33	LibraryThing work ID	LibraryThing (LT) control number
+http://www.wikidata.org/prop/p11598	33	Rate Your Music film ID	identifier for a film on Rate Your Music
+http://www.wikidata.org/prop/p12059	33	Encyclociné ID	numeric identifier for a movie on Encyclociné.com
+http://www.wikidata.org/prop/p13984	33	neodb.social ID	identifier of items in neodb.social database
+http://www.wikidata.org/prop/direct/p11190	32	WMOOV movie ID	identifier for a movie on the WMOOV website
+http://www.wikidata.org/prop/direct/p11386	32	Listal ID	identifier for a person, a character, a creation or a place in the Listal database
+http://www.wikidata.org/prop/direct/p1273	32	CANTIC ID (former scheme)	old identifier for authority control managed by the Library of Catalonia. Format: 
+http://www.wikidata.org/prop/p11190	32	WMOOV movie ID	identifier for a movie on the WMOOV website
+http://www.wikidata.org/prop/p11386	32	Listal ID	identifier for a person, a character, a creation or a place in the Listal database
+http://www.wikidata.org/prop/p1273	32	CANTIC ID (former scheme)	old identifier for authority control managed by the Library of Catalonia. Format: 
+http://www.wikidata.org/prop/direct/p1343	31	described by source	work where this item is described, in statistical contexts, a methodological note describing the data
+http://www.wikidata.org/prop/p1343	31	described by source	work where this item is described, in statistical contexts, a methodological note describing the data
+http://www.wikidata.org/prop/direct-normalized/p1316	30	Swedish Media Database ID	identifier in the Swedish Media Database
+http://www.wikidata.org/prop/direct/p1316	30	Swedish Media Database ID	identifier in the Swedish Media Database
+http://www.wikidata.org/prop/direct/p195	30	collection	art, museum, archival, or bibliographic collection of which the subject is part (item is in the collection of X)
+http://www.wikidata.org/prop/direct/p5733	30	Bilibili bangumi ID	identifier for an anime or drama topic on bilibili [with prefix 'md']
+http://www.wikidata.org/prop/p1316	30	Swedish Media Database ID	identifier in the Swedish Media Database
+http://www.wikidata.org/prop/p195	30	collection	art, museum, archival, or bibliographic collection of which the subject is part (item is in the collection of X)
+http://www.wikidata.org/prop/p5733	30	Bilibili bangumi ID	identifier for an anime or drama topic on bilibili [with prefix 'md']
+http://www.wikidata.org/prop/direct/p5318	29	César Award film ID	identifier for a film on the César Awards website
+http://www.wikidata.org/prop/direct/p8309	29	Yle topic ID	identifier for topics in Finland's national broadcaster Yle's web services
+http://www.wikidata.org/prop/direct/p9584	29	The Criterion Collection film ID	identifier of a film on the Criterion Collection website (criterion.com) [not the spine number]
+http://www.wikidata.org/prop/p5318	29	César Award film ID	identifier for a film on the César Awards website
+http://www.wikidata.org/prop/p8309	29	Yle topic ID	identifier for topics in Finland's national broadcaster Yle's web services
+http://www.wikidata.org/prop/p9584	29	The Criterion Collection film ID	identifier of a film on the Criterion Collection website (criterion.com) [not the spine number]
+http://www.wikidata.org/prop/direct/p8296	28	Cinema Context ID	identifier of an item in Cinema Context
+http://www.wikidata.org/prop/direct/p9478	28	Finna ID	media resource ID in Finna.fi
+http://www.wikidata.org/prop/p8296	28	Cinema Context ID	identifier of an item in Cinema Context
+http://www.wikidata.org/prop/p9478	28	Finna ID	media resource ID in Finna.fi
+http://www.wikidata.org/prop/direct/p12279	27	The Criterion Collection spine number	DVD/Blu-ray spine number of a film or film series in The Criterion Collection
+http://www.wikidata.org/prop/direct/p1695	27	NLP ID	National Library of Poland unique identifier. Format: 
+http://www.wikidata.org/prop/p12279	27	The Criterion Collection spine number	DVD/Blu-ray spine number of a film or film series in The Criterion Collection
+http://www.wikidata.org/prop/p1695	27	NLP ID	National Library of Poland unique identifier. Format: 
+http://www.w3.org/1999/02/22-rdf-syntax-ns#type	26		
+http://www.wikidata.org/prop/direct/p10255	26	oKino.ua film ID	identifier for a cinematic work on the site Okino.ua
+http://www.wikidata.org/prop/direct/p9203	26	CineFAN.ro title ID	identifier for a movie on the CineFAN.ro website
+http://www.wikidata.org/prop/p10255	26	oKino.ua film ID	identifier for a cinematic work on the site Okino.ua
+http://www.wikidata.org/prop/p9203	26	CineFAN.ro title ID	identifier for a movie on the CineFAN.ro website
+http://www.wikidata.org/prop/direct/p11194	25	Famous Birthdays ID	identifier for entities listed on the Famous Birthdays website
+http://www.wikidata.org/prop/direct/p4513	25	Africultures movie ID	identifier for a movie at Africultures.com
+http://www.wikidata.org/prop/p11194	25	Famous Birthdays ID	identifier for entities listed on the Famous Birthdays website
+http://www.wikidata.org/prop/p4021	25	danskefilm animated film ID	identifier for a animated film in danskefilm.dk
+http://www.wikidata.org/prop/p4513	25	Africultures movie ID	identifier for a movie at Africultures.com
+http://www.wikidata.org/prop/direct/p4805	24	make-up artist	person in charge of make-up
+http://www.wikidata.org/prop/direct/p8673	24	Naver movie ID	identifier for a film in the Naver database
+http://www.wikidata.org/prop/p4805	24	make-up artist	person in charge of make-up
+http://www.wikidata.org/prop/p6992	24	IMFDB ID	identifier for the Internet Movie Firearms Database
+http://www.wikidata.org/prop/p8673	24	Naver movie ID	identifier for a film in the Naver database
+http://www.wikidata.org/prop/p9146	24	CITWF title ID	identifier for a film in the Complete Index to World Film (www.citwf.com)
+http://www.wikidata.org/prop/direct/p11408	23	Pixiv Encyclopedia ID	identifier for an article on Pixiv Encyclopedia
+http://www.wikidata.org/prop/direct/p12086	23	WikiKids ID	identifier of the article on WikiKids
+http://www.wikidata.org/prop/direct/p4483	23	INDUCKS story ID	identifier for a comic book story related to the Disney Universe
+http://www.wikidata.org/prop/direct/p6992	23	IMFDB ID	identifier for the Internet Movie Firearms Database
+http://www.wikidata.org/prop/direct/p8092	23	EcuRed article	article at the encyclopedia EcuRed
+http://www.wikidata.org/prop/direct/p9146	23	CITWF title ID	identifier for a film in the Complete Index to World Film (www.citwf.com)
+http://www.wikidata.org/prop/p11408	23	Pixiv Encyclopedia ID	identifier for an article on Pixiv Encyclopedia
+http://www.wikidata.org/prop/p12086	23	WikiKids ID	identifier of the article on WikiKids
+http://www.wikidata.org/prop/p4483	23	INDUCKS story ID	identifier for a comic book story related to the Disney Universe
+http://www.wikidata.org/prop/p8092	23	EcuRed article	article at the encyclopedia EcuRed
+http://www.wikidata.org/prop/direct-normalized/p435	22	MusicBrainz work ID	identifier for a work per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p3106	22	The Guardian topic ID	identifier for a topic at the Guardian newspaper website
+http://www.wikidata.org/prop/direct/p3803	22	original film format	film format (gauge/size) used to create a work
+http://www.wikidata.org/prop/direct/p435	22	MusicBrainz work ID	identifier for a work per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p8823	22	Xfinity Stream ID	identifier for a program on Xfinity Stream
+http://www.wikidata.org/prop/p3106	22	The Guardian topic ID	identifier for a topic at the Guardian newspaper website
+http://www.wikidata.org/prop/p3383	22	film poster	poster used to promote and advertise this film (if file is available on Commons). Use P154 for logos, P18 for movie stills and related images. Items about film posters can be linked with the qualifier 
+http://www.wikidata.org/prop/p3803	22	original film format	film format (gauge/size) used to create a work
+http://www.wikidata.org/prop/p435	22	MusicBrainz work ID	identifier for a work per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/p8823	22	Xfinity Stream ID	identifier for a program on Xfinity Stream
+http://www.wikidata.org/prop/direct/p4021	21	danskefilm animated film ID	identifier for a animated film in danskefilm.dk
+http://www.wikidata.org/prop/direct/p8800	21	European Film Awards ID	numerical identifier for a film on the European Film Awards website
+http://www.wikidata.org/prop/p8800	21	European Film Awards ID	numerical identifier for a film on the European Film Awards website
+http://www.wikidata.org/prop/direct/p11049	20	JioHotstar ID	identifier for content on JioHotstar
+http://www.wikidata.org/prop/direct/p11859	20	Library of Congress BIBFRAME Hub ID	identifier for a BIBFRAME Hub description from the Library of Congress Catalog, primarily generated by converting the Library's MARC Bibliographic records and MARC title authority records to BIBFRAME Hub descriptions
+http://www.wikidata.org/prop/direct/p170	20	creator	maker of this creative work or other object (where no more specific property exists)
+http://www.wikidata.org/prop/direct/p2769	20	budget	assigned monetary amount for a project (for the estimated cost of a film, also commonly referred to as budget, use P2130)
+http://www.wikidata.org/prop/direct/p3553	20	Zhihu topic ID	numeric id of topics (tags) of questions on Zhihu, a Chinese question-and-answer website
+http://www.wikidata.org/prop/direct/p5885	20	Microsoft Store product ID	identifier for a product in Microsoft Store
+http://www.wikidata.org/prop/direct/p6216	20	copyright status	copyright status for intellectual creations like works of art, publications, software, etc.
+http://www.wikidata.org/prop/direct/p7327	20	OFLC classification	rating in the media content rating system of New Zealand
+http://www.wikidata.org/prop/direct/p737	20	influenced by	the subject (person, idea, etc.) was influenced or inspired by this object entity, e.g. 
+http://www.wikidata.org/prop/direct/p973	20	described at URL	item is described at the following URL
+http://www.wikidata.org/prop/p11049	20	JioHotstar ID	identifier for content on JioHotstar
+http://www.wikidata.org/prop/p11859	20	Library of Congress BIBFRAME Hub ID	identifier for a BIBFRAME Hub description from the Library of Congress Catalog, primarily generated by converting the Library's MARC Bibliographic records and MARC title authority records to BIBFRAME Hub descriptions
+http://www.wikidata.org/prop/p170	20	creator	maker of this creative work or other object (where no more specific property exists)
+http://www.wikidata.org/prop/p2769	20	budget	assigned monetary amount for a project (for the estimated cost of a film, also commonly referred to as budget, use P2130)
+http://www.wikidata.org/prop/p3553	20	Zhihu topic ID	numeric id of topics (tags) of questions on Zhihu, a Chinese question-and-answer website
+http://www.wikidata.org/prop/p5885	20	Microsoft Store product ID	identifier for a product in Microsoft Store
+http://www.wikidata.org/prop/p6216	20	copyright status	copyright status for intellectual creations like works of art, publications, software, etc.
+http://www.wikidata.org/prop/p7327	20	OFLC classification	rating in the media content rating system of New Zealand
+http://www.wikidata.org/prop/p737	20	influenced by	the subject (person, idea, etc.) was influenced or inspired by this object entity, e.g. 
+http://www.wikidata.org/prop/p973	20	described at URL	item is described at the following URL
+http://www.wikidata.org/prop/direct-normalized/p1015	19	BIBSYS ID	Norwegian Authority File: Persons and Corporate Bodies
+http://www.wikidata.org/prop/direct/p1015	19	BIBSYS ID	Norwegian Authority File: Persons and Corporate Bodies
+http://www.wikidata.org/prop/direct/p3383	19	film poster	poster used to promote and advertise this film (if file is available on Commons). Use P154 for logos, P18 for movie stills and related images. Items about film posters can be linked with the qualifier 
+http://www.wikidata.org/prop/direct/p6166	19	quotes work	other creative work which this work quotes from textually, verbally or lyrically
+http://www.wikidata.org/prop/direct/p8298	19	HBO Max ID	identifier for a creative work on HBO Max (formerly Max and formerly again HBO Max)
+http://www.wikidata.org/prop/p1015	19	BIBSYS ID	Norwegian Authority File: Persons and Corporate Bodies
+http://www.wikidata.org/prop/p6166	19	quotes work	other creative work which this work quotes from textually, verbally or lyrically
+http://www.wikidata.org/prop/p8298	19	HBO Max ID	identifier for a creative work on HBO Max (formerly Max and formerly again HBO Max)
+http://www.wikidata.org/prop/direct/p12139	18	Il Sole 24 Ore movie ID	identifier for a movie on cinema.ilsole24ore.com
+http://www.wikidata.org/prop/direct/p2572	18	hashtag	reference keyword associated with this item for online communities (do not include the 
+http://www.wikidata.org/prop/direct/p5987	18	Indiancine.ma film ID	identifier for a film (movie) in the Indiancine.ma archive of Indian film
+http://www.wikidata.org/prop/direct/p6802	18	related image	less fitting image, used only because a better alternative is not available. If an appropriate image of the item is available, use P18 instead. Value should not be a generic placeholder
+http://www.wikidata.org/prop/direct/p7522	18	SK cinema authority ID	identifier for a person, organisation, topic, event, genre or work title in the SK cinema authority file (Heslár SFÚ)
+http://www.wikidata.org/prop/p12139	18	Il Sole 24 Ore movie ID	identifier for a movie on cinema.ilsole24ore.com
+http://www.wikidata.org/prop/p2572	18	hashtag	reference keyword associated with this item for online communities (do not include the 
+http://www.wikidata.org/prop/p5987	18	Indiancine.ma film ID	identifier for a film (movie) in the Indiancine.ma archive of Indian film
+http://www.wikidata.org/prop/p6802	18	related image	less fitting image, used only because a better alternative is not available. If an appropriate image of the item is available, use P18 instead. Value should not be a generic placeholder
+http://www.wikidata.org/prop/p7522	18	SK cinema authority ID	identifier for a person, organisation, topic, event, genre or work title in the SK cinema authority file (Heslár SFÚ)
+http://www.wikidata.org/prop/direct/p10565	17	Encyclopedia of China (Third Edition) ID	identifier for an article in the online version of Encyclopedia of China (third edition)
+http://www.wikidata.org/prop/direct/p12423	17	Sundance Institute Archive film ID	identifier for a film in the Sundance Institute Digital Archive
+http://www.wikidata.org/prop/direct/p13484	17	Know Your Meme slug	slug for a Know Your Meme article
+http://www.wikidata.org/prop/direct/p5707	17	samples from work	audio or video which this work uses a raw excerpt of
+http://www.wikidata.org/prop/p10565	17	Encyclopedia of China (Third Edition) ID	identifier for an article in the online version of Encyclopedia of China (third edition)
+http://www.wikidata.org/prop/p12423	17	Sundance Institute Archive film ID	identifier for a film in the Sundance Institute Digital Archive
+http://www.wikidata.org/prop/p13484	17	Know Your Meme slug	slug for a Know Your Meme article
+http://www.wikidata.org/prop/p5707	17	samples from work	audio or video which this work uses a raw excerpt of
+http://www.wikidata.org/prop/direct/p2283	16	uses	item or concept used by the subject or in the operation (see also instrument [P1303] and armament [P520])
+http://www.wikidata.org/prop/direct/p2670	16	has part(s) of the class	the subject has one or more parts of the object class
+http://www.wikidata.org/prop/direct/p4013	16	Giphy username	this item's username on Giphy
+http://www.wikidata.org/prop/direct/p5008	16	on focus list of Wikimedia project	property to indicate that an item is of particular interest for a Wikimedia project. This property does not add notability. Items should not be created with this property if they are not notable for Wikidata. See also P6104, P972, P2354
+http://www.wikidata.org/prop/direct/p8326	16	Australian Classification ID	identifier for a creative work on the Australian Classification Board's official website
+http://www.wikidata.org/prop/direct/p8680	16	FVLB work ID	identifier for a film or video game on FVLB's official website
+http://www.wikidata.org/prop/p1638	16	working title	temporary name of a product or project used during its development
+http://www.wikidata.org/prop/p2283	16	uses	item or concept used by the subject or in the operation (see also instrument [P1303] and armament [P520])
+http://www.wikidata.org/prop/p2670	16	has part(s) of the class	the subject has one or more parts of the object class
+http://www.wikidata.org/prop/p4013	16	Giphy username	this item's username on Giphy
+http://www.wikidata.org/prop/p5008	16	on focus list of Wikimedia project	property to indicate that an item is of particular interest for a Wikimedia project. This property does not add notability. Items should not be created with this property if they are not notable for Wikidata. See also P6104, P972, P2354
+http://www.wikidata.org/prop/p6817	16	SVT Play ID	identifier for subjects in the archives of Svt, the Swedish national public television broadcaster
+http://www.wikidata.org/prop/p8326	16	Australian Classification ID	identifier for a creative work on the Australian Classification Board's official website
+http://www.wikidata.org/prop/p8680	16	FVLB work ID	identifier for a film or video game on FVLB's official website
+http://www.wikidata.org/prop/direct/p10	15	video	relevant video; use property P18 for images; for film trailers, qualify with 
+http://www.wikidata.org/prop/direct/p13992	15	Blu-ray.com film ID	ID for Blu-ray.com database
+http://www.wikidata.org/prop/direct/p2438	15	narrator	narrator, character or person that tells the story
+http://www.wikidata.org/prop/direct/p5072	15	presented in	event at which a talk, film, paper, or poster was presented
+http://www.wikidata.org/prop/direct/p6817	15	SVT Play ID	identifier for subjects in the archives of Svt, the Swedish national public television broadcaster
+http://www.wikidata.org/prop/direct/p7212	15	LyricsTranslate ID	identifier on LyricsTranslate
+http://www.wikidata.org/prop/p10	15	video	relevant video; use property P18 for images; for film trailers, qualify with 
+http://www.wikidata.org/prop/p13992	15	Blu-ray.com film ID	ID for Blu-ray.com database
+http://www.wikidata.org/prop/p2438	15	narrator	narrator, character or person that tells the story
+http://www.wikidata.org/prop/p5072	15	presented in	event at which a talk, film, paper, or poster was presented
+http://www.wikidata.org/prop/p5152	15	KAVI rating	rating in the Finnish film and television rating system
+http://www.wikidata.org/prop/p7212	15	LyricsTranslate ID	identifier on LyricsTranslate
+http://www.wikidata.org/prop/direct/p1638	14	working title	temporary name of a product or project used during its development
+http://www.wikidata.org/prop/direct/p5152	14	KAVI rating	rating in the Finnish film and television rating system
+http://www.wikidata.org/prop/direct/p8371	14	references work, tradition or theory	creative work, tradition or theory this creative work references by allusion, quote or similar means (for citations in scholarly and legal works use P2860, for other more specific properties have a look at 
+http://www.wikidata.org/prop/p8371	14	references work, tradition or theory	creative work, tradition or theory this creative work references by allusion, quote or similar means (for citations in scholarly and legal works use P2860, for other more specific properties have a look at 
+http://www.wikidata.org/prop/direct/p6657	13	CHVRS Classification	Canadian movie classification
+http://www.wikidata.org/prop/direct/p724	13	Internet Archive ID	identifier for an item on the Internet Archive
+http://www.wikidata.org/prop/p6657	13	CHVRS Classification	Canadian movie classification
+http://www.wikidata.org/prop/p724	13	Internet Archive ID	identifier for an item on the Internet Archive
+http://www.wikidata.org/prop/direct/p135	12	movement	literary, artistic, scientific or philosophical movement or scene associated with this person or work. For political ideologies use P1142.
+http://www.wikidata.org/prop/direct/p8179	12	Canadiana Name Authority ID	system control number used in the Canadiana Name Authority File, format: 
+http://www.wikidata.org/prop/direct/p8674	12	Bollywood Hungama movie ID	identifier for Indian film at Bollywood Hungama
+http://www.wikidata.org/prop/p135	12	movement	literary, artistic, scientific or philosophical movement or scene associated with this person or work. For political ideologies use P1142.
+http://www.wikidata.org/prop/p8179	12	Canadiana Name Authority ID	system control number used in the Canadiana Name Authority File, format: 
+http://www.wikidata.org/prop/p8674	12	Bollywood Hungama movie ID	identifier for Indian film at Bollywood Hungama
+http://www.wikidata.org/prop/direct/p1368	11	National Library of Latvia ID	identifier assigned by the National Library of Latvia
+http://www.wikidata.org/prop/direct/p2913	11	date depicted	date represented in a work (for narrative works use P2408)
+http://www.wikidata.org/prop/direct/p4342	11	Great Norwegian Encyclopedia ID	identifier of an article in the online encyclopedia snl.no
+http://www.wikidata.org/prop/direct/p527	11	has part(s)	part of this subject; inverse property of 
+http://www.wikidata.org/prop/direct/p825	11	dedicated to	person or organization to whom the subject was dedicated
+http://www.wikidata.org/prop/p1368	11	National Library of Latvia ID	identifier assigned by the National Library of Latvia
+http://www.wikidata.org/prop/p2913	11	date depicted	date represented in a work (for narrative works use P2408)
+http://www.wikidata.org/prop/p4342	11	Great Norwegian Encyclopedia ID	identifier of an article in the online encyclopedia snl.no
+http://www.wikidata.org/prop/p527	11	has part(s)	part of this subject; inverse property of 
+http://www.wikidata.org/prop/p825	11	dedicated to	person or organization to whom the subject was dedicated
+http://www.wikidata.org/prop/direct/p1985	10	Anime News Network anime ID	identifier of an anime in Anime News Network
+http://www.wikidata.org/prop/direct/p8928	10	Filmstriben film-ID	identifier for film on the Danish website https://fjernleje.filmstriben.dk/
+http://www.wikidata.org/prop/direct/p935	10	Commons gallery	name of the Wikimedia Commons gallery page(s) related to this item (is suitable to allow multiple links to more gallery pages)
+http://www.wikidata.org/prop/direct/p942	10	theme music	theme music/song used by the item
+http://www.wikidata.org/prop/direct/p998	10	Curlie ID	category path at Open Directory Project
+http://www.wikidata.org/prop/p1985	10	Anime News Network anime ID	identifier of an anime in Anime News Network
+http://www.wikidata.org/prop/p349	10	NDL Authority ID	identifier for authority control per the National Diet Library of Japan
+http://www.wikidata.org/prop/p8928	10	Filmstriben film-ID	identifier for film on the Danish website https://fjernleje.filmstriben.dk/
+http://www.wikidata.org/prop/p935	10	Commons gallery	name of the Wikimedia Commons gallery page(s) related to this item (is suitable to allow multiple links to more gallery pages)
+http://www.wikidata.org/prop/p942	10	theme music	theme music/song used by the item
+http://www.wikidata.org/prop/p998	10	Curlie ID	category path at Open Directory Project
+http://www.wikidata.org/prop/direct-normalized/p349	9	NDL Authority ID	identifier for authority control per the National Diet Library of Japan
+http://www.wikidata.org/prop/direct/p10883	9	The Encyclopedia of Fantasy ID	identifier for an entry on the Encyclopedia of Fantasy website
+http://www.wikidata.org/prop/direct/p11349	9	Anime-Planet anime ID	identifier for an anime on Anime-Planet
+http://www.wikidata.org/prop/direct/p11495	9	Kitsu anime ID	identifier for an anime on Kitsu
+http://www.wikidata.org/prop/direct/p12427	9	notify.moe anime ID	identifier for an anime television series on notify.moe
+http://www.wikidata.org/prop/direct/p12477	9	aniSearch anime ID	ID for an anime at aniSearch
+http://www.wikidata.org/prop/direct/p12489	9	livechart.me anime ID	ID for an anime at livechart.me
+http://www.wikidata.org/prop/direct/p1433	9	published in	larger work that a given work was published in, like a journal, a website, a collection, a book or a music album
+http://www.wikidata.org/prop/direct/p349	9	NDL Authority ID	identifier for authority control per the National Diet Library of Japan
+http://www.wikidata.org/prop/direct/p4086	9	MyAnimeList anime ID	identifier for an anime on MyAnimeList
+http://www.wikidata.org/prop/direct/p449	9	original broadcaster	network(s) or service(s) that originally broadcast a radio or television program
+http://www.wikidata.org/prop/direct/p5646	9	AniDB anime ID	identifier for an anime in AniDB database
+http://www.wikidata.org/prop/direct/p641	9	sport	sport that the subject participates or participated in or is associated with
+http://www.wikidata.org/prop/direct/p8729	9	AniList anime ID	numerical identifier for an anime on AniList.co
+http://www.wikidata.org/prop/direct/p9885	9	Bing entity ID	identifier for an entity on Microsoft Bing
+http://www.wikidata.org/prop/p10883	9	The Encyclopedia of Fantasy ID	identifier for an entry on the Encyclopedia of Fantasy website
+http://www.wikidata.org/prop/p11349	9	Anime-Planet anime ID	identifier for an anime on Anime-Planet
+http://www.wikidata.org/prop/p11495	9	Kitsu anime ID	identifier for an anime on Kitsu
+http://www.wikidata.org/prop/p12427	9	notify.moe anime ID	identifier for an anime television series on notify.moe
+http://www.wikidata.org/prop/p12477	9	aniSearch anime ID	ID for an anime at aniSearch
+http://www.wikidata.org/prop/p12489	9	livechart.me anime ID	ID for an anime at livechart.me
+http://www.wikidata.org/prop/p1433	9	published in	larger work that a given work was published in, like a journal, a website, a collection, a book or a music album
+http://www.wikidata.org/prop/p4086	9	MyAnimeList anime ID	identifier for an anime on MyAnimeList
+http://www.wikidata.org/prop/p449	9	original broadcaster	network(s) or service(s) that originally broadcast a radio or television program
+http://www.wikidata.org/prop/p5646	9	AniDB anime ID	identifier for an anime in AniDB database
+http://www.wikidata.org/prop/p641	9	sport	sport that the subject participates or participated in or is associated with
+http://www.wikidata.org/prop/p8729	9	AniList anime ID	numerical identifier for an anime on AniList.co
+http://www.wikidata.org/prop/p9885	9	Bing entity ID	identifier for an entity on Microsoft Bing
+http://www.wikidata.org/prop/direct/p11196	8	Baidu Tieba name	name of a specific topic driven forum in Baidu Tieba
+http://www.wikidata.org/prop/direct/p1269	8	facet of	topic of which this item is an aspect; item that offers a broader perspective on the same topic
+http://www.wikidata.org/prop/direct/p13147	8	Paramount+ video ID	ID of a video on Paramount+
+http://www.wikidata.org/prop/direct/p1809	8	choreographer	person(s) who did the choreography
+http://www.wikidata.org/prop/direct/p264	8	record label	brand and trademark associated with the marketing of subject music recordings and music videos
+http://www.wikidata.org/prop/direct/p3219	8	Encyclopædia Universalis ID	identifier for an article in the online version of Encyclopædia Universalis
+http://www.wikidata.org/prop/direct/p407	8	language of work or name	language associated with this creative work (such as books, shows, songs, broadcasts or websites) or a name (for persons use 
+http://www.wikidata.org/prop/direct/p7741	8	IDFA film ID	identifier for a documentary film at the IDFA website
+http://www.wikidata.org/prop/direct/p8895	8	All the Tropes article ID	identifier in All the Tropes
+http://www.wikidata.org/prop/p11196	8	Baidu Tieba name	name of a specific topic driven forum in Baidu Tieba
+http://www.wikidata.org/prop/p1269	8	facet of	topic of which this item is an aspect; item that offers a broader perspective on the same topic
+http://www.wikidata.org/prop/p13147	8	Paramount+ video ID	ID of a video on Paramount+
+http://www.wikidata.org/prop/p1809	8	choreographer	person(s) who did the choreography
+http://www.wikidata.org/prop/p264	8	record label	brand and trademark associated with the marketing of subject music recordings and music videos
+http://www.wikidata.org/prop/p3219	8	Encyclopædia Universalis ID	identifier for an article in the online version of Encyclopædia Universalis
+http://www.wikidata.org/prop/p407	8	language of work or name	language associated with this creative work (such as books, shows, songs, broadcasts or websites) or a name (for persons use 
+http://www.wikidata.org/prop/p7741	8	IDFA film ID	identifier for a documentary film at the IDFA website
+http://www.wikidata.org/prop/p8895	8	All the Tropes article ID	identifier in All the Tropes
+http://www.wikidata.org/prop/direct-normalized/p2163	7	FAST ID	authority control identifier in WorldCat's “FAST Linked Data” authority file
+http://www.wikidata.org/prop/direct/p10769	7	Kino-kolo film ID (archived)	identifier for a film on the Kino-kolo website
+http://www.wikidata.org/prop/direct/p13236	7	Danbooru tag	tag for a character, work or entity on Danbooru
+http://www.wikidata.org/prop/direct/p2163	7	FAST ID	authority control identifier in WorldCat's “FAST Linked Data” authority file
+http://www.wikidata.org/prop/direct/p3704	7	KMDb film ID	ID of a film at Korean Movie Database
+http://www.wikidata.org/prop/direct/p4073	7	Fandom wiki ID	identifier of a topic's wiki, in Fandom.com
+http://www.wikidata.org/prop/direct/p6962	7	narrative motif	thematic unit in a narrative or literary work used to develop a theme, mood or plot
+http://www.wikidata.org/prop/direct/p8313	7	Lex ID	identifier of an article in the online encyclopedia.lex.dk
+http://www.wikidata.org/prop/p10769	7	Kino-kolo film ID (archived)	identifier for a film on the Kino-kolo website
+http://www.wikidata.org/prop/p13236	7	Danbooru tag	tag for a character, work or entity on Danbooru
+http://www.wikidata.org/prop/p2163	7	FAST ID	authority control identifier in WorldCat's “FAST Linked Data” authority file
+http://www.wikidata.org/prop/p3704	7	KMDb film ID	ID of a film at Korean Movie Database
+http://www.wikidata.org/prop/p4073	7	Fandom wiki ID	identifier of a topic's wiki, in Fandom.com
+http://www.wikidata.org/prop/p6962	7	narrative motif	thematic unit in a narrative or literary work used to develop a theme, mood or plot
+http://www.wikidata.org/prop/p8313	7	Lex ID	identifier of an article in the online encyclopedia.lex.dk
+http://www.wikidata.org/prop/direct/p10664	6	featured track(s)	soundtrack of this audiovisual work
+http://www.wikidata.org/prop/direct/p11108	6	recorded participant	agent taking an active role as a participant in a nonfiction moving image or other recorded work
+http://www.wikidata.org/prop/direct/p11283	6	JCDb ID	identifier for a film in the Japanese Cinema Database
+http://www.wikidata.org/prop/direct/p12741	6	Jedipedia.net ID	identifier in the independent German wiki Jedipedia.net
+http://www.wikidata.org/prop/direct/p12875	6	StarWars.com ID	identifier of film, TV series, episode, etc. on Star Wars.com
+http://www.wikidata.org/prop/direct/p2364	6	production code	production code of a television episode
+http://www.wikidata.org/prop/direct/p3673	6	film-documentaire.fr film ID	identifier of a film (movie) in the French database film-documentaire.fr
+http://www.wikidata.org/prop/direct/p3906	6	Ishim ID	identifier in the Israeli cinema, television and radio database
+http://www.wikidata.org/prop/direct/p4608	6	scenographer	person who designed the stage or film set of this item
+http://www.wikidata.org/prop/direct/p5845	6	AnimeClick anime ID	identifier of anime from AnimeClick database
+http://www.wikidata.org/prop/direct/p6900	6	NicoNicoPedia ID	identifier for an article in NicoNicoPedia
+http://www.wikidata.org/prop/direct/p7679	6	Cinépolis KLIC ID	identifier of a movie in Cinépolis KLIC website
+http://www.wikidata.org/prop/direct/p9760	6	Treccani's Enciclopedia del Cinema ID	identifier for an item in the Enciclopedia del Cinema
+http://www.wikidata.org/prop/p10664	6	featured track(s)	soundtrack of this audiovisual work
+http://www.wikidata.org/prop/p11108	6	recorded participant	agent taking an active role as a participant in a nonfiction moving image or other recorded work
+http://www.wikidata.org/prop/p11283	6	JCDb ID	identifier for a film in the Japanese Cinema Database
+http://www.wikidata.org/prop/p1191	6	date of first performance	date a work was first debuted, performed or live-broadcasted (do not use for TV series episodes)
+http://www.wikidata.org/prop/p12741	6	Jedipedia.net ID	identifier in the independent German wiki Jedipedia.net
+http://www.wikidata.org/prop/p12875	6	StarWars.com ID	identifier of film, TV series, episode, etc. on Star Wars.com
+http://www.wikidata.org/prop/p13661	6	myCast talent ID	identifier of this person, character or work on myCast
+http://www.wikidata.org/prop/p2364	6	production code	production code of a television episode
+http://www.wikidata.org/prop/p3673	6	film-documentaire.fr film ID	identifier of a film (movie) in the French database film-documentaire.fr
+http://www.wikidata.org/prop/p3906	6	Ishim ID	identifier in the Israeli cinema, television and radio database
+http://www.wikidata.org/prop/p4608	6	scenographer	person who designed the stage or film set of this item
+http://www.wikidata.org/prop/p5845	6	AnimeClick anime ID	identifier of anime from AnimeClick database
+http://www.wikidata.org/prop/p6900	6	NicoNicoPedia ID	identifier for an article in NicoNicoPedia
+http://www.wikidata.org/prop/p7679	6	Cinépolis KLIC ID	identifier of a movie in Cinépolis KLIC website
+http://www.wikidata.org/prop/p9760	6	Treccani's Enciclopedia del Cinema ID	identifier for an item in the Enciclopedia del Cinema
+http://www.wikidata.org/prop/direct-normalized/p243	5	OCLC number	identifier for a bibliographic record in OCLC WorldCat
+http://www.wikidata.org/prop/direct/p10291	5	Wikisimpsons article ID	identifier for a Wikisimpsons article
+http://www.wikidata.org/prop/direct/p11039	5	Anime Taizen ID	identifier for a title on Anime Taizen
+http://www.wikidata.org/prop/direct/p1191	5	date of first performance	date a work was first debuted, performed or live-broadcasted (do not use for TV series episodes)
+http://www.wikidata.org/prop/direct/p12005	5	Anikore anime ID	identifier for an anime on Anikore site
+http://www.wikidata.org/prop/direct/p12215	5	Game Classification game ID	identifier of a video game in the Game Classification database
+http://www.wikidata.org/prop/direct/p13460	5	Shazoo tag ID	numeric identifier of a tag in the Shazoo database
+http://www.wikidata.org/prop/direct/p13591	5	Yale LUX ID	identifier for an entity in Yale's LUX cross collection knowledge graph
+http://www.wikidata.org/prop/direct/p13661	5	myCast talent ID	identifier of this person, character or work on myCast
+http://www.wikidata.org/prop/direct/p1424	5	topic has template	the main template relating to a topic
+http://www.wikidata.org/prop/direct/p243	5	OCLC number	identifier for a bibliographic record in OCLC WorldCat
+http://www.wikidata.org/prop/direct/p2512	5	has spin-off	works that are spin-offs of this item
+http://www.wikidata.org/prop/direct/p3785	5	danskefilm film ID	identifier for a film in danskefilm.dk
+http://www.wikidata.org/prop/direct/p3984	5	subreddit	name of the Reddit forum associated to this subject
+http://www.wikidata.org/prop/direct/p4895	5	time index	indicate when something happens relative to its beginning
+http://www.wikidata.org/prop/direct/p5732	5	Bangumi subject ID	identifier for creative works sorted on bgm.tv (Bangumi/Chobits)
+http://www.wikidata.org/prop/direct/p6452	5	CBFC rating	rating in the Indian film rating system
+http://www.wikidata.org/prop/direct/p6549	5	NZ On Screen work ID	identifier for a film, video or TV show in the NZ On Screen database
+http://www.wikidata.org/prop/direct/p8670	5	character designer	person in charge of developing the style and concept of a character in a video game, anime or other creative work
+http://www.wikidata.org/prop/p10291	5	Wikisimpsons article ID	identifier for a Wikisimpsons article
+http://www.wikidata.org/prop/p11039	5	Anime Taizen ID	identifier for a title on Anime Taizen
+http://www.wikidata.org/prop/p12005	5	Anikore anime ID	identifier for an anime on Anikore site
+http://www.wikidata.org/prop/p12215	5	Game Classification game ID	identifier of a video game in the Game Classification database
+http://www.wikidata.org/prop/p13460	5	Shazoo tag ID	numeric identifier of a tag in the Shazoo database
+http://www.wikidata.org/prop/p13591	5	Yale LUX ID	identifier for an entity in Yale's LUX cross collection knowledge graph
+http://www.wikidata.org/prop/p1424	5	topic has template	the main template relating to a topic
+http://www.wikidata.org/prop/p243	5	OCLC number	identifier for a bibliographic record in OCLC WorldCat
+http://www.wikidata.org/prop/p2512	5	has spin-off	works that are spin-offs of this item
+http://www.wikidata.org/prop/p3785	5	danskefilm film ID	identifier for a film in danskefilm.dk
+http://www.wikidata.org/prop/p3984	5	subreddit	name of the Reddit forum associated to this subject
+http://www.wikidata.org/prop/p4895	5	time index	indicate when something happens relative to its beginning
+http://www.wikidata.org/prop/p5732	5	Bangumi subject ID	identifier for creative works sorted on bgm.tv (Bangumi/Chobits)
+http://www.wikidata.org/prop/p6452	5	CBFC rating	rating in the Indian film rating system
+http://www.wikidata.org/prop/p6549	5	NZ On Screen work ID	identifier for a film, video or TV show in the NZ On Screen database
+http://www.wikidata.org/prop/p8670	5	character designer	person in charge of developing the style and concept of a character in a video game, anime or other creative work
+http://www.wikidata.org/prop/direct/p12931	4	IDU literary work ID	identifier of literary works (e.g. novels) or movies dramatized for theatrical performance in the Theatre Institute database (IDU)
+http://www.wikidata.org/prop/direct/p13390	4	booru tag	tag associated with this character, work or entity for booru websites
+http://www.wikidata.org/prop/direct/p1352	4	ranking	subject's ordinal position as qualitatively evaluated relative to other members of a group
+http://www.wikidata.org/prop/direct/p13906	4	NLAI ID	identifier for an authority record in the Catalogue of the National Library of Iran
+http://www.wikidata.org/prop/direct/p13910	4	Filmfriend movie ID	identification for a movie on the Filmfriend streaming platform
+http://www.wikidata.org/prop/direct/p1881	4	list of characters	Wikimedia page with the list of characters for this work
+http://www.wikidata.org/prop/direct/p3265	4	Myspace ID	identifier for a person or organisation, at Myspace
+http://www.wikidata.org/prop/direct/p3300	4	musical conductor	the person who directs a musical group, orchestra or chorus
+http://www.wikidata.org/prop/direct/p3931	4	copyright holder	person or organisation who holds the copyright of a work according to the Berne Convention
+http://www.wikidata.org/prop/direct/p4209	4	danskfilmogtv title ID	identifier for a film or TV episode or series in danskfilmogtv.dk
+http://www.wikidata.org/prop/direct/p6151	4	ANICA ID	identifier of a movie from the website Archiviodelcinemaitaliano.it
+http://www.wikidata.org/prop/direct/p6200	4	BBC News topic ID	identifier for a topic on the BBC News website
+http://www.wikidata.org/prop/direct/p767	4	contributor to the creative work or subject	person or organization that contributed to a subject: co-creator of a creative work or subject
+http://www.wikidata.org/prop/direct/p9204	4	CinemaRX title ID (archived)	identifier of a movie on cinemarx.ro
+http://www.wikidata.org/prop/direct/p989	4	spoken text audio	audio file for the spoken work or Wikipedia article, including audio descriptions
+http://www.wikidata.org/prop/p12931	4	IDU literary work ID	identifier of literary works (e.g. novels) or movies dramatized for theatrical performance in the Theatre Institute database (IDU)
+http://www.wikidata.org/prop/p13390	4	booru tag	tag associated with this character, work or entity for booru websites
+http://www.wikidata.org/prop/p1352	4	ranking	subject's ordinal position as qualitatively evaluated relative to other members of a group
+http://www.wikidata.org/prop/p13906	4	NLAI ID	identifier for an authority record in the Catalogue of the National Library of Iran
+http://www.wikidata.org/prop/p13910	4	Filmfriend movie ID	identification for a movie on the Filmfriend streaming platform
+http://www.wikidata.org/prop/p1881	4	list of characters	Wikimedia page with the list of characters for this work
+http://www.wikidata.org/prop/p3265	4	Myspace ID	identifier for a person or organisation, at Myspace
+http://www.wikidata.org/prop/p3300	4	musical conductor	the person who directs a musical group, orchestra or chorus
+http://www.wikidata.org/prop/p3931	4	copyright holder	person or organisation who holds the copyright of a work according to the Berne Convention
+http://www.wikidata.org/prop/p4209	4	danskfilmogtv title ID	identifier for a film or TV episode or series in danskfilmogtv.dk
+http://www.wikidata.org/prop/p6151	4	ANICA ID	identifier of a movie from the website Archiviodelcinemaitaliano.it
+http://www.wikidata.org/prop/p6200	4	BBC News topic ID	identifier for a topic on the BBC News website
+http://www.wikidata.org/prop/p767	4	contributor to the creative work or subject	person or organization that contributed to a subject: co-creator of a creative work or subject
+http://www.wikidata.org/prop/p9204	4	CinemaRX title ID (archived)	identifier of a movie on cinemarx.ro
+http://www.wikidata.org/prop/p989	4	spoken text audio	audio file for the spoken work or Wikipedia article, including audio descriptions
+http://www.wikidata.org/prop/direct/p11250	3	Miraheze article ID	identifier of an article on Miraheze. Format: subdomain:Page_title
+http://www.wikidata.org/prop/direct/p12923	3	U.S. Copyright Office Public Records System work ID	identifier for a creative work in the U.S. Copyright Office Public Records System database
+http://www.wikidata.org/prop/direct/p13309	3	Cinema Belgica censorship ID	identifier of censored productions in the Cinema Belgica film database
+http://www.wikidata.org/prop/direct/p13459	3	research project that contributed to this data set	research projects that have contributed to or otherwise created an item
+http://www.wikidata.org/prop/direct/p13650	3	Deaf Movie Database title ID	identifier for a film in the the Deaf Movie Database (DMDb)
+http://www.wikidata.org/prop/direct/p1729	3	AllMusic album ID	identifier for an album in AllMusic database
+http://www.wikidata.org/prop/direct/p2397	3	YouTube channel ID	ID of the YouTube channel of a person or organisation (not to be confused with the name of the channel) The ID can also be used for music.youtube.com IDs
+http://www.wikidata.org/prop/direct/p2400	3	JMDb film ID	film IDs on Japanese Movie Database
+http://www.wikidata.org/prop/direct/p2635	3	number of parts of this work	the number of parts that a work comprises
+http://www.wikidata.org/prop/direct/p3495	3	FilmPolski.pl ID	identifier for person, film (movie), or TV series, in the filmpolski.pl database
+http://www.wikidata.org/prop/direct/p3569	3	Cultureel Woordenboek ID	identifier for a concept in the Dutch Cultureel Woordenboek ('Cultural Dictionary')
+http://www.wikidata.org/prop/direct/p5940	3	plot expanded in	a narrative of this creative work is expanded in another work while '''not necessarily''' being part of the same series. For series use P179 instead
+http://www.wikidata.org/prop/direct/p7458	3	Kinematoscope film ID	Database about Films adaptations of literary work (18th and 19th century)
+http://www.wikidata.org/prop/direct/p7886	3	Media Arts Database ID	identifier for the Media Arts Database created by the Japanese government department Bunkacho
+http://www.wikidata.org/prop/direct/p9976	3	copyright registration	ID assigned by the US copyright office recording the registration of copyright for a creative work, or the renewal of such a copyright
+http://www.wikidata.org/prop/direct/p9989	3	stylized name	a widely used but non-standard form of a name (rather than a different name entirely or a pseudonym)
+http://www.wikidata.org/prop/p11250	3	Miraheze article ID	identifier of an article on Miraheze. Format: subdomain:Page_title
+http://www.wikidata.org/prop/p12923	3	U.S. Copyright Office Public Records System work ID	identifier for a creative work in the U.S. Copyright Office Public Records System database
+http://www.wikidata.org/prop/p13309	3	Cinema Belgica censorship ID	identifier of censored productions in the Cinema Belgica film database
+http://www.wikidata.org/prop/p13459	3	research project that contributed to this data set	research projects that have contributed to or otherwise created an item
+http://www.wikidata.org/prop/p13650	3	Deaf Movie Database title ID	identifier for a film in the the Deaf Movie Database (DMDb)
+http://www.wikidata.org/prop/p1729	3	AllMusic album ID	identifier for an album in AllMusic database
+http://www.wikidata.org/prop/p2397	3	YouTube channel ID	ID of the YouTube channel of a person or organisation (not to be confused with the name of the channel) The ID can also be used for music.youtube.com IDs
+http://www.wikidata.org/prop/p2400	3	JMDb film ID	film IDs on Japanese Movie Database
+http://www.wikidata.org/prop/p2635	3	number of parts of this work	the number of parts that a work comprises
+http://www.wikidata.org/prop/p3132	3	last line	last line (excipit) of a poem, last sentence of a novel, etc.
+http://www.wikidata.org/prop/p3495	3	FilmPolski.pl ID	identifier for person, film (movie), or TV series, in the filmpolski.pl database
+http://www.wikidata.org/prop/p3569	3	Cultureel Woordenboek ID	identifier for a concept in the Dutch Cultureel Woordenboek ('Cultural Dictionary')
+http://www.wikidata.org/prop/p5940	3	plot expanded in	a narrative of this creative work is expanded in another work while '''not necessarily''' being part of the same series. For series use P179 instead
+http://www.wikidata.org/prop/p7458	3	Kinematoscope film ID	Database about Films adaptations of literary work (18th and 19th century)
+http://www.wikidata.org/prop/p7886	3	Media Arts Database ID	identifier for the Media Arts Database created by the Japanese government department Bunkacho
+http://www.wikidata.org/prop/p9976	3	copyright registration	ID assigned by the US copyright office recording the registration of copyright for a creative work, or the renewal of such a copyright
+http://www.wikidata.org/prop/p9989	3	stylized name	a widely used but non-standard form of a name (rather than a different name entirely or a pseudonym)
+http://www.wikidata.org/prop/direct-normalized/p1407	2	MusicBrainz series ID	identifier for a series per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p11815	2	Peacock ID	identifier for a creative work on Peacock
+http://www.wikidata.org/prop/direct/p123	2	publisher	organization or person responsible for publishing a work, such as a book, periodical, printed music, podcast, game or software
+http://www.wikidata.org/prop/direct/p12544	2	RatingGraph TV show ID	identifier for a TV show on the RatingGraph site
+http://www.wikidata.org/prop/direct/p13165	2	PCGames.de ID	identifier for a video game or another entity
+http://www.wikidata.org/prop/direct/p13293	2	Toonopedia ID	identifier in Don Markstein's Toonopedia
+http://www.wikidata.org/prop/direct/p13369	2	DRTV ID	identifier for an film, television series, episode or season on DRTV, streaming service maintained by the the Danish national public television broadcaster DR (Danmarks Radio)
+http://www.wikidata.org/prop/direct/p1375	2	NSK (VIAF) ID	identifier for an item in the National and University Library in Zagreb (including leading zeroes), used in VIAF
+http://www.wikidata.org/prop/direct/p1407	2	MusicBrainz series ID	identifier for a series per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p1451	2	motto text	short motivation sentence associated to item
+http://www.wikidata.org/prop/direct/p1542	2	has effect	effect of this item
+http://www.wikidata.org/prop/direct/p2093	2	author name string	stores unspecified author or editor name for publications; use if Wikidata item for author (P50) or editor (P98) does not exist or is not known. Do not use both.
+http://www.wikidata.org/prop/direct/p275	2	copyright license	license under which this copyrighted work is released
+http://www.wikidata.org/prop/direct/p2849	2	produced by	links a class of biological features (such as a biochemical compound) with another class of biological entities known to produce it
+http://www.wikidata.org/prop/direct/p3222	2	NE.se ID	ID of article on the Swedish Nationalencyklopedin (NE.se) site
+http://www.wikidata.org/prop/direct/p3280	2	BAnQ authority ID	identifier for an authority record for authors, works, and subject headings in the Bibliothèque et Archives nationales du Québec (BAnQ).
+http://www.wikidata.org/prop/direct/p3308	2	lib.reviews ID	ID for “Things” (review subjects) on lib.reviews
+http://www.wikidata.org/prop/direct/p3868	2	MyDramaList title ID	identifier for a film and television series in the MyDramaList database
+http://www.wikidata.org/prop/direct/p4082	2	captured with	equipment (e.g. model of camera, lens, microphone), used to capture this image, video, audio, or data
+http://www.wikidata.org/prop/direct/p460	2	said to be the same as	this item is said to be the same as that item, though this may be uncertain or disputed
+http://www.wikidata.org/prop/direct/p4619	2	National Library of Brazil ID	identifier for an element in the database of the National Library of Brazil
+http://www.wikidata.org/prop/direct/p50	2	author	main creator(s) of a written work (use on works, not humans); use P2093 (author name string) when Wikidata item is unknown or does not exist
+http://www.wikidata.org/prop/direct/p528	2	catalog code	catalog name of an object, use with qualifier P972
+http://www.wikidata.org/prop/direct/p5338	2	SilentEra.com film ID	identifier for a movie at Silentera.com
+http://www.wikidata.org/prop/direct/p580	2	start time	time an entity begins to exist or a statement starts being valid
+http://www.wikidata.org/prop/direct/p582	2	end time	moment when an entity ceases to exist and a statement stops being entirely valid or no longer be true
+http://www.wikidata.org/prop/direct/p6367	2	Bahamut Gamer's Community ACG Database ID	a Taiwanese database for Games, Animation, Comic, Light Novels
+http://www.wikidata.org/prop/direct/p7067	2	Album of the Year album ID	identifier for an album or other release on the Album of the Year (AOTY) website
+http://www.wikidata.org/prop/direct/p7369	2	National Library of Chile ID	identifier for authority control managed by the National Library of Chile
+http://www.wikidata.org/prop/direct/p7775	2	RationalWiki ID	identifier for an item at RationalWiki
+http://www.wikidata.org/prop/direct/p8295	2	AustLit ID	identifier at AustLit
+http://www.wikidata.org/prop/direct/p8652	2	Netflix maturity rating	content rating used and determined by Netflix in countries where local ratings do not apply to streaming media
+http://www.wikidata.org/prop/direct/p9296	2	Astro Awani topic ID	identifier for a topic at the Astro Awani news website
+http://www.wikidata.org/prop/direct/p949	2	National Library of Israel ID (old)	former identifier for authority control used at the National Library of Israel. Replaced with 
+http://www.wikidata.org/prop/direct/p953	2	work available at URL	URL of a web page containing this work
+http://www.wikidata.org/prop/direct/p9918	2	Kallías ID	identifier in Kallías, the catalog of the German Literature Archive Marbach (DLA Marbach)
+http://www.wikidata.org/prop/p11815	2	Peacock ID	identifier for a creative work on Peacock
+http://www.wikidata.org/prop/p123	2	publisher	organization or person responsible for publishing a work, such as a book, periodical, printed music, podcast, game or software
+http://www.wikidata.org/prop/p12544	2	RatingGraph TV show ID	identifier for a TV show on the RatingGraph site
+http://www.wikidata.org/prop/p12791	2	Seret film ID	identifier for a movie at the Israeli movie database Seret
+http://www.wikidata.org/prop/p13165	2	PCGames.de ID	identifier for a video game or another entity
+http://www.wikidata.org/prop/p13293	2	Toonopedia ID	identifier in Don Markstein's Toonopedia
+http://www.wikidata.org/prop/p13369	2	DRTV ID	identifier for an film, television series, episode or season on DRTV, streaming service maintained by the the Danish national public television broadcaster DR (Danmarks Radio)
+http://www.wikidata.org/prop/p1375	2	NSK (VIAF) ID	identifier for an item in the National and University Library in Zagreb (including leading zeroes), used in VIAF
+http://www.wikidata.org/prop/p1407	2	MusicBrainz series ID	identifier for a series per the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/p1449	2	nickname	informal name (for a pseudonym use P742)
+http://www.wikidata.org/prop/p1451	2	motto text	short motivation sentence associated to item
+http://www.wikidata.org/prop/p1542	2	has effect	effect of this item
+http://www.wikidata.org/prop/p1813	2	short name	short name of a place, organisation, person, journal, Wikidata property, etc. Used by some Wikipedia templates
+http://www.wikidata.org/prop/p2093	2	author name string	stores unspecified author or editor name for publications; use if Wikidata item for author (P50) or editor (P98) does not exist or is not known. Do not use both.
+http://www.wikidata.org/prop/p275	2	copyright license	license under which this copyrighted work is released
+http://www.wikidata.org/prop/p2849	2	produced by	links a class of biological features (such as a biochemical compound) with another class of biological entities known to produce it
+http://www.wikidata.org/prop/p3222	2	NE.se ID	ID of article on the Swedish Nationalencyklopedin (NE.se) site
+http://www.wikidata.org/prop/p3280	2	BAnQ authority ID	identifier for an authority record for authors, works, and subject headings in the Bibliothèque et Archives nationales du Québec (BAnQ).
+http://www.wikidata.org/prop/p3308	2	lib.reviews ID	ID for “Things” (review subjects) on lib.reviews
+http://www.wikidata.org/prop/p3868	2	MyDramaList title ID	identifier for a film and television series in the MyDramaList database
+http://www.wikidata.org/prop/p4082	2	captured with	equipment (e.g. model of camera, lens, microphone), used to capture this image, video, audio, or data
+http://www.wikidata.org/prop/p460	2	said to be the same as	this item is said to be the same as that item, though this may be uncertain or disputed
+http://www.wikidata.org/prop/p4619	2	National Library of Brazil ID	identifier for an element in the database of the National Library of Brazil
+http://www.wikidata.org/prop/p50	2	author	main creator(s) of a written work (use on works, not humans); use P2093 (author name string) when Wikidata item is unknown or does not exist
+http://www.wikidata.org/prop/p528	2	catalog code	catalog name of an object, use with qualifier P972
+http://www.wikidata.org/prop/p5338	2	SilentEra.com film ID	identifier for a movie at Silentera.com
+http://www.wikidata.org/prop/p580	2	start time	time an entity begins to exist or a statement starts being valid
+http://www.wikidata.org/prop/p582	2	end time	moment when an entity ceases to exist and a statement stops being entirely valid or no longer be true
+http://www.wikidata.org/prop/p6367	2	Bahamut Gamer's Community ACG Database ID	a Taiwanese database for Games, Animation, Comic, Light Novels
+http://www.wikidata.org/prop/p7067	2	Album of the Year album ID	identifier for an album or other release on the Album of the Year (AOTY) website
+http://www.wikidata.org/prop/p7369	2	National Library of Chile ID	identifier for authority control managed by the National Library of Chile
+http://www.wikidata.org/prop/p7775	2	RationalWiki ID	identifier for an item at RationalWiki
+http://www.wikidata.org/prop/p8295	2	AustLit ID	identifier at AustLit
+http://www.wikidata.org/prop/p8652	2	Netflix maturity rating	content rating used and determined by Netflix in countries where local ratings do not apply to streaming media
+http://www.wikidata.org/prop/p9296	2	Astro Awani topic ID	identifier for a topic at the Astro Awani news website
+http://www.wikidata.org/prop/p949	2	National Library of Israel ID (old)	former identifier for authority control used at the National Library of Israel. Replaced with 
+http://www.wikidata.org/prop/p953	2	work available at URL	URL of a web page containing this work
+http://www.wikidata.org/prop/p9918	2	Kallías ID	identifier in Kallías, the catalog of the German Literature Archive Marbach (DLA Marbach)
+http://www.wikidata.org/prop/direct-normalized/p434	1	MusicBrainz artist ID	identifier for an artist in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct-normalized/p5229	1	Carnegie Hall work ID	identifier for a work in the Carnegie Hall Linked Open Data (LOD) database
+http://www.wikidata.org/prop/direct-normalized/p8408	1	KBpedia ID	identifier for the KBpedia knowledge graph, which provides consistent mappings across seven large-scale public knowledge bases including Wikidata, and is used to promote data interoperability and extraction of training sets for machine learning
+http://www.wikidata.org/prop/direct-normalized/p8814	1	WordNet 3.1 Synset ID	Synset identifier in Princeton’s WordNet Version 3.1
+http://www.wikidata.org/prop/direct/p10135	1	recording date	the date when a recording was made
+http://www.wikidata.org/prop/direct/p10262	1	Offizielle Deutsche Charts album ID	identifier for an album on Offizielle Deutsche Charts site
+http://www.wikidata.org/prop/direct/p1029	1	crew member	person that participated operating or serving aboard this vehicle
+http://www.wikidata.org/prop/direct/p10297	1	Google Arts & Culture entity ID	identifier for a person, event, place, or other entity on the Google Arts & Culture website
+http://www.wikidata.org/prop/direct/p10357	1	TV3 video ID	identifier for a video in TV3 website
+http://www.wikidata.org/prop/direct/p1048	1	NCL ID	identifier for authority control issued by the National Central Library in Taiwan
+http://www.wikidata.org/prop/direct/p10608	1	FID performing arts ID	Specialised Information Service Performing Arts
+http://www.wikidata.org/prop/direct/p10804	1	X list ID	identifier of a list of accounts on Twitter
+http://www.wikidata.org/prop/direct/p11119	1	RaiPlay ID	identifier for a film, television program or series on RaiPlay.it
+http://www.wikidata.org/prop/direct/p11129	1	C64-Wiki ID	identifier for an item in the C64-Wiki ID
+http://www.wikidata.org/prop/direct/p11176	1	Niconico ID	identifier for an object on Niconico
+http://www.wikidata.org/prop/direct/p11551	1	N-Anime anime ID	identifier for an anime on N-Anime
+http://www.wikidata.org/prop/direct/p11611	1	Norwegian media rating	age rating system for motion pictures, video and TV content used in Norway
+http://www.wikidata.org/prop/direct/p11849	1	first performance by	performer or performing group for the first performance of a work
+http://www.wikidata.org/prop/direct/p11935	1	Tolkien Gateway ID	identifier for an article about the universe of Tolkien in the Tolkien Gateway website
+http://www.wikidata.org/prop/direct/p11947	1	Lemmy community ID	name of the Lemmy community associated to the subject
+http://www.wikidata.org/prop/direct/p121	1	item operated	equipment, installation or service operated by the subject
+http://www.wikidata.org/prop/direct/p12361	1	Bluesky handle	account handle on Bluesky
+http://www.wikidata.org/prop/direct/p12791	1	Seret film ID	identifier for a movie at the Israeli movie database Seret
+http://www.wikidata.org/prop/direct/p13235	1	Cinema Belgica film ID	identifier of films in the Cinema Belgica film database
+http://www.wikidata.org/prop/direct/p13337	1	domain name	registered internet domain name that identifies this entity
+http://www.wikidata.org/prop/direct/p13397	1	GitLab topic ID	identifier of a topic in the GitLab database
+http://www.wikidata.org/prop/direct/p13403	1	Delfi.ee topic ID	identifier of a topic in the Delfi.ee database
+http://www.wikidata.org/prop/direct/p13506	1	Danskefilmstemmer.dk work or dubbing ID	identifier for this Danish-language audiovisual work or dubbing at Danskefilmstemmer.dk
+http://www.wikidata.org/prop/direct/p13691	1	Georgian Encyclopedia ID	identifier for an item in the Georgian Encyclopedia
+http://www.wikidata.org/prop/direct/p13801	1	Lemmy instance URL	the Lemmy instance of or about the subject
+http://www.wikidata.org/prop/direct/p13869	1	NRK topic ID	ID for topics in Norway's national broadcaster NRK's web services
+http://www.wikidata.org/prop/direct/p1430	1	Open Plaques subject ID	identifier for a person or other subject included in the OpenPlaques website
+http://www.wikidata.org/prop/direct/p1439	1	Norwegian filmography ID	identifier from Norsk filmografi, published by the National Library of Norway
+http://www.wikidata.org/prop/direct/p1557	1	manifestation of	inherent and characteristic embodiment of a given concept
+http://www.wikidata.org/prop/direct/p1922	1	first line	first line (incipit) of a poem, first sentence of a novel, speech, etc.
+http://www.wikidata.org/prop/direct/p2354	1	has list	Wikimedia list related to this subject
+http://www.wikidata.org/prop/direct/p2555	1	fee	fee or toll payable to use, transit or enter the subject (only for one-time fees, do NOT use it for an ongoing fee, tuition fee or trading fee)
+http://www.wikidata.org/prop/direct/p2678	1	Russiancinema.ru film ID	id number for films in Russiancinema.ru
+http://www.wikidata.org/prop/direct/p2754	1	production date	period of active production of (creative) work; the only date stated should refer to end of production; production starts after pre-production (planning) and is followed by publication date (P577); in general cases, use inception (P571)
+http://www.wikidata.org/prop/direct/p279	1	subclass of	this item is a subclass (subset) of that item; ALL instances of this item are instances of that item; different from P31 (instance of), e.g.: volcano is a subclass of mountain; Everest is an instance of mountain
+http://www.wikidata.org/prop/direct/p2860	1	cites work	citation from one creative or scholarly work to another
+http://www.wikidata.org/prop/direct/p2883	1	HKMDB film ID	identifier for a film at the HKMDB (Hong Kong Movie Database) website
+http://www.wikidata.org/prop/direct/p2897	1	Eldoblaje Movie ID	identifier of dubbing in the website eldoblaje.com, a database of Spanish dubbings
+http://www.wikidata.org/prop/direct/p2959	1	permanent duplicated item	this item duplicates another item and the two can't be merged, as one Wikimedia project includes two pages, e.g. in different scripts or languages (only applies to some wikis, e.g.: cdowiki, gomwiki, nanwiki). Use P31=Q17362920 for other wikis.
+http://www.wikidata.org/prop/direct/p3132	1	last line	last line (excipit) of a poem, last sentence of a novel, etc.
+http://www.wikidata.org/prop/direct/p3185	1	VK username	identifier for a person or organization in VK.com (VKontakte)
+http://www.wikidata.org/prop/direct/p3365	1	Treccani ID	identifier for the Italian Treccani website and encyclopedia
+http://www.wikidata.org/prop/direct/p3367	1	GECD film ID	identifier of a film (movie) in the German Early Cinema Database
+http://www.wikidata.org/prop/direct/p3458	1	CNC authorization number	authorization number to operate a movie theater in France
+http://www.wikidata.org/prop/direct/p3509	1	Dagens Nyheter topic ID	identifier for a topic, used by the Swedish daily newspaper Dagens Nyheter
+http://www.wikidata.org/prop/direct/p3589	1	GCD series ID	identifier of a comic book series in the Grand Comics Database (GCD)
+http://www.wikidata.org/prop/direct/p3816	1	film script	script version for subject film is described at
+http://www.wikidata.org/prop/direct/p3827	1	JSTOR topic ID (archived)	identifier for a topic at JSTOR
+http://www.wikidata.org/prop/direct/p3847	1	Open Library subject ID	identifier for a topic in the Open Library database
+http://www.wikidata.org/prop/direct/p3851	1	Cinenacional.com movie ID	identifier for a movie at cinenacional.com database (from Argentina)
+http://www.wikidata.org/prop/direct/p3893	1	public domain date	date the item enters into the public domain in a jurisdiction
+http://www.wikidata.org/prop/direct/p3919	1	contributed to creative work	person is cited as contributing to some creative or published work or series (qualify with 
+http://www.wikidata.org/prop/direct/p4015	1	Vimeo ID	username or ID on Vimeo
+http://www.wikidata.org/prop/direct/p4312	1	camera setup	filmmaking method that the cameras were placed by. Use single-camera (Q2918907) or multiple-camera (Q738160)
+http://www.wikidata.org/prop/direct/p434	1	MusicBrainz artist ID	identifier for an artist in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p4606	1	National Film Board of Canada film ID	film identifier used by the National Film Board of Canada website
+http://www.wikidata.org/prop/direct/p4647	1	location of first performance	location where a work was first debuted, performed or broadcasted
+http://www.wikidata.org/prop/direct/p4779	1	MYmovies actor ID (former scheme)	identifier for an actor in MYmovies.it
+http://www.wikidata.org/prop/direct/p4835	1	TheTVDB series ID	identifier for a television series at TheTVDB.com
+http://www.wikidata.org/prop/direct/p485	1	archives at	the institution holding the subject's archives
+http://www.wikidata.org/prop/direct/p51	1	audio	relevant sound. If available, use a more specific property. Samples: 
+http://www.wikidata.org/prop/direct/p5108	1	HanCinema film ID	identifier for a films in the HanCinema database
+http://www.wikidata.org/prop/direct/p5126	1	assistant director	assistant stage director of a performing arts, film or television production
+http://www.wikidata.org/prop/direct/p5229	1	Carnegie Hall work ID	identifier for a work in the Carnegie Hall Linked Open Data (LOD) database
+http://www.wikidata.org/prop/direct/p547	1	commemorates	what or whom is commemorated by the place, monument, memorial, or holiday
+http://www.wikidata.org/prop/direct/p5659	1	VGMdb product ID	identifier for a product (game, franchise, video) in the Video Game Music database
+http://www.wikidata.org/prop/direct/p571	1	inception	time when an entity begins to exist; for date of official opening use P1619
+http://www.wikidata.org/prop/direct/p5737	1	Moegirlpedia ID	Chinese-, Japanese-, or English-language articles and categories about ACG culture hosted on any of the Moegirlpedia family of wikis
+http://www.wikidata.org/prop/direct/p585	1	point in time	date something took place, existed or a statement was true; for providing time use the 
+http://www.wikidata.org/prop/direct/p5933	1	X post ID	identifier of a status on X/Twitter
+http://www.wikidata.org/prop/direct/p5986	1	Getty Iconography Authority ID	identifier from the Getty Iconography Authority
+http://www.wikidata.org/prop/direct/p6195	1	funding scheme	is supported under the funding scheme
+http://www.wikidata.org/prop/direct/p625	1	coordinate location	geocoordinates of the subject. For Earth, please note that only the WGS84 geodetic datum is currently supported
+http://www.wikidata.org/prop/direct/p7085	1	TikTok username	this item's username on TikTok; do not include the “@” symbol
+http://www.wikidata.org/prop/direct/p7284	1	The Independent topic ID	identifier for an topic on website of the English newspaper 
+http://www.wikidata.org/prop/direct/p7439	1	FantLab work ID	identifier for the literary work in FantLab
+http://www.wikidata.org/prop/direct/p7699	1	National Library of Lithuania ID	authority id at the National Library of Lithuania, part of VIAF (code LIH)
+http://www.wikidata.org/prop/direct/p8408	1	KBpedia ID	identifier for the KBpedia knowledge graph, which provides consistent mappings across seven large-scale public knowledge bases including Wikidata, and is used to promote data interoperability and extraction of training sets for machine learning
+http://www.wikidata.org/prop/direct/p8814	1	WordNet 3.1 Synset ID	Synset identifier in Princeton’s WordNet Version 3.1
+http://www.wikidata.org/prop/direct/p9281	1	Encyclopedia of Greater Philadelphia ID	alphabetical identifier for an article in the Encyclopedia of Greater Philadelphia
+http://www.wikidata.org/prop/direct/p9318	1	Ávvir topic ID	identifier of a topic in the Northern Sámi publication Ávvir
+http://www.wikidata.org/prop/direct/p9346	1	France 24 topic ID (French)	identifier of a topic on the French version of the France 24 website
+http://www.wikidata.org/prop/direct/p9365	1	Modernist Commons ID	identifier for an article in the encyclopedia Modernist Commons
+http://www.wikidata.org/prop/direct/p9367	1	Filmitalia film ID	identifier used for films in the database of filmitalia.org
+http://www.wikidata.org/prop/direct/p948	1	page banner	image at top of an article about the topic, mainly used by Wikivoyage and Women in Red
+http://www.wikidata.org/prop/direct/p9545	1	Encyclopedia of China (Second Edition) ID	identifier for an article in the online version of Encyclopedia of China (Second Edition)
+http://www.wikidata.org/prop/direct/p9629	1	Armeniapedia ID	numeric identifier for an article in the online encyclopedia Armeniapedia
+http://www.wikidata.org/prop/direct/p9701	1	African Film Database ID	identifier of a movie in the African Film Database
+http://www.wikidata.org/prop/direct/p98	1	editor	person who checks and corrects a work (such as a book, newspaper, academic journal, etc.) to comply with a rules of certain genre. Also applies to person who establishes the text of an ancient written work or manuscript.
+http://www.wikidata.org/prop/direct/p9863	1	Gujarati Vishwakosh entry	identifier for an entry in Gujarati Vishwakosh, an encyclopedia in Gujarati language
+http://www.wikidata.org/prop/direct/p9965	1	Musik-Sammler.de artist ID	numeric identifier for an artist (person, group) in the Musik-Sammler.de database
+http://www.wikidata.org/prop/direct/p9995	1	MYmovies person ID	identifier for a person on the MYmovies film database
+http://www.wikidata.org/prop/p10135	1	recording date	the date when a recording was made
+http://www.wikidata.org/prop/p10262	1	Offizielle Deutsche Charts album ID	identifier for an album on Offizielle Deutsche Charts site
+http://www.wikidata.org/prop/p1029	1	crew member	person that participated operating or serving aboard this vehicle
+http://www.wikidata.org/prop/p10297	1	Google Arts & Culture entity ID	identifier for a person, event, place, or other entity on the Google Arts & Culture website
+http://www.wikidata.org/prop/p10357	1	TV3 video ID	identifier for a video in TV3 website
+http://www.wikidata.org/prop/p1048	1	NCL ID	identifier for authority control issued by the National Central Library in Taiwan
+http://www.wikidata.org/prop/p10608	1	FID performing arts ID	Specialised Information Service Performing Arts
+http://www.wikidata.org/prop/p10804	1	X list ID	identifier of a list of accounts on Twitter
+http://www.wikidata.org/prop/p11119	1	RaiPlay ID	identifier for a film, television program or series on RaiPlay.it
+http://www.wikidata.org/prop/p11129	1	C64-Wiki ID	identifier for an item in the C64-Wiki ID
+http://www.wikidata.org/prop/p11176	1	Niconico ID	identifier for an object on Niconico
+http://www.wikidata.org/prop/p11551	1	N-Anime anime ID	identifier for an anime on N-Anime
+http://www.wikidata.org/prop/p11611	1	Norwegian media rating	age rating system for motion pictures, video and TV content used in Norway
+http://www.wikidata.org/prop/p11849	1	first performance by	performer or performing group for the first performance of a work
+http://www.wikidata.org/prop/p11935	1	Tolkien Gateway ID	identifier for an article about the universe of Tolkien in the Tolkien Gateway website
+http://www.wikidata.org/prop/p11947	1	Lemmy community ID	name of the Lemmy community associated to the subject
+http://www.wikidata.org/prop/p1207	1	NUKAT ID	identifier for authority control in the Center of Warsaw University Library catalog
+http://www.wikidata.org/prop/p121	1	item operated	equipment, installation or service operated by the subject
+http://www.wikidata.org/prop/p12361	1	Bluesky handle	account handle on Bluesky
+http://www.wikidata.org/prop/p13235	1	Cinema Belgica film ID	identifier of films in the Cinema Belgica film database
+http://www.wikidata.org/prop/p13337	1	domain name	registered internet domain name that identifies this entity
+http://www.wikidata.org/prop/p13397	1	GitLab topic ID	identifier of a topic in the GitLab database
+http://www.wikidata.org/prop/p13403	1	Delfi.ee topic ID	identifier of a topic in the Delfi.ee database
+http://www.wikidata.org/prop/p13506	1	Danskefilmstemmer.dk work or dubbing ID	identifier for this Danish-language audiovisual work or dubbing at Danskefilmstemmer.dk
+http://www.wikidata.org/prop/p13691	1	Georgian Encyclopedia ID	identifier for an item in the Georgian Encyclopedia
+http://www.wikidata.org/prop/p13801	1	Lemmy instance URL	the Lemmy instance of or about the subject
+http://www.wikidata.org/prop/p13869	1	NRK topic ID	ID for topics in Norway's national broadcaster NRK's web services
+http://www.wikidata.org/prop/p1430	1	Open Plaques subject ID	identifier for a person or other subject included in the OpenPlaques website
+http://www.wikidata.org/prop/p1439	1	Norwegian filmography ID	identifier from Norsk filmografi, published by the National Library of Norway
+http://www.wikidata.org/prop/p1557	1	manifestation of	inherent and characteristic embodiment of a given concept
+http://www.wikidata.org/prop/p1680	1	subtitle	for works, when the title is followed by a subtitle
+http://www.wikidata.org/prop/p1922	1	first line	first line (incipit) of a poem, first sentence of a novel, speech, etc.
+http://www.wikidata.org/prop/p2354	1	has list	Wikimedia list related to this subject
+http://www.wikidata.org/prop/p2555	1	fee	fee or toll payable to use, transit or enter the subject (only for one-time fees, do NOT use it for an ongoing fee, tuition fee or trading fee)
+http://www.wikidata.org/prop/p2678	1	Russiancinema.ru film ID	id number for films in Russiancinema.ru
+http://www.wikidata.org/prop/p2754	1	production date	period of active production of (creative) work; the only date stated should refer to end of production; production starts after pre-production (planning) and is followed by publication date (P577); in general cases, use inception (P571)
+http://www.wikidata.org/prop/p279	1	subclass of	this item is a subclass (subset) of that item; ALL instances of this item are instances of that item; different from P31 (instance of), e.g.: volcano is a subclass of mountain; Everest is an instance of mountain
+http://www.wikidata.org/prop/p2860	1	cites work	citation from one creative or scholarly work to another
+http://www.wikidata.org/prop/p2883	1	HKMDB film ID	identifier for a film at the HKMDB (Hong Kong Movie Database) website
+http://www.wikidata.org/prop/p2897	1	Eldoblaje Movie ID	identifier of dubbing in the website eldoblaje.com, a database of Spanish dubbings
+http://www.wikidata.org/prop/p2959	1	permanent duplicated item	this item duplicates another item and the two can't be merged, as one Wikimedia project includes two pages, e.g. in different scripts or languages (only applies to some wikis, e.g.: cdowiki, gomwiki, nanwiki). Use P31=Q17362920 for other wikis.
+http://www.wikidata.org/prop/p3185	1	VK username	identifier for a person or organization in VK.com (VKontakte)
+http://www.wikidata.org/prop/p3365	1	Treccani ID	identifier for the Italian Treccani website and encyclopedia
+http://www.wikidata.org/prop/p3367	1	GECD film ID	identifier of a film (movie) in the German Early Cinema Database
+http://www.wikidata.org/prop/p3458	1	CNC authorization number	authorization number to operate a movie theater in France
+http://www.wikidata.org/prop/p3509	1	Dagens Nyheter topic ID	identifier for a topic, used by the Swedish daily newspaper Dagens Nyheter
+http://www.wikidata.org/prop/p3589	1	GCD series ID	identifier of a comic book series in the Grand Comics Database (GCD)
+http://www.wikidata.org/prop/p3816	1	film script	script version for subject film is described at
+http://www.wikidata.org/prop/p3827	1	JSTOR topic ID (archived)	identifier for a topic at JSTOR
+http://www.wikidata.org/prop/p3847	1	Open Library subject ID	identifier for a topic in the Open Library database
+http://www.wikidata.org/prop/p3851	1	Cinenacional.com movie ID	identifier for a movie at cinenacional.com database (from Argentina)
+http://www.wikidata.org/prop/p3893	1	public domain date	date the item enters into the public domain in a jurisdiction
+http://www.wikidata.org/prop/p3919	1	contributed to creative work	person is cited as contributing to some creative or published work or series (qualify with 
+http://www.wikidata.org/prop/p4015	1	Vimeo ID	username or ID on Vimeo
+http://www.wikidata.org/prop/p4312	1	camera setup	filmmaking method that the cameras were placed by. Use single-camera (Q2918907) or multiple-camera (Q738160)
+http://www.wikidata.org/prop/p434	1	MusicBrainz artist ID	identifier for an artist in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/p4606	1	National Film Board of Canada film ID	film identifier used by the National Film Board of Canada website
+http://www.wikidata.org/prop/p4647	1	location of first performance	location where a work was first debuted, performed or broadcasted
+http://www.wikidata.org/prop/p4779	1	MYmovies actor ID (former scheme)	identifier for an actor in MYmovies.it
+http://www.wikidata.org/prop/p4835	1	TheTVDB series ID	identifier for a television series at TheTVDB.com
+http://www.wikidata.org/prop/p485	1	archives at	the institution holding the subject's archives
+http://www.wikidata.org/prop/p51	1	audio	relevant sound. If available, use a more specific property. Samples: 
+http://www.wikidata.org/prop/p5108	1	HanCinema film ID	identifier for a films in the HanCinema database
+http://www.wikidata.org/prop/p5126	1	assistant director	assistant stage director of a performing arts, film or television production
+http://www.wikidata.org/prop/p5229	1	Carnegie Hall work ID	identifier for a work in the Carnegie Hall Linked Open Data (LOD) database
+http://www.wikidata.org/prop/p547	1	commemorates	what or whom is commemorated by the place, monument, memorial, or holiday
+http://www.wikidata.org/prop/p5659	1	VGMdb product ID	identifier for a product (game, franchise, video) in the Video Game Music database
+http://www.wikidata.org/prop/p571	1	inception	time when an entity begins to exist; for date of official opening use P1619
+http://www.wikidata.org/prop/p5737	1	Moegirlpedia ID	Chinese-, Japanese-, or English-language articles and categories about ACG culture hosted on any of the Moegirlpedia family of wikis
+http://www.wikidata.org/prop/p585	1	point in time	date something took place, existed or a statement was true; for providing time use the 
+http://www.wikidata.org/prop/p5933	1	X post ID	identifier of a status on X/Twitter
+http://www.wikidata.org/prop/p5986	1	Getty Iconography Authority ID	identifier from the Getty Iconography Authority
+http://www.wikidata.org/prop/p6195	1	funding scheme	is supported under the funding scheme
+http://www.wikidata.org/prop/p625	1	coordinate location	geocoordinates of the subject. For Earth, please note that only the WGS84 geodetic datum is currently supported
+http://www.wikidata.org/prop/p7085	1	TikTok username	this item's username on TikTok; do not include the “@” symbol
+http://www.wikidata.org/prop/p7284	1	The Independent topic ID	identifier for an topic on website of the English newspaper 
+http://www.wikidata.org/prop/p7439	1	FantLab work ID	identifier for the literary work in FantLab
+http://www.wikidata.org/prop/p7699	1	National Library of Lithuania ID	authority id at the National Library of Lithuania, part of VIAF (code LIH)
+http://www.wikidata.org/prop/p8408	1	KBpedia ID	identifier for the KBpedia knowledge graph, which provides consistent mappings across seven large-scale public knowledge bases including Wikidata, and is used to promote data interoperability and extraction of training sets for machine learning
+http://www.wikidata.org/prop/p8814	1	WordNet 3.1 Synset ID	Synset identifier in Princeton’s WordNet Version 3.1
+http://www.wikidata.org/prop/p9281	1	Encyclopedia of Greater Philadelphia ID	alphabetical identifier for an article in the Encyclopedia of Greater Philadelphia
+http://www.wikidata.org/prop/p9318	1	Ávvir topic ID	identifier of a topic in the Northern Sámi publication Ávvir
+http://www.wikidata.org/prop/p9346	1	France 24 topic ID (French)	identifier of a topic on the French version of the France 24 website
+http://www.wikidata.org/prop/p9365	1	Modernist Commons ID	identifier for an article in the encyclopedia Modernist Commons
+http://www.wikidata.org/prop/p9367	1	Filmitalia film ID	identifier used for films in the database of filmitalia.org
+http://www.wikidata.org/prop/p948	1	page banner	image at top of an article about the topic, mainly used by Wikivoyage and Women in Red
+http://www.wikidata.org/prop/p9545	1	Encyclopedia of China (Second Edition) ID	identifier for an article in the online version of Encyclopedia of China (Second Edition)
+http://www.wikidata.org/prop/p9629	1	Armeniapedia ID	numeric identifier for an article in the online encyclopedia Armeniapedia
+http://www.wikidata.org/prop/p9701	1	African Film Database ID	identifier of a movie in the African Film Database
+http://www.wikidata.org/prop/p98	1	editor	person who checks and corrects a work (such as a book, newspaper, academic journal, etc.) to comply with a rules of certain genre. Also applies to person who establishes the text of an ancient written work or manuscript.
+http://www.wikidata.org/prop/p9863	1	Gujarati Vishwakosh entry	identifier for an entry in Gujarati Vishwakosh, an encyclopedia in Gujarati language
+http://www.wikidata.org/prop/p9965	1	Musik-Sammler.de artist ID	numeric identifier for an artist (person, group) in the Musik-Sammler.de database
+http://www.wikidata.org/prop/p9995	1	MYmovies person ID	identifier for a person on the MYmovies film database

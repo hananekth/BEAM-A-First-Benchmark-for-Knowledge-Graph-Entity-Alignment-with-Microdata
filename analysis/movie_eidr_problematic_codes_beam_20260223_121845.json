@@ -1,0 +1,1993 @@
+{
+  "summary": {
+    "build_path": "data/Movie/beam_20260223_121845",
+    "align_cache_tsv": "Download/Movie/align_cache/c3ff1ef54ca93c72/wdc_wikidata_links.tsv",
+    "ent_links_path": "data/Movie/beam_20260223_121845/with_link_code/ent_links",
+    "build_ent_links_lines": 1176,
+    "build_ent_links_unique_pairs": 1176,
+    "align_rows_matched_to_build": 1176,
+    "align_extra_rows_not_in_build": 0,
+    "build_pairs_missing_in_align_cache": 0,
+    "distinct_eidr_codes_in_build": 1117,
+    "problematic_eidr_codes": 56,
+    "problematic_due_to_multiple_wdc": 56,
+    "problematic_due_to_multiple_wikidata": 0
+  },
+  "problematic_codes": [
+    {
+      "eidr_normalized": "105240/83f7acb78859b7b81187t",
+      "eidr_wdc_values": [
+        "10.5240/83F7-ACB7-8859-B7B8-1187-T"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/83F7-ACB7-8859-B7B8-1187-T"
+      ],
+      "wdc_count": 3,
+      "wikidata_count": 1,
+      "pairs_count": 3,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n12cfa92c57524e05965185685e403cc4xb0",
+        "_:n5563eff6cf854a1193762630c8d9260dxb2",
+        "_:n942cd03dfdae4c03a5eeea63df73ff1dxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q108444804"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n12cfa92c57524e05965185685e403cc4xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108444804"
+        },
+        {
+          "wdc": "_:n5563eff6cf854a1193762630c8d9260dxb2",
+          "wikidata": "http://www.wikidata.org/entity/Q108444804"
+        },
+        {
+          "wdc": "_:n942cd03dfdae4c03a5eeea63df73ff1dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108444804"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/60d4e6841f46d64c59bag",
+      "eidr_wdc_values": [
+        "10.5240/60D4-E684-1F46-D64C-59BA-G"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/60D4-E684-1F46-D64C-59BA-G"
+      ],
+      "wdc_count": 3,
+      "wikidata_count": 1,
+      "pairs_count": 3,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n10e9e49a9c624531a8600e0401362c49xb0",
+        "_:n23a365ec194b46acb3f6e7b2a9afb2d3xb2",
+        "_:nd57d06d248a242c0a2b201c88acee00dxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q102180106"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n10e9e49a9c624531a8600e0401362c49xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q102180106"
+        },
+        {
+          "wdc": "_:n23a365ec194b46acb3f6e7b2a9afb2d3xb2",
+          "wikidata": "http://www.wikidata.org/entity/Q102180106"
+        },
+        {
+          "wdc": "_:nd57d06d248a242c0a2b201c88acee00dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q102180106"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/30fd323596e17f0c96af3",
+      "eidr_wdc_values": [
+        "10.5240/30FD-3235-96E1-7F0C-96AF-3"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/30FD-3235-96E1-7F0C-96AF-3"
+      ],
+      "wdc_count": 3,
+      "wikidata_count": 1,
+      "pairs_count": 3,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n3eb73e69343b4949b316e61241011943xb2",
+        "_:n5f22cbeb1b334377b4960a63485bf67fxb0",
+        "_:n9d52d2bb7fe74ffa9f168dd3f99a9ccbxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q108030443"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n3eb73e69343b4949b316e61241011943xb2",
+          "wikidata": "http://www.wikidata.org/entity/Q108030443"
+        },
+        {
+          "wdc": "_:n5f22cbeb1b334377b4960a63485bf67fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108030443"
+        },
+        {
+          "wdc": "_:n9d52d2bb7fe74ffa9f168dd3f99a9ccbxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108030443"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/f3ca8a2f426afb7b2277i",
+      "eidr_wdc_values": [
+        "10.5240/F3CA-8A2F-426A-FB7B-2277-I"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/F3CA-8A2F-426A-FB7B-2277-I"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n2280081e96b541d8bf46a3e0c8d7dc35xb0",
+        "_:nfe57dcb861174057b915e1649a136bcfxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q27888452"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n2280081e96b541d8bf46a3e0c8d7dc35xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27888452"
+        },
+        {
+          "wdc": "_:nfe57dcb861174057b915e1649a136bcfxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27888452"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/ed26433bdeaf915c3973u",
+      "eidr_wdc_values": [
+        "10.5240/ED26-433B-DEAF-915C-3973-U"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/ED26-433B-DEAF-915C-3973-U"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n81c0e997c03f41e8a01dba9181713832xb0",
+        "_:nf2a387098a494925bd66d4825e98e5b0xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q34414"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n81c0e997c03f41e8a01dba9181713832xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q34414"
+        },
+        {
+          "wdc": "_:nf2a387098a494925bd66d4825e98e5b0xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q34414"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/e8423f719312ec8ba8b5a",
+      "eidr_wdc_values": [
+        "10.5240/E842-3F71-9312-EC8B-A8B5-A"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/E842-3F71-9312-EC8B-A8B5-A"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n41be3b7c286446acbf5b3010ace97b69xb0",
+        "_:nd4f92ea7bb31465280606f3594faf888xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q107358448"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n41be3b7c286446acbf5b3010ace97b69xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q107358448"
+        },
+        {
+          "wdc": "_:nd4f92ea7bb31465280606f3594faf888xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q107358448"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/e3b8c00eed40d7895a9e9",
+      "eidr_wdc_values": [
+        "10.5240/E3B8-C00E-ED40-D789-5A9E-9"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/E3B8-C00E-ED40-D789-5A9E-9"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n61cba2c687cb411ea2477c8100b85eeexb0",
+        "_:n72ded874db224bc4b53bceed7bb6dca1xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q97164958"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n61cba2c687cb411ea2477c8100b85eeexb0",
+          "wikidata": "http://www.wikidata.org/entity/Q97164958"
+        },
+        {
+          "wdc": "_:n72ded874db224bc4b53bceed7bb6dca1xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q97164958"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d8ac22ca95f14ac01449a",
+      "eidr_wdc_values": [
+        "10.5240/D8AC-22CA-95F1-4AC0-1449-A"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D8AC-22CA-95F1-4AC0-1449-A"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n5655657e329a49ba8e97df2e887e1811xb0",
+        "_:ned492716b40349c397a6527e7d935989xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q697501"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n5655657e329a49ba8e97df2e887e1811xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q697501"
+        },
+        {
+          "wdc": "_:ned492716b40349c397a6527e7d935989xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q697501"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d79470c9111cd36b0e29d",
+      "eidr_wdc_values": [
+        "10.5240/D794-70C9-111C-D36B-0E29-D"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D794-70C9-111C-D36B-0E29-D"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n7391e155b1b14e86bbdfc86599752150xb0",
+        "_:nf70a0d7e437f41359938fb8a1b7bbd66xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q122113"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n7391e155b1b14e86bbdfc86599752150xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q122113"
+        },
+        {
+          "wdc": "_:nf70a0d7e437f41359938fb8a1b7bbd66xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q122113"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d60a62fe4002f2b4c8c4a",
+      "eidr_wdc_values": [
+        "10.5240/D60A-62FE-4002-F2B4-C8C4-A"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D60A-62FE-4002-F2B4-C8C4-A"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n082a0ac5bc7e4fcbac1b450311819584xb0",
+        "_:ne57e6bb6107f4d3983b9506f841533d7xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q5659581"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n082a0ac5bc7e4fcbac1b450311819584xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5659581"
+        },
+        {
+          "wdc": "_:ne57e6bb6107f4d3983b9506f841533d7xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5659581"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d470360cb0e98742ca0ak",
+      "eidr_wdc_values": [
+        "10.5240/D470-360C-B0E9-8742-CA0A-K"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D470-360C-B0E9-8742-CA0A-K"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:nae023c730f384839af29442e03e62f5exb0",
+        "_:nb7c5e4b75c7a4c468b1c9c79820e7e18xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q463927"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:nae023c730f384839af29442e03e62f5exb0",
+          "wikidata": "http://www.wikidata.org/entity/Q463927"
+        },
+        {
+          "wdc": "_:nb7c5e4b75c7a4c468b1c9c79820e7e18xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q463927"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d3c921cbea8db352f3653",
+      "eidr_wdc_values": [
+        "10.5240/D3C9-21CB-EA8D-B352-F365-3"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D3C9-21CB-EA8D-B352-F365-3"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n61471b8a887547f3aeb506ec4dde3168xb2",
+        "_:n79dd0702accf478cbe7c8d9bacc299faxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q84712797"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n61471b8a887547f3aeb506ec4dde3168xb2",
+          "wikidata": "http://www.wikidata.org/entity/Q84712797"
+        },
+        {
+          "wdc": "_:n79dd0702accf478cbe7c8d9bacc299faxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q84712797"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d21e3b4e35a9a1b8f5c0o",
+      "eidr_wdc_values": [
+        "10.5240/D21E-3B4E-35A9-A1B8-F5C0-O"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D21E-3B4E-35A9-A1B8-F5C0-O"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n0d1c7619bea94a91b3f4dd6072a1d407xb0",
+        "_:nc95bf7bbe81245e7ba60c24785fce2f1xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q18811608"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n0d1c7619bea94a91b3f4dd6072a1d407xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18811608"
+        },
+        {
+          "wdc": "_:nc95bf7bbe81245e7ba60c24785fce2f1xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18811608"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/d03bf2c347be182f85955",
+      "eidr_wdc_values": [
+        "10.5240/D03B-F2C3-47BE-182F-8595-5"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/D03B-F2C3-47BE-182F-8595-5"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n401e491f1bac4e7a9b017531015537fcxb0",
+        "_:nf02ffcb10a704b25ba7c06d451b4ddb0xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q21581258"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n401e491f1bac4e7a9b017531015537fcxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q21581258"
+        },
+        {
+          "wdc": "_:nf02ffcb10a704b25ba7c06d451b4ddb0xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q21581258"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/cf8c4d76482ef35f8df2z",
+      "eidr_wdc_values": [
+        "10.5240/CF8C-4D76-482E-F35F-8DF2-Z"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/CF8C-4D76-482E-F35F-8DF2-Z"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n3a38237bf8314794913b4439fd389c96xb0",
+        "_:ne6c6599ff63749b295ae715a29abee1axb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q22000288"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n3a38237bf8314794913b4439fd389c96xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q22000288"
+        },
+        {
+          "wdc": "_:ne6c6599ff63749b295ae715a29abee1axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q22000288"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/cadc3108d6b86908c5dfn",
+      "eidr_wdc_values": [
+        "10.5240/CADC-3108-D6B8-6908-C5DF-N"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/CADC-3108-D6B8-6908-C5DF-N"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n59df337005bf4fc386ff8096694e9d45xb0",
+        "_:nbb2c765c81344e75b2661b8106b50198xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q27921157"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n59df337005bf4fc386ff8096694e9d45xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27921157"
+        },
+        {
+          "wdc": "_:nbb2c765c81344e75b2661b8106b50198xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27921157"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/c2e6e66b2497bb2e29a7j",
+      "eidr_wdc_values": [
+        "10.5240/C2E6-E66B-2497-BB2E-29A7-J"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/C2E6-E66B-2497-BB2E-29A7-J"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n0151d7188aa24716b8110baf54612b01xb0",
+        "_:n27149aa0e91d4828a2a24feed7e955c2xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q593254"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n0151d7188aa24716b8110baf54612b01xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q593254"
+        },
+        {
+          "wdc": "_:n27149aa0e91d4828a2a24feed7e955c2xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q593254"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/c2b5c8236769abf1e33a4",
+      "eidr_wdc_values": [
+        "10.5240/C2B5-C823-6769-ABF1-E33A-4"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/C2B5-C823-6769-ABF1-E33A-4"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:nd61b2a1e7402483f8c2780ecec7c666axb0",
+        "_:neb007e8ce2bd4d9782e58f01380a3becxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q38486"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:nd61b2a1e7402483f8c2780ecec7c666axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q38486"
+        },
+        {
+          "wdc": "_:neb007e8ce2bd4d9782e58f01380a3becxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q38486"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/c2794b133fa8b3d33ba8k",
+      "eidr_wdc_values": [
+        "10.5240/C279-4B13-3FA8-B3D3-3BA8-K"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/C279-4B13-3FA8-B3D3-3BA8-K"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n01346e14950b4bc5a43cb78da355ee4cxb0",
+        "_:n8cbad28cacc44772896f1d247300ed02xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q27957941"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n01346e14950b4bc5a43cb78da355ee4cxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27957941"
+        },
+        {
+          "wdc": "_:n8cbad28cacc44772896f1d247300ed02xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q27957941"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/bf71f98c596d652cac595",
+      "eidr_wdc_values": [
+        "10.5240/BF71-F98C-596D-652C-AC59-5"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/BF71-F98C-596D-652C-AC59-5"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:nd0a14335109240a5ba09fc883f156079xb0",
+        "_:nd7c44b379daf4e9f9e333b35ef18b95bxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q6074"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:nd0a14335109240a5ba09fc883f156079xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q6074"
+        },
+        {
+          "wdc": "_:nd7c44b379daf4e9f9e333b35ef18b95bxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q6074"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/ba1ef52e2b43d44fe0e31",
+      "eidr_wdc_values": [
+        "10.5240/BA1E-F52E-2B43-D44F-E0E3-1"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/BA1E-F52E-2B43-D44F-E0E3-1"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n7d818d13607f4434ae6b3002f97b056bxb0",
+        "_:nca11ed8e919d48d1b48b2db1b6861113xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q47952256"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n7d818d13607f4434ae6b3002f97b056bxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q47952256"
+        },
+        {
+          "wdc": "_:nca11ed8e919d48d1b48b2db1b6861113xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q47952256"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/b07ee3058057cd370887e",
+      "eidr_wdc_values": [
+        "10.5240/B07E-E305-8057-CD37-0887-E"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/B07E-E305-8057-CD37-0887-E"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:na6d92f350e504b2e8ee0578cabab951fxb0",
+        "_:nd17f09d88aa04149b7cde4910a733357xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q131074"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:na6d92f350e504b2e8ee0578cabab951fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q131074"
+        },
+        {
+          "wdc": "_:nd17f09d88aa04149b7cde4910a733357xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q131074"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/ada405e56a7cbee0bfe8w",
+      "eidr_wdc_values": [
+        "10.5240/ADA4-05E5-6A7C-BEE0-BFE8-W"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/ADA4-05E5-6A7C-BEE0-BFE8-W"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n9fec42183af54724bf570be8102d4bb8xb0",
+        "https://avisrama.fr/saw-x-film-extreme-avis-critique#Movie"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q115734942"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n9fec42183af54724bf570be8102d4bb8xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q115734942"
+        },
+        {
+          "wdc": "https://avisrama.fr/saw-x-film-extreme-avis-critique#Movie",
+          "wikidata": "http://www.wikidata.org/entity/Q115734942"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/ad754c244c6e7180da6dk",
+      "eidr_wdc_values": [
+        "10.5240/AD75-4C24-4C6E-7180-DA6D-K"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/AD75-4C24-4C6E-7180-DA6D-K"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n86b503f7f0c04b859746cb779643586bxb0",
+        "_:nc1f1dfa3ec664f8483698a83751cd659xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q88465322"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n86b503f7f0c04b859746cb779643586bxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q88465322"
+        },
+        {
+          "wdc": "_:nc1f1dfa3ec664f8483698a83751cd659xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q88465322"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/a33f27eaf985fb810cbfn",
+      "eidr_wdc_values": [
+        "10.5240/A33F-27EA-F985-FB81-0CBF-N"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/A33F-27EA-F985-FB81-0CBF-N"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n1af98bd78f7d423dbb998a84845b6ab3xb0",
+        "_:n6f98f859712a4d79bd326461eb816491xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q118313105"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n1af98bd78f7d423dbb998a84845b6ab3xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q118313105"
+        },
+        {
+          "wdc": "_:n6f98f859712a4d79bd326461eb816491xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q118313105"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/9d586871e30ed1e28706z",
+      "eidr_wdc_values": [
+        "10.5240/9D58-6871-E30E-D1E2-8706-Z"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/9D58-6871-E30E-D1E2-8706-Z"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n64a14ba930b4419f9bfaa5c10e1b0805xb0",
+        "_:nc35be996b928437986be450c740d5364xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q1160813"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n64a14ba930b4419f9bfaa5c10e1b0805xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q1160813"
+        },
+        {
+          "wdc": "_:nc35be996b928437986be450c740d5364xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q1160813"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/87529e3448d3576f9ea3n",
+      "eidr_wdc_values": [
+        "10.5240/8752-9E34-48D3-576F-9EA3-N"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/8752-9E34-48D3-576F-9EA3-N"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n2c37f73d0ce94960923effe2ab08bcf4xb0",
+        "_:n47340d550c494488a3e4aad7de376042xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q23016644"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n2c37f73d0ce94960923effe2ab08bcf4xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q23016644"
+        },
+        {
+          "wdc": "_:n47340d550c494488a3e4aad7de376042xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q23016644"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/8537d218c1cbd54f4bbaq",
+      "eidr_wdc_values": [
+        "10.5240/8537-D218-C1CB-D54F-4BBA-Q"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/8537-D218-C1CB-D54F-4BBA-Q"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n50af2a9b8bf048e8b48648882c0f3900xb0",
+        "_:n61d61f875ef84eb9a435b6d72befe630xb3"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q114818951"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n50af2a9b8bf048e8b48648882c0f3900xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q114818951"
+        },
+        {
+          "wdc": "_:n61d61f875ef84eb9a435b6d72befe630xb3",
+          "wikidata": "http://www.wikidata.org/entity/Q114818951"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/83cab999433426402994k",
+      "eidr_wdc_values": [
+        "10.5240/83CA-B999-4334-2640-2994-K"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/83CA-B999-4334-2640-2994-K"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n3bad684f259e44f08c0b88f0191ec4e1xb0",
+        "_:ne522cfc7e20a4f509f3196923e911ea8xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q87134762"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n3bad684f259e44f08c0b88f0191ec4e1xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q87134762"
+        },
+        {
+          "wdc": "_:ne522cfc7e20a4f509f3196923e911ea8xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q87134762"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/80341337d2da2134bc92v",
+      "eidr_wdc_values": [
+        "10.5240/8034-1337-D2DA-2134-BC92-V"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/8034-1337-D2DA-2134-BC92-V"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n94496938fc6b4f86b9dcce81c1c7822dxb0",
+        "_:nd573766e12ea4d38853b916f70bd0950xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q5650558"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n94496938fc6b4f86b9dcce81c1c7822dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5650558"
+        },
+        {
+          "wdc": "_:nd573766e12ea4d38853b916f70bd0950xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5650558"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/7f9354bb49efcd692c90r",
+      "eidr_wdc_values": [
+        "10.5240/7F93-54BB-49EF-CD69-2C90-R"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/7F93-54BB-49EF-CD69-2C90-R"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n9e8c8f97ef014382babb5c126d67a642xb0",
+        "_:nb9e159c0524e4a3a91c71926d1f3a074xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q13417189"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n9e8c8f97ef014382babb5c126d67a642xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q13417189"
+        },
+        {
+          "wdc": "_:nb9e159c0524e4a3a91c71926d1f3a074xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q13417189"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/73882489aad3ba65e318y",
+      "eidr_wdc_values": [
+        "10.5240/7388-2489-AAD3-BA65-E318-Y"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/7388-2489-AAD3-BA65-E318-Y"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n4b08f91959a4407e8fcc4340f09753dexb0",
+        "_:neb6e782c53014251bd365b0819602e4dxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q567577"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n4b08f91959a4407e8fcc4340f09753dexb0",
+          "wikidata": "http://www.wikidata.org/entity/Q567577"
+        },
+        {
+          "wdc": "_:neb6e782c53014251bd365b0819602e4dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q567577"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/71a5204f10f2ae31f66c5",
+      "eidr_wdc_values": [
+        "10.5240/71A5-204F-10F2-AE31-F66C-5"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/71A5-204F-10F2-AE31-F66C-5"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n7e3cea42f75349c9af9b25c389444c11xb0",
+        "_:nf0afed8af64f4882be4cd9626481e133xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q117842470"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n7e3cea42f75349c9af9b25c389444c11xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q117842470"
+        },
+        {
+          "wdc": "_:nf0afed8af64f4882be4cd9626481e133xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q117842470"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/60b738494ceb99d95382s",
+      "eidr_wdc_values": [
+        "10.5240/60B7-3849-4CEB-99D9-5382-S"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/60B7-3849-4CEB-99D9-5382-S"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n1f6d8a4f7a0b4b33833e5ea5c2cd5e0dxb0",
+        "_:nd223815ae1754f97bc80afd50bb5819fxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q21450480"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n1f6d8a4f7a0b4b33833e5ea5c2cd5e0dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q21450480"
+        },
+        {
+          "wdc": "_:nd223815ae1754f97bc80afd50bb5819fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q21450480"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/5954c921c67753c110f9g",
+      "eidr_wdc_values": [
+        "10.5240/5954-C921-C677-53C1-10F9-G"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/5954-C921-C677-53C1-10F9-G"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n95067403743d4c2087380cc6f6d980a3xb0",
+        "_:nf5942958dfe14a72af5724581a024beexb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q500093"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n95067403743d4c2087380cc6f6d980a3xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q500093"
+        },
+        {
+          "wdc": "_:nf5942958dfe14a72af5724581a024beexb0",
+          "wikidata": "http://www.wikidata.org/entity/Q500093"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/4e5878536b0f88a29c65m",
+      "eidr_wdc_values": [
+        "10.5240/4E58-7853-6B0F-88A2-9C65-M"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/4E58-7853-6B0F-88A2-9C65-M"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n4c0c67bd53704084aaa42cd13d9c9e96xb0",
+        "_:n53be908814d4411d8cafd915430d5c5exb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q466297"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n4c0c67bd53704084aaa42cd13d9c9e96xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q466297"
+        },
+        {
+          "wdc": "_:n53be908814d4411d8cafd915430d5c5exb0",
+          "wikidata": "http://www.wikidata.org/entity/Q466297"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/4aedb282ce41d47d461d8",
+      "eidr_wdc_values": [
+        "10.5240/4AED-B282-CE41-D47D-461D-8"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/4AED-B282-CE41-D47D-461D-8"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n69d505757e4241f9ada6233493d00e28xb0",
+        "_:n9c9a0230e3924d5bb790bf7d9c73f2e3xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q119260191"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n69d505757e4241f9ada6233493d00e28xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q119260191"
+        },
+        {
+          "wdc": "_:n9c9a0230e3924d5bb790bf7d9c73f2e3xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q119260191"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/47f844a5c97f86b904ffn",
+      "eidr_wdc_values": [
+        "10.5240/47F8-44A5-C97F-86B9-04FF-N"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/47F8-44A5-C97F-86B9-04FF-N"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n26f0b986711f4313b8e76181d3daee4exb0",
+        "_:nd9c676e046a74d6c9ab9f79244575e64xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q29011"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n26f0b986711f4313b8e76181d3daee4exb0",
+          "wikidata": "http://www.wikidata.org/entity/Q29011"
+        },
+        {
+          "wdc": "_:nd9c676e046a74d6c9ab9f79244575e64xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q29011"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/40db0a54275db1f11bbei",
+      "eidr_wdc_values": [
+        "10.5240/40DB-0A54-275D-B1F1-1BBE-I"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/40DB-0A54-275D-B1F1-1BBE-I"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n3705a26716994d599216a9ce50797c3axb0",
+        "_:nca0a6a358e094d2aaa5197d09c076f5bxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q471992"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n3705a26716994d599216a9ce50797c3axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q471992"
+        },
+        {
+          "wdc": "_:nca0a6a358e094d2aaa5197d09c076f5bxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q471992"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/3d98977893ce183f1fbcy",
+      "eidr_wdc_values": [
+        "10.5240/3D98-9778-93CE-183F-1FBC-Y"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/3D98-9778-93CE-183F-1FBC-Y"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n12de88791312469e9b64bdc365c44e8cxb0",
+        "_:nf108929a5f0440f9b1a1982094fa36b7xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q164417"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n12de88791312469e9b64bdc365c44e8cxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q164417"
+        },
+        {
+          "wdc": "_:nf108929a5f0440f9b1a1982094fa36b7xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q164417"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/3b9f7d0d9c2ceadf7ad3w",
+      "eidr_wdc_values": [
+        "10.5240/3B9F-7D0D-9C2C-EADF-7AD3-W"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/3B9F-7D0D-9C2C-EADF-7AD3-W"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n7b7789899df9466e9003dea941091169xb0",
+        "_:n88558581ae784fb280f2dde00d2008daxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q64145552"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n7b7789899df9466e9003dea941091169xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q64145552"
+        },
+        {
+          "wdc": "_:n88558581ae784fb280f2dde00d2008daxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q64145552"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/3b13acb5e0807b6ddf7ev",
+      "eidr_wdc_values": [
+        "10.5240/3B13-ACB5-E080-7B6D-DF7E-V"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/3B13-ACB5-E080-7B6D-DF7E-V"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:na3fa102870f9408a884191f811203c30xb0",
+        "_:nb7996234227248cda0ba6026641275a9xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q229808"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:na3fa102870f9408a884191f811203c30xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q229808"
+        },
+        {
+          "wdc": "_:nb7996234227248cda0ba6026641275a9xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q229808"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/37b5ecb98e1a98901f4d2",
+      "eidr_wdc_values": [
+        "10.5240/37B5-ECB9-8E1A-9890-1F4D-2"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/37B5-ECB9-8E1A-9890-1F4D-2"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n540483e99d3e4a158c18f462df1a34d2xb0",
+        "_:n6e147a2139994ac6b7166a0037d999a3xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q113547547"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n540483e99d3e4a158c18f462df1a34d2xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q113547547"
+        },
+        {
+          "wdc": "_:n6e147a2139994ac6b7166a0037d999a3xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q113547547"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/2b72af596f1d045265f4i",
+      "eidr_wdc_values": [
+        "10.5240/2B72-AF59-6F1D-0452-65F4-I"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/2B72-AF59-6F1D-0452-65F4-I"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n235568d9801b42e2a24d19feefb9307axb0",
+        "_:n8e896d8a63814e0aa8a4037d2edf205axb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q31271369"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n235568d9801b42e2a24d19feefb9307axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q31271369"
+        },
+        {
+          "wdc": "_:n8e896d8a63814e0aa8a4037d2edf205axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q31271369"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/2a9a64b20dbb25d0f53fx",
+      "eidr_wdc_values": [
+        "10.5240/2A9A-64B2-0DBB-25D0-F53F-X"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/2A9A-64B2-0DBB-25D0-F53F-X"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n57d7f1c852f74420af0f3f1b2e6f0924xb0",
+        "_:nec46784c7684495ba3a5d2b2338e60efxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q108760382"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n57d7f1c852f74420af0f3f1b2e6f0924xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108760382"
+        },
+        {
+          "wdc": "_:nec46784c7684495ba3a5d2b2338e60efxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q108760382"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/26feae936b1c564549f9t",
+      "eidr_wdc_values": [
+        "10.5240/26FE-AE93-6B1C-5645-49F9-T"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/26FE-AE93-6B1C-5645-49F9-T"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n537a55e662454da08a88e9311d5aa172xb0",
+        "_:n85c61c5f735342b6960dcfc7ba5a1a2axb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q19824612"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n537a55e662454da08a88e9311d5aa172xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q19824612"
+        },
+        {
+          "wdc": "_:n85c61c5f735342b6960dcfc7ba5a1a2axb0",
+          "wikidata": "http://www.wikidata.org/entity/Q19824612"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/24db42b239f6621513991",
+      "eidr_wdc_values": [
+        "10.5240/24DB-42B2-39F6-6215-1399-1"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/24DB-42B2-39F6-6215-1399-1"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n12a2520e63304455a5efc8fad98a106exb0",
+        "_:n8be5a1273317453dbf6365d05f23a0c3xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q18415459"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n12a2520e63304455a5efc8fad98a106exb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18415459"
+        },
+        {
+          "wdc": "_:n8be5a1273317453dbf6365d05f23a0c3xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18415459"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/249de76f7e61b4989caf3",
+      "eidr_wdc_values": [
+        "10.5240/249D-E76F-7E61-B498-9CAF-3"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/249D-E76F-7E61-B498-9CAF-3"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:nced9c47ba3f245b5a43ec271ab794c1fxb0",
+        "_:nffa3fc106aa0450f86f4531061843e3dxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q22350752"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:nced9c47ba3f245b5a43ec271ab794c1fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q22350752"
+        },
+        {
+          "wdc": "_:nffa3fc106aa0450f86f4531061843e3dxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q22350752"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/229601cfddfa40d40c43o",
+      "eidr_wdc_values": [
+        "10.5240/2296-01CF-DDFA-40D4-0C43-O"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/2296-01CF-DDFA-40D4-0C43-O"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n1bc2d98230114507956ca7799ad05459xb0",
+        "_:n7b30262db580410e8d8da718fad1cba5xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q18639593"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n1bc2d98230114507956ca7799ad05459xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18639593"
+        },
+        {
+          "wdc": "_:n7b30262db580410e8d8da718fad1cba5xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q18639593"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/21a6ed2aa2c0619a97464",
+      "eidr_wdc_values": [
+        "10.5240/21A6-ED2A-A2C0-619A-9746-4"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/21A6-ED2A-A2C0-619A-9746-4"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n38bc7fc03c784d72954fdfad63b79059xb0",
+        "_:ncfc96a3701084a4981bb362c331405c6xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q5516100"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n38bc7fc03c784d72954fdfad63b79059xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5516100"
+        },
+        {
+          "wdc": "_:ncfc96a3701084a4981bb362c331405c6xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q5516100"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/15b695bb3742fea9e4676",
+      "eidr_wdc_values": [
+        "10.5240/15B6-95BB-3742-FEA9-E467-6"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/15B6-95BB-3742-FEA9-E467-6"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n3b284f871a74410eb713fdd3377e76e7xb0",
+        "_:nedd6513c0ee14e969a74a91db3dd3d2cxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q105359456"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n3b284f871a74410eb713fdd3377e76e7xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q105359456"
+        },
+        {
+          "wdc": "_:nedd6513c0ee14e969a74a91db3dd3d2cxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q105359456"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/15677bc924c701d45396j",
+      "eidr_wdc_values": [
+        "10.5240/1567-7BC9-24C7-01D4-5396-J"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/1567-7BC9-24C7-01D4-5396-J"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n9f589abd173e48b89811b66082a4c990xb0",
+        "_:nb164c1f8664b4a22b1905435bbb76badxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q113877606"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n9f589abd173e48b89811b66082a4c990xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q113877606"
+        },
+        {
+          "wdc": "_:nb164c1f8664b4a22b1905435bbb76badxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q113877606"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/11eb711b4b0794a4a7c6e",
+      "eidr_wdc_values": [
+        "10.5240/11EB-711B-4B07-94A4-A7C6-E"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/11EB-711B-4B07-94A4-A7C6-E"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n72e083a6a728447b8b3cb61104a7487fxb0",
+        "_:ndf913974f01040b1b2a9dbc7d1a93878xb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q67471817"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n72e083a6a728447b8b3cb61104a7487fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q67471817"
+        },
+        {
+          "wdc": "_:ndf913974f01040b1b2a9dbc7d1a93878xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q67471817"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/0ebe34d296af26a9c38di",
+      "eidr_wdc_values": [
+        "10.5240/0EBE-34D2-96AF-26A9-C38D-I"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/0EBE-34D2-96AF-26A9-C38D-I"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n4a02a89c115345dfa8cfea5ffdca92b8xb0",
+        "_:n792f3a2e03274df193f6f3ccb48a211fxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q56559254"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n4a02a89c115345dfa8cfea5ffdca92b8xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q56559254"
+        },
+        {
+          "wdc": "_:n792f3a2e03274df193f6f3ccb48a211fxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q56559254"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/0c7dc5c4eaaa97ec1c242",
+      "eidr_wdc_values": [
+        "10.5240/0C7D-C5C4-EAAA-97EC-1C24-2"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/0C7D-C5C4-EAAA-97EC-1C24-2"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n6d75680d8ce24d87b86fbf5bcca06489xb0",
+        "_:nd2741a6453e3463fa9403891b93a84adxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q110876778"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n6d75680d8ce24d87b86fbf5bcca06489xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q110876778"
+        },
+        {
+          "wdc": "_:nd2741a6453e3463fa9403891b93a84adxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q110876778"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    },
+    {
+      "eidr_normalized": "105240/090065f78aa2d9779398b",
+      "eidr_wdc_values": [
+        "10.5240/0900-65F7-8AA2-D977-9398-B"
+      ],
+      "eidr_wikidata_values": [
+        "10.5240/0900-65F7-8AA2-D977-9398-B"
+      ],
+      "wdc_count": 2,
+      "wikidata_count": 1,
+      "pairs_count": 2,
+      "methods": [
+        "exact"
+      ],
+      "wdc_entities": [
+        "_:n0bd092c0caa844c1abfb21c79615f391xb0",
+        "_:n538e790bf48341c0ae533413f5f8b80bxb0"
+      ],
+      "wikidata_entities": [
+        "http://www.wikidata.org/entity/Q122160859"
+      ],
+      "link_pairs": [
+        {
+          "wdc": "_:n0bd092c0caa844c1abfb21c79615f391xb0",
+          "wikidata": "http://www.wikidata.org/entity/Q122160859"
+        },
+        {
+          "wdc": "_:n538e790bf48341c0ae533413f5f8b80bxb0",
+          "wikidata": "http://www.wikidata.org/entity/Q122160859"
+        }
+      ],
+      "problematic_reasons": [
+        "multiple_wdc_entities_for_same_code"
+      ]
+    }
+  ]
+}
