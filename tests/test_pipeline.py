@@ -195,7 +195,7 @@ def test_filter_links_one_to_one_drops_ambiguous_endpoints():
     assert out_wd_vals == ["C", "D"]
     assert report["links_before"] == 4
     assert report["links_after"] == 2
-    assert report["removed_links"] == 2
+    assert report["filtered_out_links"] == 2
     assert report["ambiguous_wikidata_entities"] == 1
     assert report["ambiguous_wdc_entities"] == 0
 

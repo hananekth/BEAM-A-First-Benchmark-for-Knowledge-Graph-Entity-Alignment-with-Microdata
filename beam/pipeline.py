@@ -115,12 +115,12 @@ def _filter_links_one_to_one(wdc_entities, wd_entities_raw, wdc_values=None, wd_
             "enabled": True,
             "links_before": 0,
             "links_after": 0,
-            "removed_links": 0,
+            "filtered_out_links": 0,
             "ambiguous_wdc_entities": 0,
             "ambiguous_wikidata_entities": 0,
             "max_links_per_wdc_entity": 0,
             "max_links_per_wikidata_entity": 0,
-            "examples_removed": [],
+            "examples_filtered_out": [],
         }
 
     wdc_values = list(wdc_values or [])
@@ -139,14 +139,14 @@ def _filter_links_one_to_one(wdc_entities, wd_entities_raw, wdc_values=None, wd_
         wd_counts[key] = wd_counts.get(key, 0) + 1
 
     keep_idx = []
-    removed_examples = []
+    filtered_out_examples = []
     for i, (wdc_key, wd_key) in enumerate(zip(wdc_keys, wd_keys)):
         keep = (wdc_counts.get(wdc_key, 0) == 1) and (wd_counts.get(wd_key, 0) == 1)
         if keep:
             keep_idx.append(i)
             continue
-        if len(removed_examples) < 20:
-            removed_examples.append(
+        if len(filtered_out_examples) < 20:
+            filtered_out_examples.append(
                 {
                     "wdc_entity": wdc_entities[i],
                     "wikidata_entity": wd_entities_raw[i],
@@ -171,12 +171,12 @@ def _filter_links_one_to_one(wdc_entities, wd_entities_raw, wdc_values=None, wd_
         "enabled": True,
         "links_before": int(total),
         "links_after": int(len(filtered_wdc)),
-        "removed_links": int(total - len(filtered_wdc)),
+        "filtered_out_links": int(total - len(filtered_wdc)),
         "ambiguous_wdc_entities": int(sum(1 for v in wdc_counts.values() if v > 1)),
         "ambiguous_wikidata_entities": int(sum(1 for v in wd_counts.values() if v > 1)),
         "max_links_per_wdc_entity": int(max(wdc_counts.values()) if wdc_counts else 0),
         "max_links_per_wikidata_entity": int(max(wd_counts.values()) if wd_counts else 0),
-        "examples_removed": removed_examples,
+        "examples_filtered_out": filtered_out_examples,
     }
     return filtered_wdc, filtered_wd, filtered_wdc_values, filtered_wd_values, report
 
@@ -548,7 +548,7 @@ def generate_benchmark(
         print(
             "[INFO] 1-to-1 link filter: "
             f"kept {one_to_one_report['links_after']:,}/{one_to_one_report['links_before']:,} "
-            f"links (removed {one_to_one_report['removed_links']:,})."
+            f"links (filtered out {one_to_one_report['filtered_out_links']:,})."
         )
         try:
             (out_dir / "LINK_FILTER_1TO1.json").write_text(
