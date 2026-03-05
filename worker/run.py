@@ -6,16 +6,19 @@ import signal
 import sys
 import threading
 import time
+import statistics
 from collections import deque
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr
 
 from beam import db
-from beam.pipeline import generate_benchmark, PipelineError, _config_hash
+from beam.pipeline import generate_benchmark, PipelineError, is_align_cache_reusable
 
+_CPU_COUNT = max(1, os.cpu_count() or 1)
 MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "8"))
 POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "1"))
-MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", "8"))
+MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", str(_CPU_COUNT)))
+JOB_WORKER_CPU_SHARE = float(os.environ.get("JOB_WORKER_CPU_SHARE", "0.95"))
 JOB_STUCK_TIMEOUT_S = int(os.environ.get("JOB_STUCK_TIMEOUT_S", os.environ.get("JOB_STUCK_TIMEOUT", "1800")))
 
 
@@ -86,6 +89,121 @@ def _extract_batch_progress(msg):
     return done, total
 
 
+def _parse_eta_seconds(value):
+    raw = str(value or "").strip().lower()
+    if not raw:
+        return None
+    compact = re.sub(r"\s+", "", raw)
+    if compact in {"n/a", "na", "-", "—"}:
+        return None
+    if re.fullmatch(r"\d+:\d{2}(?::\d{2})?", compact):
+        parts = [int(x) for x in compact.split(":")]
+        if len(parts) == 2:
+            m, s = parts
+            total = (m * 60) + s
+        else:
+            h, m, s = parts
+            total = (h * 3600) + (m * 60) + s
+        return total if total > 0 else None
+    chunks = re.findall(r"(\d+)\s*([hms])", compact)
+    if not chunks:
+        return None
+    total = 0
+    for num, unit in chunks:
+        n = int(num)
+        if unit == "h":
+            total += n * 3600
+        elif unit == "m":
+            total += n * 60
+        elif unit == "s":
+            total += n
+    return total if total > 0 else None
+
+
+def _cfg_eta_fingerprint(params):
+    data = params if isinstance(params, dict) else {}
+    mode = str(data.get("matching_mode") or "").strip().lower()
+    if mode not in {"property", "identifier", "sameas"}:
+        mode = "sameas" if bool(data.get("wdc_value_is_wikidata")) else "property"
+    def _txt(k):
+        return str(data.get(k) or "").strip()
+    def _b(k):
+        return bool(data.get(k))
+    return (
+        mode,
+        _txt("class_name"),
+        _txt("parts_spec"),
+        _txt("wdc_predicate_pattern"),
+        _txt("wikidata_property"),
+        _txt("wkd_class"),
+        _txt("ignore_chars"),
+        _b("use_local_only"),
+        _b("force_one_to_one_links"),
+        _b("dedup_wdc_exact_subgraph_by_link_value"),
+    )
+
+
+def _estimate_eta_baselines(params, limit=250):
+    """Return median historical durations (seconds) for comparable runs."""
+    rows = db.list_jobs(limit=max(20, int(limit)))
+    target_fp = _cfg_eta_fingerprint(params)
+    target_class = target_fp[0]
+    total_same = []
+    build_same = []
+    total_class = []
+    build_class = []
+    for row in rows:
+        if str(row["status"] or "") != "done":
+            continue
+        try:
+            started = float(row["started_at"] or 0.0)
+            ended = float(row["ended_at"] or 0.0)
+        except Exception:
+            continue
+        if started <= 0 or ended <= started:
+            continue
+        total_dur = ended - started
+        if total_dur <= 0 or total_dur > 48 * 3600:
+            continue
+        try:
+            cfg = json.loads(row["params_json"] or "{}")
+            if not isinstance(cfg, dict):
+                cfg = {}
+        except Exception:
+            cfg = {}
+        fp = _cfg_eta_fingerprint(cfg)
+        if not fp[0]:
+            continue
+        build_dur = None
+        try:
+            sj = db.get_subjob(int(row["id"]), "build")
+            if sj:
+                bs = float(sj["started_at"] or 0.0)
+                be = float(sj["ended_at"] or 0.0)
+                if bs > 0 and be > bs:
+                    d = be - bs
+                    if 0 < d <= 48 * 3600:
+                        build_dur = d
+        except Exception:
+            build_dur = None
+        if fp[0] == target_class:
+            total_class.append(total_dur)
+            if build_dur is not None:
+                build_class.append(build_dur)
+        if fp == target_fp:
+            total_same.append(total_dur)
+            if build_dur is not None:
+                build_same.append(build_dur)
+    total_pool = total_same or total_class
+    build_pool = build_same or build_class
+    out = {}
+    if total_pool:
+        out["total_s"] = max(1, int(statistics.median(total_pool)))
+    if build_pool:
+        out["build_s"] = max(1, int(statistics.median(build_pool)))
+    return out
+
+
 def _should_mark_job_stuck(last_activity_ts, now_ts, timeout_s):
     if timeout_s is None:
         return False
@@ -106,10 +224,12 @@ def _should_mark_job_stuck(last_activity_ts, now_ts, timeout_s):
 
 
 def _cpu_workers_for(job_count):
-    cpu = os.cpu_count() or 1
+    share = JOB_WORKER_CPU_SHARE
+    if share <= 0 or share > 1.0:
+        share = 0.95
     active = max(1, job_count)
-    workers = max(1, int((cpu * 0.8) / active))
-    return max(1, min(workers, MAX_WORKERS_PER_JOB))
+    workers = max(1, int((_CPU_COUNT * share) / active))
+    return max(1, min(workers, MAX_WORKERS_PER_JOB, _CPU_COUNT))
 
 
 def _terminate_process_tree(proc, grace_s=0.5):
@@ -209,21 +329,7 @@ def _error_if_active(job_id, subjob_type, reason, ended_at=None):
 
 def _align_cache_ready(params):
     try:
-        class_name = params.get("class_name")
-        if not class_name:
-            return False
-        align_params = {
-            "class_name": class_name,
-            "parts_spec": params.get("parts_spec") or "all",
-            "pattern": params.get("wdc_predicate_pattern"),
-            "wikidata_property": params.get("wikidata_property") or None,
-            "wkd_class": params.get("wkd_class") or None,
-            "ignore_chars": params.get("ignore_chars") or None,
-            "wdc_value_is_wikidata": bool(params.get("wdc_value_is_wikidata")),
-        }
-        cache_hash = _config_hash(align_params)
-        cache_dir = Path("Download") / class_name / "align_cache" / cache_hash
-        return (cache_dir / "ALIGN_DONE").exists() and (cache_dir / "wdc_wikidata_links.tsv").exists()
+        return bool(is_align_cache_reusable(params))
     except Exception:
         return False
 
@@ -455,6 +561,7 @@ def _run_job(job_id, workers):
         cancel_requested=0,
         progress_text=None,
         progress_pct=None,
+        final_links_count=None,
         job_pgid=os.getpid(),
     )
     build_row = db.get_subjob(job_id, "build")
@@ -493,8 +600,10 @@ def _run_job(job_id, workers):
         return
 
     try:
+        eta_baselines = _estimate_eta_baselines(parsed_params)
+
         class DbWriter:
-            def __init__(self, jid):
+            def __init__(self, jid, baselines=None):
                 self.jid = jid
                 self._buf = ""
                 self._phase = "align"
@@ -513,6 +622,8 @@ def _run_job(job_id, workers):
                 self._build_batches_done = 0
                 self._build_batches_total = 0
                 self._build_batch_samples = deque(maxlen=20)
+                self._job_started_at = time.time()
+                self._eta_baselines = dict(baselines or {})
                 self._translations = (
                     ("Téléchargement/Décompression", "Download/Decompress"),
                     ("Téléchargement depuis", "Downloading from"),
@@ -556,6 +667,46 @@ def _run_job(job_id, workers):
                 except Exception:
                     # Logging must never break the running pipeline.
                     pass
+
+            def _global_eta_seconds(self):
+                now = time.time()
+                phase_eta = _parse_eta_seconds(self._eta_by_phase.get(self._phase))
+                if self._phase == "build":
+                    if phase_eta is not None:
+                        return phase_eta
+                    build_baseline = int(self._eta_baselines.get("build_s") or 0)
+                    if build_baseline > 0:
+                        elapsed = max(0.0, now - self._phase_started_at)
+                        rem = int(build_baseline - elapsed)
+                        if rem > 0:
+                            return rem
+                    return None
+
+                # align phase: prefer historical total ETA when available.
+                total_baseline = int(self._eta_baselines.get("total_s") or 0)
+                if total_baseline > 0:
+                    elapsed_total = max(0.0, now - self._job_started_at)
+                    rem_total = int(total_baseline - elapsed_total)
+                    if rem_total > 0:
+                        return rem_total
+
+                if phase_eta is None:
+                    return None
+                build_baseline = int(self._eta_baselines.get("build_s") or 0)
+                if build_baseline > 0:
+                    return phase_eta + build_baseline
+                return phase_eta
+
+            def _global_eta_hint(self):
+                return _normalize_eta_hint(_format_eta_seconds(self._global_eta_seconds()))
+
+            def _with_global_eta(self, msg):
+                eta_hint = self._global_eta_hint()
+                if not eta_hint:
+                    return msg
+                if "ETA:" in msg:
+                    return re.sub(r"ETA:\s*([^|]+)", f"ETA: {eta_hint}", msg, count=1, flags=re.IGNORECASE)
+                return f"{msg} | ETA: {eta_hint}"
 
             def write(self, data):
                 if not data:
@@ -609,17 +760,6 @@ def _run_job(job_id, workers):
                     if should_emit:
                         self._emit_event(msg, kind=kind, pct=pct)
                 self._last_logged_msg = msg
-                # update progress if line looks like progress
-                if kind == "progress":
-                    try:
-                        if pct is None:
-                            db.update_job(self.jid, progress_text=msg)
-                            db.update_subjob_by_type(self.jid, self._phase, progress_text=msg)
-                        else:
-                            db.update_job(self.jid, progress_text=msg, progress_pct=pct)
-                            db.update_subjob_by_type(self.jid, self._phase, progress_text=msg, progress_pct=pct)
-                    except Exception:
-                        pass
                 if self._phase == "build":
                     done_batches, total_batches = _extract_batch_progress(msg)
                     if done_batches is not None and total_batches is not None:
@@ -655,6 +795,18 @@ def _run_job(job_id, workers):
                         # Avoid stale/meaningless ETA values while the phase continues.
                         self._eta_by_phase[self._phase] = None
                         self._eta_ts_by_phase[self._phase] = 0.0
+                # update progress if line looks like progress (always expose global ETA)
+                if kind == "progress":
+                    display_msg = self._with_global_eta(msg)
+                    try:
+                        if pct is None:
+                            db.update_job(self.jid, progress_text=display_msg)
+                            db.update_subjob_by_type(self.jid, self._phase, progress_text=display_msg)
+                        else:
+                            db.update_job(self.jid, progress_text=display_msg, progress_pct=pct)
+                            db.update_subjob_by_type(self.jid, self._phase, progress_text=display_msg, progress_pct=pct)
+                    except Exception:
+                        pass
                 # step detection
                 step = None
                 current_file = None
@@ -673,6 +825,8 @@ def _run_job(job_id, workers):
                     step = "linking"
                 elif ("Exporting results" in msg) or ("Export des résultats" in msg):
                     step = "export"
+                elif self._phase == "build" and msg.startswith("[WDC_DEDUP]"):
+                    step = "build_wdc_dedup"
                 elif self._phase == "build" and msg.startswith("[WDC]"):
                     step = "build_wdc"
                 elif self._phase == "build" and msg.startswith("[WD]"):
@@ -698,7 +852,7 @@ def _run_job(job_id, workers):
                         )
                         self._last_step_key = step_key
 
-        writer = DbWriter(job_id)
+        writer = DbWriter(job_id, baselines=eta_baselines)
         checkpoint_lock = threading.Lock()
         checkpoint_state = {"last_saved_at": 0.0}
         resume_out_dir_ref = {"path": str(parsed_params.get("resume_out_dir") or "").strip()}
@@ -755,6 +909,30 @@ def _run_job(job_id, workers):
             _save_build_checkpoint(reason="build_started", force=True)
             db.insert_event(job_id, "system", f"Checkpoint saved for build restart ({out_dir})")
 
+        def _on_final_links_count(payload):
+            if not isinstance(payload, dict):
+                return
+            try:
+                count = int(payload.get("final_links_count"))
+            except Exception:
+                return
+            db.update_job(job_id, final_links_count=count)
+            # Log once when exact final count becomes known, but UI reads from dedicated field.
+            try:
+                source = str(payload.get("source") or "build_prefilter")
+                db.insert_event(
+                    job_id,
+                    "system",
+                    f"Final entity links count fixed at {count:,} ({source})",
+                    phase="build",
+                    kind="links_ready",
+                    step=writer._current_step or "build",
+                    worker="build",
+                    meta=payload,
+                )
+            except Exception:
+                pass
+
         with redirect_stdout(writer), redirect_stderr(writer):
             print(f"[JOB {job_id}] started")
             print(f"[JOB {job_id}] workers={workers}")
@@ -774,9 +952,9 @@ def _run_job(job_id, workers):
                         continue
                     phase_elapsed = int(now - writer._phase_started_at)
                     step = writer._current_step or "build"
-                    eta_hint = _normalize_eta_hint(writer._eta_by_phase.get("build"))
-                    eta_ts = float(writer._eta_ts_by_phase.get("build") or 0.0)
-                    eta_age_ok = eta_ts > 0 and (now - eta_ts) <= 45.0
+                    eta_hint = writer._global_eta_hint()
+                    eta_ts = float(writer._eta_ts_by_phase.get(writer._phase) or 0.0)
+                    eta_age_ok = (eta_ts <= 0) or ((now - eta_ts) <= 45.0)
                     eta_suffix = f" | ETA: {eta_hint}" if (eta_hint and eta_age_ok) else ""
                     msg = f"[HB] build active | step={step} | phase_elapsed={phase_elapsed}s | quiet={quiet_s}s{eta_suffix}"
                     try:
@@ -814,6 +992,9 @@ def _run_job(job_id, workers):
                 writer._phase = phase
                 writer._phase_started_at = time.time()
                 writer._last_heartbeat_ts = 0.0
+                writer._current_step = None
+                writer._current_file = None
+                writer._last_step_key = None
                 writer._eta_by_phase[phase] = None
                 writer._eta_ts_by_phase[phase] = 0.0
                 try:
@@ -838,6 +1019,7 @@ def _run_job(job_id, workers):
                     set_phase=set_phase,
                     should_skip_build=should_skip_build,
                     on_checkpoint=_on_pipeline_checkpoint,
+                    on_final_links_count=_on_final_links_count,
                 )
             finally:
                 heartbeat_stop.set()

@@ -146,6 +146,39 @@ def test_extract_unique_iris_literal_mode_ignores_iri_objects(tmp_path):
     assert all_values == {"Alpha"}
 
 
+def test_extract_unique_iris_supports_multiple_predicate_patterns(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "<http://example.org/s1> <http://schema.org/sameAs> \"A\" <http://example.org/g> .\n"
+        "<http://example.org/s2> <http://schema.org/url> \"B\" <http://example.org/g> .\n"
+        "<http://example.org/s3> <http://schema.org/name> \"C\" <http://example.org/g> .\n",
+        encoding="utf-8",
+    )
+
+    value_map, matched_count = align.extract_unique_iris_from_files(
+        [part],
+        pattern="sameAs, url",
+        collect_top_props=False,
+        parallel=False,
+        progress_every=0,
+        wdc_value_is_wd_iri=False,
+    )
+
+    assert matched_count == 2
+    all_values = {v for entries in value_map.values() for (v, _s) in entries}
+    assert all_values == {"A", "B"}
+
+
+def test_predicate_matching_is_case_insensitive_even_when_value_normalization_disabled():
+    align.set_normalization(False)
+    try:
+        prepared = align.prepare_predicate_patterns("sameas")
+        assert align.predicate_matches_prepared_patterns("http://schema.org/sameAs", prepared) is True
+        assert align.predicate_matches_prepared_patterns("https://schema.org/sameAs", prepared) is True
+    finally:
+        align.set_normalization(True)
+
+
 def test_extract_unique_iris_filters_subjects_by_wdc_type(tmp_path):
     part = tmp_path / "part_0.nq"
     part.write_text(

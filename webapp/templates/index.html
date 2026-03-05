@@ -262,10 +262,10 @@
           <span class="help-tip" tabindex="0" title="Select the linking strategy. The form will show and enforce only relevant fields for this mode.">?</span>
         </span>
       </label>
-      <select id="matching-mode-select">
-        <option value="property">Property (label, telephone...)</option>
-        <option value="identifier">Identifier code</option>
-        <option value="sameas">sameAs</option>
+      <select id="matching-mode-select" name="matching_mode">
+        <option value="property" {% if form.matching_mode == "property" %}selected{% endif %}>Property (label, telephone...)</option>
+        <option value="identifier" {% if form.matching_mode == "identifier" %}selected{% endif %}>Identifier code</option>
+        <option value="sameas" {% if form.matching_mode == "sameas" %}selected{% endif %}>sameAs</option>
       </select>
     </div>
     <div class="row" style="margin-top:8px;">
@@ -300,11 +300,11 @@
             <span class="label-help">
               WDC property pattern
               <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Type a keyword from the WDC property IRI (case-insensitive). Example: isrc matches isrcCode.">?</span>
+              <span class="help-tip" tabindex="0" title="Type one or more keywords from the WDC property IRI (case-insensitive). Separate multiple patterns with commas or semicolons. Example: sameAs, url">?</span>
             </span>
           </label>
-          <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="name / sameAs / url / eidr / telephone" required />
-          <div class="small">Example: <code>isrc</code> matches <code>isrcCode</code>, <code>isrc</code>, <code>codeIsrc</code>...</div>
+          <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="name / sameAs / url / eidr / telephone (or sameAs, url)" required />
+          <div class="small">Example: <code>isrc</code> matches <code>isrcCode</code>, <code>isrc</code>, <code>codeIsrc</code>... You can combine patterns: <code>sameAs, url</code>.</div>
         </div>
 
         <div class="field-group" id="wikidata-property-group">
@@ -352,11 +352,6 @@
           <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
 
-        <label class="checkrow" id="wdc-url-mode-row" style="display:none;">
-          <input id="wdc-value-is-wikidata-checkbox" type="checkbox" name="wdc_value_is_wikidata" {% if form.wdc_value_is_wikidata %}checked{% endif %}>
-          WDC values are Wikidata URLs
-          <span class="help-tip" tabindex="0" title="Enable this when WDC values are Wikidata entity URLs (often in sameAs or url). Matching is then done directly on Wikidata entities.">?</span>
-        </label>
         <label class="checkrow">
           <input id="force-align-checkbox" type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
           Ignore align cache (force re-run align)
@@ -371,6 +366,11 @@
           <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
           Keep only 1-to-1 links (drop ambiguous links)
           <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the Wikidata entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
+        </label>
+        <label class="checkrow">
+          <input id="dedup-wdc-exact-subgraph-checkbox" type="checkbox" name="dedup_wdc_exact_subgraph_by_link_value" {% if form.dedup_wdc_exact_subgraph_by_link_value %}checked{% endif %}>
+          Deduplicate identical WDC mentions by exact subgraph (before 1-to-1)
+          <span class="help-tip" tabindex="0" title="Within the same linking value (e.g. same phone/code/label), compare the full outgoing WDC subgraph of each subject. Bnode IDs are ignored but their contents are compared recursively. Exact duplicates are collapsed before optional 1-to-1 filtering.">?</span>
         </label>
       </div>
     </div>
@@ -586,6 +586,9 @@
         </div>
         <div class="small" id="job-align-dir-{{ job.id }}" {% if not job.align_dir %}style="display:none"{% endif %}>
           Align dir: {{ job.align_dir or '' }}{% if job.reused_align %} (cached){% endif %}
+        </div>
+        <div class="small" id="job-final-links-{{ job.id }}">
+          Final entity links (exact): {% if job.final_links_count is not none %}{{ job.final_links_count }}{% else %}—{% endif %}
         </div>
         {% set out = jobs_outputs[job.id] %}
         <div id="job-build-output-{{ job.id }}">
@@ -906,11 +909,12 @@ function setFieldGroupVisible(groupId, visible) {
 }
 
 function inferMatchingModeFromForm() {
+  const selectedMode = normalizeFormText(document.getElementById('matching-mode-select')?.value).toLowerCase();
+  if (['property', 'identifier', 'sameas'].includes(selectedMode)) return selectedMode;
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
   const prop = normalizeFormText(document.getElementById('wikidata-property-input')?.value).toLowerCase();
-  const urlModeChecked = !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked;
-  if (urlModeChecked || pattern.includes('sameas') || pattern === 'url') return 'sameas';
   if (pattern.includes('telephone') || prop === 'p1329' || prop === 'wdt:p1329') return 'property';
+  if (/(sameas|url)/i.test(pattern) && !prop) return 'sameas';
   if (prop === 'rdfs:label') return 'property';
   if (pattern || prop) return 'identifier';
   return 'property';
@@ -928,7 +932,6 @@ function applyMatchingMode(mode, fromUser = false) {
 
   const patternInput = document.getElementById('wdc-pattern-input');
   const propInput = document.getElementById('wikidata-property-input');
-  const urlModeCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
 
   if (fromUser && patternInput) {
     const current = normalizeFormText(patternInput.value);
@@ -961,10 +964,6 @@ function applyMatchingMode(mode, fromUser = false) {
         propInput.value = defaultPropertyByMode[normalizedMode] || currentProp;
       }
     }
-  }
-
-  if (urlModeCheckbox) {
-    urlModeCheckbox.checked = normalizedMode === 'sameas';
   }
 
   setFieldGroupVisible('wikidata-property-group', normalizedMode !== 'sameas');
@@ -1156,13 +1155,8 @@ function syncIgnoreCharsHiddenFromUi() {
   hidden.value = selected.join(';');
 }
 
-function isSameAsPatternMode() {
-  const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
-  return pattern.includes('sameas');
-}
-
 function isEffectiveWikidataUrlMode() {
-  return !!document.getElementById('wdc-value-is-wikidata-checkbox')?.checked || isSameAsPatternMode();
+  return normalizeFormText(document.getElementById('matching-mode-select')?.value).toLowerCase() === 'sameas';
 }
 
 function setRequiredState(inputId, starId, isRequired) {
@@ -1186,20 +1180,6 @@ function updateRequiredIndicators() {
 }
 
 function syncWikidataPropertyState() {
-  const patternForcesUrlMode = isSameAsPatternMode();
-  const wdcModeCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
-  if (wdcModeCheckbox) {
-    if (patternForcesUrlMode) {
-      wdcModeCheckbox.checked = true;
-      wdcModeCheckbox.disabled = true;
-      wdcModeCheckbox.setAttribute('aria-disabled', 'true');
-      wdcModeCheckbox.title = 'Auto-enabled in sameAs mode';
-    } else {
-      wdcModeCheckbox.disabled = false;
-      wdcModeCheckbox.setAttribute('aria-disabled', 'false');
-      wdcModeCheckbox.title = '';
-    }
-  }
   const isWikidata = isEffectiveWikidataUrlMode();
   const propInput = document.getElementById('wikidata-property-input');
   if (!propInput) return;
@@ -1343,15 +1323,16 @@ async function runPreflightCheck() {
   const preflightBtn = document.getElementById('preflight-btn');
   if (preflightBtn) preflightBtn.disabled = true;
   try {
-    const effectiveWikidataMode = isEffectiveWikidataUrlMode();
+    const selectedMode = normalizeFormText(document.getElementById('matching-mode-select')?.value) || 'property';
+    const effectiveWikidataMode = selectedMode.toLowerCase() === 'sameas';
     const query = new URLSearchParams({
+      matching_mode: selectedMode,
       class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
       parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
       wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
       wikidata_property: normalizeFormText(document.getElementById('wikidata-property-input')?.value),
       wkd_class: normalizeFormText(document.getElementById('wkd-class-input')?.value),
       ignore_chars: effectiveWikidataMode ? '' : normalizeFormText(document.getElementById('ignore-chars-input')?.value),
-      wdc_value_is_wikidata: effectiveWikidataMode ? 'true' : 'false',
       use_local_only: document.getElementById('use-local-only-checkbox')?.checked ? 'true' : 'false',
       include_wikidata_preview: 'true',
       scan_limit_lines: '30000',
@@ -2045,6 +2026,12 @@ function applyProgressPayload(jobId, payload, opts = {}) {
   }
 
   updateJobArtifacts(jobId, payload);
+  const finalLinksEl = document.getElementById('job-final-links-' + jobId);
+  if (finalLinksEl) {
+    const v = payload.final_links_count;
+    const shown = (v === null || v === undefined || v === '') ? '—' : String(v);
+    finalLinksEl.textContent = `Final entity links (exact): ${shown}`;
+  }
 
   const jobCancelWrap = document.getElementById('job-cancel-wrap-' + jobId);
   if (jobCancelWrap) {
@@ -2251,6 +2238,7 @@ async function pollDashboardOnce() {
         align_dir: j.align_dir,
         reused_align: !!j.reused_align,
         error_message: j.error_message,
+        final_links_count: j.final_links_count,
         outputs: j.outputs || {},
         subjobs: Array.isArray(j.subjobs) ? j.subjobs : [],
       });
@@ -2377,7 +2365,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const ignoreCharsCustomInput = document.getElementById('ignore-chars-custom-input');
   const ignoreCharsCheckboxes = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
   const useLocalOnlyCheckbox = document.getElementById('use-local-only-checkbox');
-  const wdcValueIsWikidataCheckbox = document.getElementById('wdc-value-is-wikidata-checkbox');
 
   syncIgnoreCharsUiFromHidden();
   syncIgnoreCharsHiddenFromUi();
@@ -2385,17 +2372,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (matchingModeSelect) {
     matchingModeSelect.addEventListener('change', () => {
       applyMatchingMode(matchingModeSelect.value, true);
-      showFormError('');
-      const preflightBox = document.getElementById('preflight-box');
-      if (preflightBox) {
-        preflightBox.dataset.risk = '';
-      }
-    });
-  }
-  if (wdcValueIsWikidataCheckbox) {
-    wdcValueIsWikidataCheckbox.addEventListener('change', () => {
-      syncWikidataPropertyState();
-      updateMatchingGuidance();
       showFormError('');
       const preflightBox = document.getElementById('preflight-box');
       if (preflightBox) {

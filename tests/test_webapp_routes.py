@@ -34,16 +34,17 @@ def _make_build_tree(build_root: Path, links_count: int = 2, class_name: str = "
     (build_root / "BUILD_CONFIG.json").write_text(
         json.dumps(
             {
+                "matching_mode": "property",
                 "class_name": class_name,
                 "parts_spec": "all",
                 "wdc_predicate_pattern": "name",
                 "wikidata_property": "rdfs:label",
                 "wkd_class": "Q515",
                 "ignore_chars": "spaces;-;.",
-                "wdc_value_is_wikidata": False,
                 "force_align": False,
                 "use_local_only": True,
                 "force_one_to_one_links": False,
+                "dedup_wdc_exact_subgraph_by_link_value": False,
                 "build_name": build_root.name,
                 "result_path": str(build_root),
                 "parts_count": 2,
@@ -222,16 +223,17 @@ def test_index_discovers_local_testclass_parts(monkeypatch):
 def test_create_job_persists_params(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
+        "matching_mode": "property",
         "class_name": "  TestClass  ",
         "parts_spec": "  all  ",
         "wdc_predicate_pattern": "  name  ",
         "wikidata_property": "  P31  ",
         "wkd_class": "  Q515  ",
         "ignore_chars": "  spaces;-;.  ",
-        "wdc_value_is_wikidata": "",
         "force_align": "",
         "use_local_only": "",
         "force_one_to_one_links": "on",
+        "dedup_wdc_exact_subgraph_by_link_value": "on",
     }
     with client:
         resp = client.post("/jobs", data=form, follow_redirects=False)
@@ -242,14 +244,17 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
     params = json.loads(jobs[0]["params_json"])
     assert params["class_name"] == "TestClass"
     assert params["parts_spec"] == "all"
+    assert params["matching_mode"] == "property"
     assert params["wdc_predicate_pattern"] == "name"
     assert params["wikidata_property"] == "P31"
     assert params["force_one_to_one_links"] is True
+    assert params["dedup_wdc_exact_subgraph_by_link_value"] is True
 
 
 def test_create_job_requires_wikidata_property_when_not_url_mode(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
+        "matching_mode": "property",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -269,13 +274,13 @@ def test_create_job_requires_wikidata_property_when_not_url_mode(monkeypatch, te
 def test_create_job_url_mode_clears_wikidata_property(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
+        "matching_mode": "sameas",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
         "wikidata_property": "rdfs:label",
         "wkd_class": "Q486972",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": "on",
     }
     with client:
         resp = client.post("/jobs", data=form, follow_redirects=False)
@@ -284,14 +289,15 @@ def test_create_job_url_mode_clears_wikidata_property(monkeypatch, test_wdc_clas
     jobs = web_main.db.list_jobs(limit=1)
     assert len(jobs) == 1
     params = json.loads(jobs[0]["params_json"])
-    assert params["wdc_value_is_wikidata"] is True
+    assert params["matching_mode"] == "sameas"
     assert params["wikidata_property"] == ""
     assert params["wkd_class"] == "Q486972"
 
 
-def test_create_job_sameas_mode_auto_enables_url_mode(monkeypatch, test_wdc_classes):
+def test_create_job_sameas_pattern_does_not_auto_enable_url_mode(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
+        "matching_mode": "property",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
@@ -306,14 +312,39 @@ def test_create_job_sameas_mode_auto_enables_url_mode(monkeypatch, test_wdc_clas
     jobs = web_main.db.list_jobs(limit=1)
     assert len(jobs) == 1
     params = json.loads(jobs[0]["params_json"])
-    assert params["wdc_value_is_wikidata"] is True
-    assert params["wikidata_property"] == ""
-    assert params["ignore_chars"] == ""
+    assert params["matching_mode"] == "property"
+    assert params["wikidata_property"] == "rdfs:label"
+    assert params["ignore_chars"] == "spaces;-;."
 
 
-def test_create_job_sameas_mode_requires_wikidata_class(monkeypatch, test_wdc_classes):
+def test_create_job_sameas_list_pattern_does_not_auto_enable_url_mode(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
+        "matching_mode": "property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameAs, url",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q486972",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["matching_mode"] == "property"
+    assert params["wikidata_property"] == "rdfs:label"
+    assert params["ignore_chars"] == "spaces;-;."
+    assert params["wdc_predicate_pattern"] == "sameAs, url"
+
+
+def test_create_job_url_mode_requires_wikidata_class(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "matching_mode": "sameas",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
@@ -349,9 +380,9 @@ def test_preflight_api_reports_matches(monkeypatch, test_wdc_classes):
             params={
                 "class_name": "TestClass",
                 "parts_spec": "all",
+                "matching_mode": "property",
                 "wdc_predicate_pattern": "name",
                 "ignore_chars": "spaces;-;.",
-                "wdc_value_is_wikidata": "false",
                 "use_local_only": "true",
                 "scan_limit_lines": "10000",
             },

@@ -45,7 +45,8 @@ def init_db():
                 ended_at REAL,
                 log_path TEXT,
                 result_path TEXT,
-                error_message TEXT
+                error_message TEXT,
+                final_links_count INTEGER
             )
             """
         )
@@ -121,6 +122,8 @@ def init_db():
             conn.execute("ALTER TABLE jobs ADD COLUMN job_pid INTEGER")
         if "job_pgid" not in cols:
             conn.execute("ALTER TABLE jobs ADD COLUMN job_pgid INTEGER")
+        if "final_links_count" not in cols:
+            conn.execute("ALTER TABLE jobs ADD COLUMN final_links_count INTEGER")
         sub_cols = [r[1] for r in conn.execute("PRAGMA table_info(subjobs)").fetchall()]
         if "cancel_requested" not in sub_cols:
             conn.execute("ALTER TABLE subjobs ADD COLUMN cancel_requested INTEGER DEFAULT 0")

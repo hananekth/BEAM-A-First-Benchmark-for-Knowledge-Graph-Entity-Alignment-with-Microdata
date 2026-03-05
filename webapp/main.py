@@ -42,121 +42,121 @@ _TRIPLE_RE = re.compile(
 PRESETS = {
     "testclass_large_benchmark": {
         "label": "TestClassLarge - property (label)",
+        "matching_mode": "property",
         "class_name": "TestClassLarge",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_quick": {
         "label": "TestClass - property (label)",
+        "matching_mode": "property",
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_label": {
         "label": "TestClassLabel - property (label)",
+        "matching_mode": "property",
         "class_name": "TestClassLabel",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
         "wkd_class": "Q34770",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_identifier": {
         "label": "TestClassIdentifier - identifier code",
+        "matching_mode": "identifier",
         "class_name": "TestClassIdentifier",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
         "wikidata_property": "wdt:P2704",
         "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_wikidata_url": {
         "label": "TestClassWikidataUrl - sameAs",
+        "matching_mode": "sameas",
         "class_name": "TestClassWikidataUrl",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
         "wikidata_property": "wdt:P31",
         "wkd_class": "Q515",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": True,
         "force_align": False,
         "use_local_only": False,
     },
     "testclass_wikidata_sameas": {
         "label": "TestClassWikidataSameAs - sameAs",
+        "matching_mode": "sameas",
         "class_name": "TestClassWikidataSameAs",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameas",
         "wikidata_property": "wdt:P31",
         "wkd_class": "Q6256",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": True,
         "force_align": False,
         "use_local_only": False,
     },
     "code_movie": {
         "label": "Movie - via code (EIDR)",
+        "matching_mode": "identifier",
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
         "wikidata_property": "wdt:P2704",
         "wkd_class": "Q11424",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "label_language": {
         "label": "Language - property (label)",
+        "matching_mode": "property",
         "class_name": "Language",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
         "wikidata_property": "rdfs:label",
         "wkd_class": "Q33742",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "property_college_or_university_telephone": {
         "label": "CollegeOrUniversity - property (telephone)",
+        "matching_mode": "property",
         "class_name": "CollegeOrUniversity",
         "parts_spec": "all",
         "wdc_predicate_pattern": "telephone",
         "wikidata_property": "P1329",
         "wkd_class": "Q38723",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
     },
     "wikidata_link_city": {
         "label": "City - sameAs",
+        "matching_mode": "sameas",
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameAs",
         "wikidata_property": "",
         "wkd_class": "Q486972",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": True,
         "force_align": False,
         "use_local_only": False,
     },
@@ -169,16 +169,17 @@ LEGACY_PRESET_ALIASES = {
 
 def _default_form():
     return {
+        "matching_mode": "property",
         "class_name": "",
         "parts_spec": "all",
         "wdc_predicate_pattern": "",
         "wikidata_property": "",
         "wkd_class": "",
         "ignore_chars": "spaces;-;.",
-        "wdc_value_is_wikidata": False,
         "force_align": False,
         "use_local_only": False,
         "force_one_to_one_links": False,
+        "dedup_wdc_exact_subgraph_by_link_value": False,
     }
 
 
@@ -186,42 +187,53 @@ def _clean_text(value: Optional[str]) -> str:
     return (value or "").strip()
 
 
-def _is_sameas_mode(pattern: str) -> bool:
-    return "sameas" in _clean_text(pattern).lower()
+def _normalize_matching_mode(value: Optional[str], fallback_wdc_value_is_wikidata: bool = False) -> str:
+    mode = _clean_text(value).lower()
+    if mode in {"property", "identifier", "sameas"}:
+        return mode
+    return "sameas" if bool(fallback_wdc_value_is_wikidata) else "property"
+
+
+def _is_wikidata_url_mode(params: dict) -> bool:
+    return _normalize_matching_mode(
+        (params or {}).get("matching_mode"),
+        fallback_wdc_value_is_wikidata=bool((params or {}).get("wdc_value_is_wikidata")),
+    ) == "sameas"
 
 
 def _validate_and_normalize_job_params(raw_params: dict):
     params = dict(raw_params or {})
+    params["matching_mode"] = _normalize_matching_mode(
+        params.get("matching_mode"),
+        fallback_wdc_value_is_wikidata=bool(params.get("wdc_value_is_wikidata")),
+    )
+    params.pop("wdc_value_is_wikidata", None)
     params["class_name"] = _clean_text(params.get("class_name"))
     params["parts_spec"] = _clean_text(params.get("parts_spec")) or "all"
     params["wdc_predicate_pattern"] = _clean_text(params.get("wdc_predicate_pattern"))
     params["wikidata_property"] = _clean_text(params.get("wikidata_property"))
     params["wkd_class"] = _clean_text(params.get("wkd_class"))
     params["ignore_chars"] = _clean_text(params.get("ignore_chars"))
-    params["wdc_value_is_wikidata"] = bool(params.get("wdc_value_is_wikidata"))
     params["force_align"] = bool(params.get("force_align"))
     params["use_local_only"] = bool(params.get("use_local_only"))
     params["force_one_to_one_links"] = bool(params.get("force_one_to_one_links"))
+    params["dedup_wdc_exact_subgraph_by_link_value"] = bool(
+        params.get("dedup_wdc_exact_subgraph_by_link_value")
+    )
 
     if not params["class_name"]:
         return params, "Class name is required."
     if not params["wdc_predicate_pattern"]:
         return params, "WDC property pattern is required."
 
-    sameas_mode = _is_sameas_mode(params["wdc_predicate_pattern"])
-    if sameas_mode:
-        params["wdc_value_is_wikidata"] = True
-        params["wikidata_property"] = ""
-        params["ignore_chars"] = ""
-    elif not params["ignore_chars"]:
-        params["ignore_chars"] = "spaces;-;."
-
-    if params["wdc_value_is_wikidata"]:
+    if _is_wikidata_url_mode(params):
         params["wikidata_property"] = ""
         params["ignore_chars"] = ""
         if not params["wkd_class"]:
             return params, "Wikidata class (QID) is required when WDC values are Wikidata URLs."
     else:
+        if not params["ignore_chars"]:
+            params["ignore_chars"] = "spaces;-;."
         if not params["wikidata_property"]:
             return params, "Equivalent Wikidata property is required when WDC values are not Wikidata URLs."
 
@@ -256,20 +268,22 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params = json.loads(r["params_json"])
         except Exception:
             continue
+        mode = _normalize_matching_mode(
+            params.get("matching_mode"),
+            fallback_wdc_value_is_wikidata=bool(params.get("wdc_value_is_wikidata")),
+        )
         if test_mode is not None and _is_test_class_name(params.get("class_name")) != bool(test_mode):
             continue
-        key = tuple(
-            params.get(k, "")
-            for k in (
-                "class_name",
-                "parts_spec",
-                "wdc_predicate_pattern",
-                "wikidata_property",
-                "wkd_class",
-                "ignore_chars",
-                "wdc_value_is_wikidata",
-                "force_one_to_one_links",
-            )
+        key = (
+            mode,
+            params.get("class_name", ""),
+            params.get("parts_spec", ""),
+            params.get("wdc_predicate_pattern", ""),
+            params.get("wikidata_property", ""),
+            params.get("wkd_class", ""),
+            params.get("ignore_chars", ""),
+            params.get("force_one_to_one_links", ""),
+            params.get("dedup_wdc_exact_subgraph_by_link_value", ""),
         )
         if key in seen:
             continue
@@ -277,7 +291,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
         label = (
             f"{params.get('class_name','')} | {params.get('parts_spec','')} | "
             f"{params.get('wdc_predicate_pattern','')} -> "
-            f"{params.get('wikidata_property','') or 'Wikidata URL'}"
+            f"{params.get('wikidata_property','') or ('Wikidata URL' if _is_wikidata_url_mode(params) else '')}"
         )
         recent.append({"label": label, "params": params, "job_id": r["id"]})
     return recent
@@ -312,6 +326,34 @@ def _count_lines(path: Path) -> int:
         for _ in f:
             c += 1
     return c
+
+
+def _looks_like_ent_links_header(line: str) -> bool:
+    line = (line or "").strip()
+    if not line:
+        return False
+    parts = line.split("\t")
+    if len(parts) < 2:
+        return False
+    left = parts[0].strip().lower()
+    right = parts[1].strip().lower()
+    return left in {"wdc_iri", "wdc", "wdc_entity"} and right in {"wikidata_uri", "wikidata", "wikidata_entity"}
+
+
+def _count_ent_links_rows(path: Path) -> int:
+    if not path.exists() or not path.is_file():
+        return 0
+    total = _count_lines(path)
+    if total <= 0:
+        return 0
+    try:
+        with path.open("r", encoding="utf-8", errors="ignore") as f:
+            first = f.readline()
+        if _looks_like_ent_links_header(first):
+            return max(0, total - 1)
+    except Exception:
+        pass
+    return total
 
 
 def _parse_nq_or_nt(line: str):
@@ -491,7 +533,7 @@ def _read_ent_links_samples(path: Path, limit: int = 5):
                 continue
             left = parts[0].strip()
             right = parts[1].strip()
-            if left == "wdc_iri" and right == "wikidata_uri":
+            if _looks_like_ent_links_header(f"{left}\t{right}"):
                 continue
             rows.append({"wdc_iri": left, "wikidata_uri": right})
             if len(rows) >= limit:
@@ -568,7 +610,7 @@ def _build_preflight_report(
     parts_spec: str,
     wdc_predicate_pattern: str,
     ignore_chars: str,
-    wdc_value_is_wikidata: bool,
+    matching_mode: str,
     use_local_only: bool,
     wikidata_property: str = "",
     wkd_class: str = "",
@@ -579,11 +621,14 @@ def _build_preflight_report(
     parts_spec = _clean_text(parts_spec) or "all"
     pattern = _clean_text(wdc_predicate_pattern)
     ignore_chars = _clean_text(ignore_chars)
+    mode_norm = _normalize_matching_mode(matching_mode)
+    wdc_value_is_wikidata = mode_norm == "sameas"
     report = {
         "ok": False,
         "class_name": class_name,
         "parts_spec": parts_spec,
         "pattern": pattern,
+        "matching_mode": mode_norm,
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
         "scan_limit_lines": int(max(1000, scan_limit_lines)),
         "selected_files_count": 0,
@@ -631,7 +676,7 @@ def _build_preflight_report(
                 "Preflight scans local files only; some online parts are not downloaded yet."
             )
 
-    pattern_norm, pattern_raw = align_script.prepare_predicate_pattern(pattern)
+    prepared_patterns = align_script.prepare_predicate_patterns(pattern)
     distinct_norm = set()
     value_counts = Counter()
     value_examples = {}
@@ -655,8 +700,7 @@ def _build_preflight_report(
                 _s, p_tok, o_tok = parsed
                 predicate = p_tok.strip("<>")
                 predicate_counts[predicate] += 1
-                pred_norm = align_script.normalize_predicate_for_match(predicate, pattern_raw)
-                if pattern_norm not in pred_norm:
+                if not align_script.predicate_matches_prepared_patterns(predicate, prepared_patterns):
                     continue
 
                 matched += 1
@@ -987,8 +1031,7 @@ def _variant_stats(base: Path, variant: str):
                 size_total += fp.stat().st_size
             except Exception:
                 pass
-    links_lines = _count_lines(files["ent_links"])
-    links_count = max(0, links_lines - 1) if links_lines else 0
+    links_count = _count_ent_links_rows(files["ent_links"])
     wd_props = max(0, _count_lines(files["prop_stats_wd"]) - 1)
     wdc_props = max(0, _count_lines(files["prop_stats_wdc"]) - 1)
     top_wdc_props = _read_top_props(files["prop_stats_wdc"], limit=5)
@@ -1066,8 +1109,18 @@ def _build_config_groups(cfg: dict):
         return []
     ordered = [
         ("Input", ["class_name"]),
-        ("Matching", ["wdc_predicate_pattern", "wikidata_property", "wkd_class", "wdc_value_is_wikidata", "ignore_chars"]),
-        ("Build", ["force_align", "use_local_only", "force_one_to_one_links", "build_name", "result_path"]),
+        ("Matching", ["matching_mode", "wdc_predicate_pattern", "wikidata_property", "wkd_class", "ignore_chars"]),
+        (
+            "Build",
+            [
+                "force_align",
+                "use_local_only",
+                "force_one_to_one_links",
+                "dedup_wdc_exact_subgraph_by_link_value",
+                "build_name",
+                "result_path",
+            ],
+        ),
     ]
     used = set()
     groups = []
@@ -1227,16 +1280,22 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         return v
 
     raw_params = {
+        "matching_mode": _normalize_matching_mode(
+            _clean_text(str(_pick("matching_mode", ""))),
+            fallback_wdc_value_is_wikidata=_bool_from_any(_pick("wdc_value_is_wikidata", False)),
+        ),
         "class_name": _clean_text(str(_pick("class_name", class_name))),
         "parts_spec": _clean_text(str(_pick("parts_spec", "all"))),
         "wdc_predicate_pattern": _clean_text(str(_pick("wdc_predicate_pattern", ""))),
         "wikidata_property": _clean_text(str(_pick("wikidata_property", ""))),
         "wkd_class": _clean_text(str(_pick("wkd_class", ""))),
         "ignore_chars": _clean_text(str(_pick("ignore_chars", "spaces;-;."))),
-        "wdc_value_is_wikidata": _bool_from_any(_pick("wdc_value_is_wikidata", False)),
         "force_align": _bool_from_any(_pick("force_align", False)),
         "use_local_only": _bool_from_any(_pick("use_local_only", False)),
         "force_one_to_one_links": _bool_from_any(_pick("force_one_to_one_links", False)),
+        "dedup_wdc_exact_subgraph_by_link_value": _bool_from_any(
+            _pick("dedup_wdc_exact_subgraph_by_link_value", False)
+        ),
     }
     return _validate_and_normalize_job_params(raw_params)
 
@@ -1441,6 +1500,11 @@ def index(
             except Exception:
                 pass
 
+    form["matching_mode"] = _normalize_matching_mode(
+        form.get("matching_mode"),
+        fallback_wdc_value_is_wikidata=bool(form.get("wdc_value_is_wikidata")),
+    )
+
     wdc_classes = [dict(r) for r in db.list_wdc_classes()]
     wdc_classes = [r for r in wdc_classes if _is_test_class_name(r.get("class_name")) == is_test_mode]
     class_meta = {r["class_name"]: r for r in wdc_classes}
@@ -1536,11 +1600,11 @@ def class_parts_api(class_name: str):
 def preflight_api(
     class_name: str,
     parts_spec: str = "all",
+    matching_mode: str = "property",
     wdc_predicate_pattern: str = "",
     wikidata_property: str = "",
     wkd_class: str = "",
     ignore_chars: str = "",
-    wdc_value_is_wikidata: bool = False,
     use_local_only: bool = False,
     include_wikidata_preview: bool = True,
     scan_limit_lines: int = 30000,
@@ -1548,11 +1612,11 @@ def preflight_api(
     return _build_preflight_report(
         class_name=class_name,
         parts_spec=parts_spec,
+        matching_mode=matching_mode,
         wdc_predicate_pattern=wdc_predicate_pattern,
         wikidata_property=wikidata_property,
         wkd_class=wkd_class,
         ignore_chars=ignore_chars,
-        wdc_value_is_wikidata=bool(wdc_value_is_wikidata),
         use_local_only=bool(use_local_only),
         include_wikidata_preview=bool(include_wikidata_preview),
         scan_limit_lines=int(scan_limit_lines),
@@ -1682,28 +1746,30 @@ def delete_job(job_id: int):
 
 @app.post("/jobs")
 def create_job(
+    matching_mode: str = Form("property"),
     class_name: str = Form(...),
     parts_spec: str = Form(""),
     wdc_predicate_pattern: str = Form(""),
     wikidata_property: str = Form(""),
     wkd_class: str = Form(""),
     ignore_chars: str = Form(""),
-    wdc_value_is_wikidata: Optional[str] = Form(None),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
     force_one_to_one_links: Optional[str] = Form(None),
+    dedup_wdc_exact_subgraph_by_link_value: Optional[str] = Form(None),
 ):
     raw_params = {
+        "matching_mode": _clean_text(matching_mode),
         "class_name": _clean_text(class_name),
         "parts_spec": _clean_text(parts_spec),
         "wdc_predicate_pattern": _clean_text(wdc_predicate_pattern),
         "wikidata_property": _clean_text(wikidata_property),
         "wkd_class": _clean_text(wkd_class),
         "ignore_chars": _clean_text(ignore_chars),
-        "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
         "force_align": bool(force_align),
         "use_local_only": bool(use_local_only),
         "force_one_to_one_links": bool(force_one_to_one_links),
+        "dedup_wdc_exact_subgraph_by_link_value": bool(dedup_wdc_exact_subgraph_by_link_value),
     }
     params, validation_error = _validate_and_normalize_job_params(raw_params)
     if validation_error:
@@ -1863,6 +1929,7 @@ async def ws_logs(websocket: WebSocket, job_id: int):
                     "align_dir": job["align_dir"],
                     "reused_align": bool(job["reused_align"]),
                     "error_message": job["error_message"],
+                    "final_links_count": job["final_links_count"],
                     "outputs": _job_outputs(job),
                     "subjobs": [dict(s) for s in db.list_subjobs(job_id)],
                 }

@@ -200,6 +200,72 @@ def test_filter_links_one_to_one_drops_ambiguous_endpoints():
     assert report["ambiguous_wdc_entities"] == 0
 
 
+def test_dedup_links_exact_wdc_subgraph_by_link_value_collapses_identical_bnode_mentions(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "\n".join(
+            [
+                # Subject A
+                "_:a <http://schema.org/name> \"Fachhochschule Kiel\" .",
+                "_:a <http://schema.org/telephone> \"+494312100\" .",
+                "_:a <http://schema.org/email> \"info@fh-kiel.de\" .",
+                "_:a <http://schema.org/address> _:a_addr .",
+                "_:a_addr <http://schema.org/postalCode> \"24118\" .",
+                "_:a_addr <http://schema.org/addressCountry> \"DE\" .",
+                # Subject B (same content, different bnode ids)
+                "_:b <http://schema.org/name> \"Fachhochschule Kiel\" .",
+                "_:b <http://schema.org/telephone> \"+494312100\" .",
+                "_:b <http://schema.org/email> \"info@fh-kiel.de\" .",
+                "_:b <http://schema.org/address> _:b_addr .",
+                "_:b_addr <http://schema.org/postalCode> \"24118\" .",
+                "_:b_addr <http://schema.org/addressCountry> \"DE\" .",
+                # Subject C (same linking value but different address => should not dedup)
+                "_:c <http://schema.org/name> \"Fachhochschule Kiel\" .",
+                "_:c <http://schema.org/telephone> \"+494312100\" .",
+                "_:c <http://schema.org/email> \"info@fh-kiel.de\" .",
+                "_:c <http://schema.org/address> _:c_addr .",
+                "_:c_addr <http://schema.org/postalCode> \"99999\" .",
+                "_:c_addr <http://schema.org/addressCountry> \"DE\" .",
+                # Subject D (different linking value)
+                "_:d <http://schema.org/name> \"Other\" .",
+                "_:d <http://schema.org/telephone> \"+33123456\" .",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    wdc_entities = ["_:a", "_:b", "_:c", "_:d"]
+    wd_entities = [
+        "http://www.wikidata.org/entity/Q1",
+        "http://www.wikidata.org/entity/Q1",
+        "http://www.wikidata.org/entity/Q1",
+        "http://www.wikidata.org/entity/Q2",
+    ]
+    wdc_values = ["+494312100", "+494312100", "+494312100", "+33123456"]
+    wd_values = ["+494312100", "+494312100", "+494312100", "+33123456"]
+
+    out_wdc, out_wd, out_wdc_vals, out_wd_vals, report = pipeline._dedup_links_exact_wdc_subgraph_by_link_value(
+        [str(part)],
+        wdc_entities,
+        wd_entities,
+        wdc_values,
+        wd_values,
+    )
+
+    assert len(out_wdc) == 3
+    assert len(out_wd) == 3
+    assert len(out_wdc_vals) == 3
+    assert len(out_wd_vals) == 3
+    assert set(out_wdc) == {"_:a", "_:c", "_:d"} or set(out_wdc) == {"_:b", "_:c", "_:d"}
+    assert report["links_before"] == 4
+    assert report["links_after"] == 3
+    assert report["filtered_out_links"] == 1
+    assert report["multi_link_value_groups"] == 1
+    assert report["subjects_profiled"] == 3
+    assert report["exact_duplicate_clusters"] == 1
+
+
 def test_generate_benchmark_rejects_missing_required_values():
     with pytest.raises(pipeline.PipelineError, match="wikidata_property is required"):
         pipeline.generate_benchmark(

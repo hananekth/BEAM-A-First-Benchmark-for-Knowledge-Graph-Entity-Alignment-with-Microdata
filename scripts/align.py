@@ -30,7 +30,9 @@ from bs4 import BeautifulSoup
 # Configuration
 WDC_BASE_URL = "https://data.dws.informatik.uni-mannheim.de/structureddata/2024-12/quads/classspecific/"
 WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql"
-MAX_PARALLEL_WORKERS = int(os.environ.get("ALIGN_MAX_WORKERS", "8"))
+_CPU_COUNT = max(1, os.cpu_count() or 1)
+MAX_PARALLEL_WORKERS = int(os.environ.get("ALIGN_MAX_WORKERS", str(_CPU_COUNT)))
+ALIGN_CPU_SHARE = float(os.environ.get("ALIGN_CPU_SHARE", "0.95"))
 
 # Colors
 class Colors:
@@ -360,7 +362,9 @@ def scan_top_props_from_files(files, top_n=1000, parallel=True, workers=None, ba
 
                     if lines_since_workers_update >= 10000:
                         if lock_path:
-                            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+                            n_workers, _runs, _cpu = get_shared_workers(
+                                lock_path, share=ALIGN_CPU_SHARE, override=workers
+                            )
                         else:
                             n_workers = workers or 1
                         lines_since_workers_update = 0
@@ -393,7 +397,9 @@ def scan_top_props_from_files(files, top_n=1000, parallel=True, workers=None, ba
             window_batches.append(buffer)
         if window_batches:
             if lock_path:
-                n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+                n_workers, _runs, _cpu = get_shared_workers(
+                    lock_path, share=ALIGN_CPU_SHARE, override=workers
+                )
             else:
                 n_workers = workers or 1
             with ProcessPoolExecutor(max_workers=n_workers) as ex:
@@ -503,8 +509,19 @@ def _is_pid_alive(pid):
     except OSError:
         return False
 
-def compute_shared_workers(lock_path, share=0.8):
-    cpu = os.cpu_count() or 1
+def _normalize_worker_share(value, default=0.95):
+    try:
+        share = float(value)
+    except Exception:
+        share = float(default)
+    if share <= 0 or share > 1.0:
+        return float(default)
+    return share
+
+
+def compute_shared_workers(lock_path, share=None):
+    share = _normalize_worker_share(ALIGN_CPU_SHARE if share is None else share)
+    cpu = _CPU_COUNT
     lock_path = Path(lock_path)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -539,7 +556,7 @@ def compute_shared_workers(lock_path, share=0.8):
     workers = max(1, int((cpu * share) / runs))
     return workers, runs, cpu
 
-def get_shared_workers(lock_path, share=0.8, override=None):
+def get_shared_workers(lock_path, share=None, override=None):
     if override:
         return min(max(1, int(override)), MAX_PARALLEL_WORKERS), None, None
     workers, runs, cpu = compute_shared_workers(lock_path, share=share)
@@ -576,15 +593,16 @@ def normalize_for_matching(text):
     return text
 
 def _looks_like_phone_mode(value):
-    p = str(value or "").strip().lower()
-    if not p:
-        return False
-    return (
-        "telephone" in p
-        or "phone" in p
-        or "phonenumber" in p
-        or "p1329" in p
-    )
+    for p in split_predicate_patterns(value):
+        low = p.lower()
+        if (
+            "telephone" in low
+            or "phone" in low
+            or "phonenumber" in low
+            or "p1329" in low
+        ):
+            return True
+    return False
 
 def normalize_for_phone_matching(text):
     """
@@ -605,21 +623,87 @@ def normalize_value_for_matching(text, phone_mode=False):
 def prepare_predicate_pattern(pattern):
     """
     Prépare un pattern de prédicat:
-    - Si pattern ressemble à une IRI/CURIE (contient ://, / ou :), on le garde tel quel (lowercase).
-    - Sinon, normalisation agressive (normalize_for_matching).
-    Retourne (pattern_normalized, use_raw).
+    - Matching de noms de propriétés/prédicats: toujours case-insensitive via lowercase.
+    - La normalisation configurable des valeurs (ignore chars, etc.) ne doit pas impacter
+      le matching des prédicats.
+    Retourne (pattern_normalized, use_raw) pour compatibilité; use_raw reste True.
     """
     if pattern is None:
         return "", False
     p = str(pattern).strip()
     if not p:
         return "", False
-    if "://" in p or "/" in p or ":" in p:
-        return p.lower(), True
-    return normalize_for_matching(p), False
+    return p.lower(), True
+
+
+def split_predicate_patterns(pattern):
+    """
+    Split a user predicate pattern string into multiple OR-patterns.
+
+    Supported separators:
+    - comma (,)
+    - semicolon (;)
+    - newlines
+
+    Example:
+      "sameAs, url" -> ["sameAs", "url"]
+    """
+    if pattern is None:
+        return []
+    text = str(pattern).strip()
+    if not text:
+        return []
+    parts = re.split(r"[\n,;]+", text)
+    cleaned = []
+    seen = set()
+    for raw in parts:
+        token = str(raw or "").strip()
+        if not token:
+            continue
+        key = token.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(token)
+    return cleaned
+
+
+def prepare_predicate_patterns(pattern):
+    """
+    Prepare multiple predicate patterns for OR matching.
+
+    Returns a list of tuples: [(pattern_normalized, use_raw, original_token), ...]
+    """
+    prepared = []
+    seen = set()
+    for token in split_predicate_patterns(pattern):
+        norm, use_raw = prepare_predicate_pattern(token)
+        if not norm:
+            continue
+        key = (norm, bool(use_raw))
+        if key in seen:
+            continue
+        seen.add(key)
+        prepared.append((norm, bool(use_raw), token))
+    return prepared
+
+
+def predicate_matches_prepared_patterns(predicate, prepared_patterns):
+    """
+    True if predicate matches any prepared pattern (OR semantics).
+    """
+    if not prepared_patterns:
+        return False
+    predicate_raw = str(predicate or "").lower()
+    for pattern_normalized, use_raw, _original in prepared_patterns:
+        # Predicate/property-name matching is always case-insensitive only.
+        haystack = predicate_raw
+        if pattern_normalized in haystack:
+            return True
+    return False
 
 def normalize_predicate_for_match(predicate, use_raw):
-    return predicate.lower() if use_raw else normalize_for_matching(predicate)
+    return str(predicate or "").lower()
 
 def normalize_country_code(isrc_normalized):
     """
@@ -941,7 +1025,9 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
         try:
             if parallel_decompress:
                 if lock_path:
-                    desired_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+                    desired_workers, _runs, _cpu = get_shared_workers(
+                        lock_path, share=ALIGN_CPU_SHARE, override=workers
+                    )
                 else:
                     desired_workers = workers or 1
                 
@@ -1004,7 +1090,7 @@ def download_and_decompress(class_name, parts, work_dir, parallel_decompress=Tru
     return decompressed_files
 
 def _filter_file_worker(args):
-    file_path, pattern_normalized, pattern_raw, tmp_dir, collect_top_props = args
+    file_path, prepared_patterns, tmp_dir, collect_top_props = args
     file_path = Path(file_path)
     tmp_dir = Path(tmp_dir)
     tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -1023,8 +1109,7 @@ def _filter_file_worker(args):
                     predicate = predicates[0]
                     if collect_top_props:
                         predicates_found[predicate] += 1
-                    predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                    if pattern_normalized in predicate_normalized:
+                    if predicate_matches_prepared_patterns(predicate, prepared_patterns):
                         out_f.write(line)
                         file_matched += 1
     
@@ -1044,11 +1129,17 @@ def filter_by_pattern(files, pattern, output_file, collect_top_props=False, top_
     print_color(f"\n🔍 Filtrage par pattern dans les PRÉDICATS: '{pattern}'", Colors.BLUE)
     print("   Recherche: <predicate> qui contient le pattern (case-insensitive)")
     
-    pattern_normalized, pattern_raw = prepare_predicate_pattern(pattern)
-    if pattern_raw:
-        print(f"   Pattern brut: '{pattern}'")
+    prepared_patterns = prepare_predicate_patterns(pattern)
+    if not prepared_patterns:
+        raise ValueError("Empty predicate pattern")
+    if len(prepared_patterns) == 1:
+        pattern_normalized, pattern_raw, _ = prepared_patterns[0]
+        if pattern_raw:
+            print(f"   Pattern brut: '{pattern}'")
+        else:
+            print(f"   Pattern normalisé: '{pattern_normalized}'")
     else:
-        print(f"   Pattern normalisé: '{pattern_normalized}'")
+        print(f"   Patterns (OR): {', '.join(t for _, _, t in prepared_patterns)}")
     
     total_lines = 0
     matched_lines = 0
@@ -1062,7 +1153,7 @@ def filter_by_pattern(files, pattern, output_file, collect_top_props=False, top_
         tmp_dir.mkdir(parents=True, exist_ok=True)
 
         print_color(f"\n⚙️  Filtrage parallèle ({len(files)} fichiers, workers={workers or 1})...", Colors.BLUE)
-        tasks = [(str(p), pattern_normalized, pattern_raw, str(tmp_dir), collect_top_props) for p in files]
+        tasks = [(str(p), prepared_patterns, str(tmp_dir), collect_top_props) for p in files]
         results = {}
         with ProcessPoolExecutor(max_workers=workers) as ex:
             future_map = {ex.submit(_filter_file_worker, t): t[0] for t in tasks}
@@ -1104,10 +1195,8 @@ def filter_by_pattern(files, pattern, output_file, collect_top_props=False, top_
                             predicate = predicates[0]  # Premier <...> = prédicat
                             if collect_top_props:
                                 predicates_found[predicate] += 1
-                            predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                            
-                            # Match si pattern dans prédicat normalisé
-                            if pattern_normalized in predicate_normalized:
+                            # Match si un pattern match le prédicat (OR)
+                            if predicate_matches_prepared_patterns(predicate, prepared_patterns):
                                 out_f.write(line)
                                 matched_lines += 1
                                 file_matched += 1
@@ -1160,7 +1249,7 @@ def _extract_batch(lines):
     return value_map, all_raw_values, all_iris, country_code_changes, line_count
 
 def _extract_batch_with_pattern(args):
-    lines, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode = args
+    lines, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode = args
     value_map = defaultdict(list)
     all_raw_values = set()
     all_iris = set()
@@ -1176,8 +1265,7 @@ def _extract_batch_with_pattern(args):
         predicate = predicate_tok.strip("<>")
         if collect_top_props:
             predicates_found[predicate] += 1
-        predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-        if pattern_normalized not in predicate_normalized:
+        if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
             continue
         
         matched_count += 1
@@ -1322,11 +1410,11 @@ def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=2
     
     return value_map
 
-def _process_extract_window(window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, executor):
+def _process_extract_window(window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, executor):
     futures = [
         executor.submit(
             _extract_batch_with_pattern,
-            (b, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode),
+            (b, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode),
         )
         for b in window_batches
     ]
@@ -1340,12 +1428,18 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     et extrait les valeurs distinctes sans générer de fichier filtré.
     """
     print_color(f"\n📊 Extraction directe depuis le graphe (sans fichier filtré)...", Colors.BLUE)
-    pattern_normalized, pattern_raw = prepare_predicate_pattern(pattern)
+    prepared_patterns = prepare_predicate_patterns(pattern)
+    if not prepared_patterns:
+        return {}, 0
     phone_mode = _looks_like_phone_mode(pattern)
-    if pattern_raw:
-        print(f"   Pattern brut: '{pattern}'")
+    if len(prepared_patterns) == 1:
+        pattern_normalized, pattern_raw, _ = prepared_patterns[0]
+        if pattern_raw:
+            print(f"   Pattern brut: '{pattern}'")
+        else:
+            print(f"   Pattern normalisé: '{pattern_normalized}'")
     else:
-        print(f"   Pattern normalisé: '{pattern_normalized}'")
+        print(f"   Patterns (OR): {', '.join(t for _, _, t in prepared_patterns)}")
     
     value_map = defaultdict(list)
     all_raw_values = set()
@@ -1369,7 +1463,9 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
         buffer = []
         window_batches = []
         if lock_path:
-            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+            n_workers, _runs, _cpu = get_shared_workers(
+                lock_path, share=ALIGN_CPU_SHARE, override=workers
+            )
         else:
             n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
         window_size = max(1, n_workers * 6)
@@ -1395,7 +1491,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
 
                     if len(window_batches) >= window_size:
                         for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                            window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                            window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                         ):
                             matched_lines += matched
                             all_raw_values.update(raw_vals)
@@ -1418,7 +1514,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     window_batches.append(buffer)
                 if window_batches:
                     for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                        window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                        window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                     ):
                         matched_lines += matched
                         all_raw_values.update(raw_vals)
@@ -1448,8 +1544,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                 predicate = predicate_tok.strip("<>")
                 if collect_top_props:
                     predicates_found[predicate] += 1
-                predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                if pattern_normalized not in predicate_normalized:
+                if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
                     continue
                 
                 matched_lines += 1
@@ -1542,12 +1637,18 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
     et extrait les valeurs distinctes sans générer de fichier fusionné.
     """
     print_color(f"\n📊 Extraction directe depuis les parts (sans graphe fusionné)...", Colors.BLUE)
-    pattern_normalized, pattern_raw = prepare_predicate_pattern(pattern)
+    prepared_patterns = prepare_predicate_patterns(pattern)
+    if not prepared_patterns:
+        return {}, 0
     phone_mode = _looks_like_phone_mode(pattern)
-    if pattern_raw:
-        print(f"   Pattern brut: '{pattern}'")
+    if len(prepared_patterns) == 1:
+        pattern_normalized, pattern_raw, _ = prepared_patterns[0]
+        if pattern_raw:
+            print(f"   Pattern brut: '{pattern}'")
+        else:
+            print(f"   Pattern normalisé: '{pattern_normalized}'")
     else:
-        print(f"   Pattern normalisé: '{pattern_normalized}'")
+        print(f"   Patterns (OR): {', '.join(t for _, _, t in prepared_patterns)}")
     
     value_map = defaultdict(list)
     all_raw_values = set()
@@ -1573,7 +1674,9 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
         buffer = []
         window_batches = []
         if lock_path:
-            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+            n_workers, _runs, _cpu = get_shared_workers(
+                lock_path, share=ALIGN_CPU_SHARE, override=workers
+            )
         else:
             n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
         window_size = max(1, n_workers * 6)
@@ -1605,7 +1708,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
 
                         if len(window_batches) >= window_size:
                             for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                                window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                                window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                             ):
                                 matched_lines += matched
                                 all_raw_values.update(raw_vals)
@@ -1634,7 +1737,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                 window_batches.append(buffer)
             if window_batches:
                 for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                    window_batches, pattern_normalized, pattern_raw, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                    window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
                 ):
                     matched_lines += matched
                     all_raw_values.update(raw_vals)
@@ -1668,8 +1771,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                     predicate = predicate_tok.strip("<>")
                     if collect_top_props:
                         predicates_found[predicate] += 1
-                    predicate_normalized = normalize_predicate_for_match(predicate, pattern_raw)
-                    if pattern_normalized not in predicate_normalized:
+                    if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
                         continue
                     
                     matched_lines += 1
@@ -2181,7 +2283,9 @@ def fuzzy_link(wdc_map, wikidata_map, parallel=True, workers=None, lock_path=Non
     wdc_items = list(wdc_map.items())
     if parallel and len(wdc_items) > 1:
         if lock_path:
-            n_workers, _runs, _cpu = get_shared_workers(lock_path, share=0.8, override=workers)
+            n_workers, _runs, _cpu = get_shared_workers(
+                lock_path, share=ALIGN_CPU_SHARE, override=workers
+            )
         else:
             n_workers = min(max(1, int(workers or 1)), MAX_PARALLEL_WORKERS)
         chunk_size = max(1, len(wdc_items) // max(1, n_workers))
@@ -2413,7 +2517,7 @@ def main():
     if workers_override:
         print(f"Workers:             {workers_override} (override)")
     else:
-        workers_default, runs, cpu = compute_shared_workers(lock_path, share=0.8)
+        workers_default, runs, cpu = compute_shared_workers(lock_path, share=ALIGN_CPU_SHARE)
         print(f"Workers:             {workers_default} (80% CPU partagé / {runs} runs, CPU={cpu})")
     
     # 1. Source WDC: toujours part_* (jamais *_full_graph.nq)

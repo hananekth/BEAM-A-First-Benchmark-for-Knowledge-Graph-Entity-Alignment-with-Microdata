@@ -13,6 +13,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 
+_CPU_COUNT = max(1, os.cpu_count() or 1)
+BUILD_CPU_SHARE = float(os.environ.get("BUILD_CPU_SHARE", "0.95"))
+
 
 QUAD_RE = re.compile(
     r'^\s*(<[^>]+>|_:[^\s]+)\s+(<[^>]+>)\s+(".*?"(?:\^\^<[^>]+>|@[a-zA-Z-]+)?|<[^>]+>|_:[^\s]+)\s+(<[^>]+>)\s+\.\s*$'
@@ -219,8 +222,19 @@ def _is_pid_alive(pid):
         return False
 
 
-def compute_shared_workers(lock_path, share=0.8):
-    cpu = os.cpu_count() or 1
+def _normalize_worker_share(value, default=0.95):
+    try:
+        share = float(value)
+    except Exception:
+        share = float(default)
+    if share <= 0 or share > 1.0:
+        return float(default)
+    return share
+
+
+def compute_shared_workers(lock_path, share=None):
+    share = _normalize_worker_share(BUILD_CPU_SHARE if share is None else share)
+    cpu = _CPU_COUNT
     lock_path = os.path.abspath(lock_path)
     os.makedirs(os.path.dirname(lock_path), exist_ok=True)
     with open(lock_path, "a+") as f:
@@ -440,7 +454,7 @@ def split_triples(
             kept_attr = 0
             kept_rel = 0
             lock_path = os.path.join("Download", ".workers.lock")
-            n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+            n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=BUILD_CPU_SHARE)
             total_bytes = sum(os.path.getsize(p) for p in input_paths)
             done_bytes = 0
             start_ts = time.time()
@@ -535,7 +549,7 @@ def count_wdc_triples(input_path, subjects, exclude_props=None, exclude_prop_pat
 
     # Parallel over parts
     lock_path = os.path.join("Download", ".workers.lock")
-    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=BUILD_CPU_SHARE)
     total_bytes = sum(os.path.getsize(p) for p in input_paths)
     done_bytes = 0
     start_ts = time.time()
@@ -964,7 +978,7 @@ def append_wdc_labels_descriptions(attr_path, rel_path, wdc_input_paths):
     input_paths = _iter_input_paths(wdc_input_paths)
 
     lock_path = os.path.join("Download", ".workers.lock")
-    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=BUILD_CPU_SHARE)
     total_written = 0
     total_bytes = sum(os.path.getsize(p) for p in input_paths)
     done_bytes = 0
@@ -1110,7 +1124,7 @@ def write_prop_stats_wdc(out_path, attr_path, rel_path, wdc_input_paths):
     targets = {p.strip("<>") for p in counts.keys()}
 
     lock_path = os.path.join("Download", ".workers.lock")
-    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=0.8)
+    n_workers, _runs, _cpu = compute_shared_workers(lock_path, share=BUILD_CPU_SHARE)
     total_bytes = sum(os.path.getsize(p) for p in _iter_input_paths(wdc_input_paths))
     done_bytes = 0
     start_ts = time.time()
