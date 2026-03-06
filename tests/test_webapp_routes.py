@@ -91,7 +91,99 @@ def _write_link_explorer_variant(variant_dir: Path):
         encoding="utf-8",
     )
     (variant_dir / "prop_stats_wd.tsv").write_text(
-        "property\tcount\nhttp://www.wikidata.org/prop/direct/P1329\t1\n",
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://www.w3.org/2000/01/rdf-schema#label\t1\tlabel\titem label\n"
+        "http://www.wikidata.org/prop/direct/p1329\t1\tphone number\ttelephone number of subject\n"
+        "http://www.wikidata.org/prop/direct/p31\t1\tinstance of\tthat class of which this subject is a particular example\n",
+        encoding="utf-8",
+    )
+
+
+def _write_link_explorer_value_fallback_variant(variant_dir: Path):
+    variant_dir.mkdir(parents=True, exist_ok=True)
+    (variant_dir / "ent_links").write_text(
+        "wdc_iri\twikidata_uri\n"
+        "http://example.org/wdc/entity-snarc\thttp://www.wikidata.org/entity/Q145892\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "attr_triples_1").write_text(
+        'http://example.org/wdc/entity-snarc\thttp://example.org/vocab/snarcRef\t"SNARC-7788"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_1").write_text("", encoding="utf-8")
+    (variant_dir / "attr_triples_2").write_text(
+        'http://www.wikidata.org/entity/Q145892\thttp://www.wikidata.org/prop/direct/P12749\t"SNARC7788"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_2").write_text("", encoding="utf-8")
+    (variant_dir / "prop_stats_wdc.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://example.org/vocab/snarcRef\t1\tSNARC ref\tcustom id in source catalog\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "prop_stats_wd.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://www.wikidata.org/prop/direct/P12749\t1\tSNARC ID\tunique identifier for people, places and organisations represented in Welsh collections\n",
+        encoding="utf-8",
+    )
+
+
+def _write_link_explorer_value_fallback_multivalue_variant(variant_dir: Path):
+    variant_dir.mkdir(parents=True, exist_ok=True)
+    (variant_dir / "ent_links").write_text(
+        "wdc_iri\twikidata_uri\n"
+        "http://example.org/wdc/entity-snarc-multi\thttp://www.wikidata.org/entity/Q145892\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "attr_triples_1").write_text(
+        'http://example.org/wdc/entity-snarc-multi\thttp://example.org/vocab/snarcRef\t"SNARC-7788"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_1").write_text("", encoding="utf-8")
+    (variant_dir / "attr_triples_2").write_text(
+        'http://www.wikidata.org/entity/Q145892\thttp://www.wikidata.org/prop/direct/P12749\t"SNARC7788"\n'
+        'http://www.wikidata.org/entity/Q145892\thttp://www.wikidata.org/prop/direct/P12749\t"SNARC-0000"\n'
+        'http://www.wikidata.org/entity/Q145892\thttp://www.wikidata.org/prop/direct/P12749\t"SNARC-9999"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_2").write_text("", encoding="utf-8")
+    (variant_dir / "prop_stats_wdc.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://example.org/vocab/snarcRef\t1\tSNARC ref\tcustom id in source catalog\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "prop_stats_wd.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://www.wikidata.org/prop/direct/P12749\t3\tSNARC ID\tunique identifier for people, places and organisations represented in Welsh collections\n",
+        encoding="utf-8",
+    )
+
+
+def _write_link_explorer_weak_numeric_variant(variant_dir: Path):
+    variant_dir.mkdir(parents=True, exist_ok=True)
+    (variant_dir / "ent_links").write_text(
+        "wdc_iri\twikidata_uri\n"
+        "http://example.org/wdc/entity-num\thttp://www.wikidata.org/entity/Q999\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "attr_triples_1").write_text(
+        'http://example.org/wdc/entity-num\thttp://schema.org/aggregateRating\t"6"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_1").write_text("", encoding="utf-8")
+    (variant_dir / "attr_triples_2").write_text(
+        'http://www.wikidata.org/entity/Q999\thttp://schema.org/sitelinks\t"6"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_2").write_text("", encoding="utf-8")
+    (variant_dir / "prop_stats_wdc.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://schema.org/aggregateRating\t1\taggregate rating\taverage rating\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "prop_stats_wd.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://schema.org/sitelinks\t1\tsitelinks\tnumber of sitelinks\n",
         encoding="utf-8",
     )
 
@@ -579,8 +671,10 @@ def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
 
     assert page.status_code == 200
     assert "Link Explorer" in page.text
-    assert "Suggested Property Alignment" in page.text
-    assert "WDC Nodes" in page.text
+    assert "Equivalent properties (WDC -> Wikidata)" in page.text
+    assert "Simple view: property equivalents + recursive IRI tree" in page.text
+    assert "IRI WDC" not in page.text
+    assert "IRI Wikidata" not in page.text
 
     assert links_resp.status_code == 200
     links_payload = links_resp.json()
@@ -599,13 +693,165 @@ def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
         row.get("wdc_short_property") == "name" and row.get("wikidata_short_property") == "label"
         for row in detail.get("property_matches", [])
     )
+    assert any(
+        str(row.get("wikidata_short_property", "")).lower() == "p1329"
+        and row.get("wikidata_property_label") == "phone number"
+        for row in detail.get("property_matches", [])
+    )
 
     assert node_resp.status_code == 200
     node_payload = node_resp.json()
     assert node_payload["ok"] is True
     assert node_payload["node"]["side"] == "wdc"
     assert node_payload["node"]["node"] == "http://example.org/wdc/entity1"
+    assert node_payload["node"]["summary_label"] == "Alpha City"
     assert node_payload["node"]["attr_count"] >= 1
+
+
+def test_link_explorer_falls_back_to_wikidata_property_meta(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120013"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_variant(build_root / "with_link_code")
+
+    (build_root / "with_link_code" / "prop_stats_wd.tsv").write_text(
+        "predicate\tcount\tlabel\tdescription\n"
+        "http://www.wikidata.org/prop/direct/p1329\t1\t\t\n",
+        encoding="utf-8",
+    )
+
+    def fake_wikidata_meta(prop_id, language="en"):
+        if prop_id == "P1329":
+            return "phone number", "telephone number of subject"
+        return "", ""
+
+    monkeypatch.setattr(web_main, "_fetch_wikidata_property_meta", fake_wikidata_meta)
+
+    with client:
+        detail_resp = client.get(f"/api/builds/TestClass/{build_name}/link?variant=with_link_code&idx=0")
+
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()["detail"]
+    assert any(
+        str(row.get("wikidata_short_property", "")).lower() == "p1329"
+        and row.get("wikidata_property_label") == "phone number"
+        and row.get("wikidata_property_description") == "telephone number of subject"
+        for row in detail.get("property_matches", [])
+    )
+
+
+def test_link_explorer_node_summary_local_and_wikidata_entity_fallback(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120017"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_variant(build_root / "with_link_code")
+
+    (build_root / "with_link_code" / "attr_triples_2").write_text(
+        'http://www.wikidata.org/entity/Q100\thttp://www.wikidata.org/prop/direct/P1329\t"+331234567"\n'
+        '_:b1\thttp://www.w3.org/2000/01/rdf-schema#label\t"Nested blank node"\n'
+        '_:b1\thttp://schema.org/description\t"nested description from local triples"\n',
+        encoding="utf-8",
+    )
+    (build_root / "with_link_code" / "rel_triples_2").write_text(
+        "http://www.wikidata.org/entity/Q100\thttp://www.wikidata.org/prop/direct/P527\t_:b1\n",
+        encoding="utf-8",
+    )
+
+    def fake_wikidata_entity_meta(entity_id, language="en"):
+        if entity_id == "Q100":
+            return "Alpha City WD", "city in fallback metadata"
+        return "", ""
+
+    monkeypatch.setattr(web_main, "_fetch_wikidata_entity_meta", fake_wikidata_entity_meta)
+
+    with client:
+        wd_resp = client.get(
+            f"/api/builds/TestClass/{build_name}/node",
+            params={
+                "variant": "with_link_code",
+                "side": "wd",
+                "node": "http://www.wikidata.org/entity/Q100",
+            },
+        )
+        blank_resp = client.get(
+            f"/api/builds/TestClass/{build_name}/node",
+            params={
+                "variant": "with_link_code",
+                "side": "wd",
+                "node": "_:b1",
+            },
+        )
+
+    assert wd_resp.status_code == 200
+    wd_node = wd_resp.json()["node"]
+    assert wd_node["summary_label"] == "Alpha City WD"
+    assert wd_node["summary_description"] == "city in fallback metadata"
+
+    assert blank_resp.status_code == 200
+    blank_node = blank_resp.json()["node"]
+    assert blank_node["summary_label"] == "Nested blank node"
+    assert blank_node["summary_description"] == "nested description from local triples"
+
+
+def test_link_explorer_aligns_by_values_when_property_names_do_not_match(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120014"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_value_fallback_variant(build_root / "with_link_code")
+
+    with client:
+        detail_resp = client.get(f"/api/builds/TestClass/{build_name}/link?variant=with_link_code&idx=0")
+
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()["detail"]
+    assert any(
+        row.get("wdc_short_property") == "snarcRef"
+        and str(row.get("wikidata_short_property", "")).lower() == "p12749"
+        and row.get("match_reason") == "value_fallback"
+        for row in detail.get("property_matches", [])
+    )
+
+
+def test_link_explorer_aligns_by_values_when_wikidata_property_has_multiple_values(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120015"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_value_fallback_multivalue_variant(build_root / "with_link_code")
+
+    with client:
+        detail_resp = client.get(f"/api/builds/TestClass/{build_name}/link?variant=with_link_code&idx=0")
+
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()["detail"]
+    assert any(
+        row.get("wdc_short_property") == "snarcRef"
+        and str(row.get("wikidata_short_property", "")).lower() == "p12749"
+        and row.get("match_reason") == "value_fallback"
+        for row in detail.get("property_matches", [])
+    )
+
+
+def test_link_explorer_does_not_align_on_weak_numeric_value_only(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120016"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_weak_numeric_variant(build_root / "with_link_code")
+
+    with client:
+        detail_resp = client.get(f"/api/builds/TestClass/{build_name}/link?variant=with_link_code&idx=0")
+
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()["detail"]
+    assert not any(
+        row.get("wdc_short_property") == "aggregateRating"
+        and str(row.get("wikidata_short_property", "")).lower() == "sitelinks"
+        for row in detail.get("property_matches", [])
+    )
 
 
 def test_delete_build_removes_directory_and_job_rows(monkeypatch, test_wdc_classes):

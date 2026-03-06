@@ -1288,12 +1288,214 @@ def _predicate_alias_key(value: str) -> str:
     return _LINK_EXPLORER_PROP_ALIASES.get(token, token)
 
 
+def _normalize_property_key(value: str) -> str:
+    return _clean_text(value).strip().strip("<>").lower()
+
+
+def _extract_wikidata_property_id(predicate: str):
+    raw = _clean_text(predicate).strip().strip("<>")
+    if not raw:
+        return ""
+    m = re.search(r"([Pp]\d+)$", raw)
+    if not m:
+        return ""
+    return m.group(1).upper()
+
+
+def _extract_wikidata_entity_id(value: str):
+    raw = _clean_text(value).strip().strip("<>")
+    if not raw:
+        return ""
+    direct = re.fullmatch(r"([QqPp]\d+)", raw)
+    if direct:
+        return direct.group(1).upper()
+    iri_match = re.search(r"/entity/([QqPp]\d+)$", raw)
+    if iri_match:
+        return iri_match.group(1).upper()
+    return ""
+
+
+@lru_cache(maxsize=4096)
+def _fetch_wikidata_entity_meta(entity_id: str, language: str = "en"):
+    eid = _clean_text(entity_id).upper()
+    lang = _clean_text(language) or "en"
+    if not re.fullmatch(r"[QP]\d+", eid):
+        return "", ""
+    url = "https://www.wikidata.org/w/api.php"
+    params = {
+        "action": "wbgetentities",
+        "ids": eid,
+        "props": "labels|descriptions",
+        "languages": lang,
+        "format": "json",
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        entity = ((data or {}).get("entities") or {}).get(eid, {})
+        labels = entity.get("labels") or {}
+        descs = entity.get("descriptions") or {}
+        label = _clean_text((labels.get(lang) or {}).get("value", ""))
+        desc = _clean_text((descs.get(lang) or {}).get("value", ""))
+        return label, desc
+    except Exception:
+        return "", ""
+
+
+@lru_cache(maxsize=2048)
+def _fetch_wikidata_property_meta(prop_id: str, language: str = "en"):
+    pid = _clean_text(prop_id).upper()
+    lang = _clean_text(language) or "en"
+    if not re.fullmatch(r"P\d+", pid):
+        return "", ""
+    url = "https://www.wikidata.org/w/api.php"
+    params = {
+        "action": "wbgetentities",
+        "ids": pid,
+        "props": "labels|descriptions",
+        "languages": lang,
+        "format": "json",
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        entity = ((data or {}).get("entities") or {}).get(pid, {})
+        labels = entity.get("labels") or {}
+        descs = entity.get("descriptions") or {}
+        label = _clean_text((labels.get(lang) or {}).get("value", ""))
+        desc = _clean_text((descs.get(lang) or {}).get("value", ""))
+        return label, desc
+    except Exception:
+        return "", ""
+
+
+@lru_cache(maxsize=512)
+def _load_property_meta_cached(path_text: str, mtime_ns: int, size_b: int):
+    del mtime_ns, size_b
+    out = {}
+    path = Path(path_text)
+    if not path.exists() or not path.is_file():
+        return out
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        header_skipped = False
+        for line in f:
+            raw = line.rstrip("\n")
+            if not raw:
+                continue
+            parts = raw.split("\t")
+            if not header_skipped:
+                header_skipped = True
+                first = parts[0].strip().lower() if parts else ""
+                if first in {"predicate", "property"}:
+                    continue
+            prop = _clean_text(parts[0] if parts else "").strip().strip("<>")
+            if not prop:
+                continue
+            label = _clean_text(parts[2] if len(parts) > 2 else "")
+            desc = _clean_text(parts[3] if len(parts) > 3 else "")
+            keys = {
+                _normalize_property_key(prop),
+                _predicate_token(prop),
+                _short_predicate(prop).lower(),
+            }
+            score = (1 if label else 0) + (1 if desc else 0)
+            for key in keys:
+                if not key:
+                    continue
+                existing = out.get(key)
+                if existing:
+                    prev_score = (1 if existing.get("label") else 0) + (1 if existing.get("description") else 0)
+                    if prev_score > score:
+                        continue
+                out[key] = {
+                    "label": label,
+                    "description": desc,
+                }
+    return out
+
+
+def _load_property_meta(path: Path):
+    if not path.exists() or not path.is_file():
+        return {}
+    try:
+        st = path.stat()
+    except Exception:
+        return {}
+    try:
+        resolved = path.resolve()
+    except Exception:
+        resolved = path
+    return _load_property_meta_cached(str(resolved), int(st.st_mtime_ns), int(st.st_size))
+
+
+def _property_meta_for(predicate: str, prop_meta: dict):
+    if not prop_meta:
+        prop_id = _extract_wikidata_property_id(predicate)
+        if not prop_id:
+            return "", ""
+        return _fetch_wikidata_property_meta(prop_id)
+    keys = (
+        _normalize_property_key(predicate),
+        _predicate_token(predicate),
+        _short_predicate(predicate).lower(),
+    )
+    label = ""
+    desc = ""
+    for key in keys:
+        if not key:
+            continue
+        data = prop_meta.get(key)
+        if not data:
+            continue
+        label = _clean_text(data.get("label"))
+        desc = _clean_text(data.get("description"))
+        break
+
+    if label and desc:
+        return label, desc
+
+    prop_id = _extract_wikidata_property_id(predicate)
+    if not prop_id:
+        return label, desc
+    remote_label, remote_desc = _fetch_wikidata_property_meta(prop_id)
+    if not label:
+        label = remote_label
+    if not desc:
+        desc = remote_desc
+    return label, desc
+
+
 def _normalize_compare_text(value: str) -> str:
     raw = _clean_text(value)
     if not raw:
         return ""
     base = align_script.normalize_for_matching(raw)
     return re.sub(r"[^a-z0-9]+", "", base.lower())
+
+
+def _is_informative_value_norm(value: str) -> bool:
+    token = _clean_text(value).lower()
+    if not token:
+        return False
+    # Ignore tiny numeric tokens (e.g. "6") which cause many false alignments.
+    if re.fullmatch(r"\d{1,4}", token):
+        return False
+    # Ignore blank-node-like normalized IDs, usually not semantically informative.
+    if re.fullmatch(r"n[0-9a-f]{10,}", token):
+        return False
+    # Keep concise Wikidata IDs.
+    if re.fullmatch(r"[pq]\d+", token):
+        return True
+    # Very short non-ID tokens are typically noisy.
+    if len(token) < 4:
+        return False
+    return True
+
+
+def _informative_value_norms(values):
+    return {v for v in (values or set()) if _is_informative_value_norm(v)}
 
 
 def _object_value_info(obj: str):
@@ -1313,6 +1515,44 @@ def _object_value_info(obj: str):
         "node": node or text,
         "norm": _normalize_compare_text(text),
     }
+
+
+def _first_literal_value(values):
+    for value in values or []:
+        if not isinstance(value, dict):
+            continue
+        if value.get("is_node"):
+            continue
+        text = _clean_text(value.get("text"))
+        if text:
+            return text
+    return ""
+
+
+def _build_node_summary(side: str, node: str, attr_items):
+    side_norm = _clean_text(side).lower()
+    node_key = _normalize_node_token(node)
+    label = ""
+    description = ""
+    for item in attr_items or []:
+        alias = _predicate_alias_key(item.get("property", ""))
+        if alias == "label" and not label:
+            label = _first_literal_value(item.get("values"))
+        elif alias == "description" and not description:
+            description = _first_literal_value(item.get("values"))
+        if label and description:
+            break
+
+    if side_norm == "wd":
+        entity_id = _extract_wikidata_entity_id(node_key)
+        if entity_id:
+            remote_label, remote_desc = _fetch_wikidata_entity_meta(entity_id)
+            if not label:
+                label = remote_label
+            if not description:
+                description = remote_desc
+
+    return label, description
 
 
 def _parse_ent_link_line(line: str):
@@ -1436,7 +1676,7 @@ def _scan_subject_triples(path: Path, subject_key: str, max_rows: int = 4000):
     return rows
 
 
-def _aggregate_property_items(rows, relation: bool, max_values: int = 8):
+def _aggregate_property_items(rows, relation: bool, max_values: int = 8, prop_meta: Optional[dict] = None):
     by_pred = {}
     for p, o in rows:
         pred = _clean_text(p).strip().strip("<>")
@@ -1447,9 +1687,12 @@ def _aggregate_property_items(rows, relation: bool, max_values: int = 8):
             continue
         item = by_pred.get(pred)
         if item is None:
+            prop_label, prop_desc = _property_meta_for(pred, prop_meta or {})
             item = {
                 "property": pred,
                 "short_property": _short_predicate(pred),
+                "property_label": prop_label,
+                "property_description": prop_desc,
                 "count": 0,
                 "values": [],
                 "value_norms": set(),
@@ -1479,6 +1722,8 @@ def _aggregate_property_items(rows, relation: bool, max_values: int = 8):
             {
                 "property": pred,
                 "short_property": item["short_property"],
+                "property_label": item.get("property_label", ""),
+                "property_description": item.get("property_description", ""),
                 "count": item["count"],
                 "values": item["values"],
                 "value_norms": sorted(item["value_norms"]),
@@ -1507,10 +1752,14 @@ def _side_files(variant_dir: Path, side: str):
 def _build_node_payload(variant_dir: Path, side: str, node: str):
     files = _side_files(variant_dir, side)
     node_key = _normalize_node_token(node)
+    stats_path = variant_dir / ("prop_stats_wd.tsv" if files["side"] == "wd" else "prop_stats_wdc.tsv")
+    prop_meta = _load_property_meta(stats_path)
     if not node_key:
         return {
             "side": files["side"],
             "node": "",
+            "summary_label": "",
+            "summary_description": "",
             "attr_items": [],
             "rel_items": [],
             "attr_count": 0,
@@ -1518,11 +1767,14 @@ def _build_node_payload(variant_dir: Path, side: str, node: str):
         }
     attr_rows = _scan_subject_triples(files["attr"], node_key)
     rel_rows = _scan_subject_triples(files["rel"], node_key)
-    attr_items = _aggregate_property_items(attr_rows, relation=False)
-    rel_items = _aggregate_property_items(rel_rows, relation=True)
+    attr_items = _aggregate_property_items(attr_rows, relation=False, prop_meta=prop_meta)
+    rel_items = _aggregate_property_items(rel_rows, relation=True, prop_meta=prop_meta)
+    summary_label, summary_description = _build_node_summary(files["side"], node_key, attr_items)
     return {
         "side": files["side"],
         "node": node_key,
+        "summary_label": summary_label,
+        "summary_description": summary_description,
         "attr_items": attr_items,
         "rel_items": rel_items,
         "attr_count": sum(int(r.get("count", 0)) for r in attr_items),
@@ -1552,14 +1804,34 @@ def _similarity_for_properties(left_item: dict, right_item: dict):
                 ratio = max(ratio, 0.86)
             name_score = ratio
 
-    left_values = set(left_item.get("value_norms") or [])
-    right_values = set(right_item.get("value_norms") or [])
+    left_values = _informative_value_norms(set(left_item.get("value_norms") or []))
+    right_values = _informative_value_norms(set(right_item.get("value_norms") or []))
     value_score = 0.0
     if left_values and right_values:
         inter = len(left_values & right_values)
         union = len(left_values | right_values)
-        if union > 0:
-            value_score = inter / union
+        jaccard = (inter / union) if union > 0 else 0.0
+        smaller = min(len(left_values), len(right_values))
+        coverage = (inter / smaller) if smaller > 0 else 0.0
+
+        # Best-pair fallback when one side contains many values and only one needs to match.
+        best_pair = 0.0
+        for lv in left_values:
+            for rv in right_values:
+                if not lv or not rv:
+                    continue
+                if lv == rv:
+                    best_pair = 1.0
+                    break
+                ratio = difflib.SequenceMatcher(None, lv, rv).ratio()
+                if lv in rv or rv in lv:
+                    ratio = max(ratio, 0.96)
+                if ratio > best_pair:
+                    best_pair = ratio
+            if best_pair >= 1.0:
+                break
+
+        value_score = max(jaccard, coverage, best_pair)
 
     score = (0.65 * name_score) + (0.35 * value_score)
     if name_score >= 0.93 and score < 0.93:
@@ -1568,12 +1840,33 @@ def _similarity_for_properties(left_item: dict, right_item: dict):
 
 
 def _compute_property_matches(left_items, right_items, max_matches: int = 14, threshold: float = 0.55):
+    def _candidate_row(left_item: dict, right_item: dict, cand: dict, reason: str):
+        return {
+            "wdc_property": left_item.get("property", ""),
+            "wdc_short_property": left_item.get("short_property", ""),
+            "wdc_property_label": left_item.get("property_label", ""),
+            "wdc_property_description": left_item.get("property_description", ""),
+            "wikidata_property": right_item.get("property", ""),
+            "wikidata_short_property": right_item.get("short_property", ""),
+            "wikidata_property_label": right_item.get("property_label", ""),
+            "wikidata_property_description": right_item.get("property_description", ""),
+            "score": round(float(cand["score"]), 3),
+            "name_score": round(float(cand["name_score"]), 3),
+            "value_score": round(float(cand["value_score"]), 3),
+            "match_reason": reason,
+            "wdc_sample": (left_item.get("values") or [{}])[0].get("text", "") if left_item.get("values") else "",
+            "wikidata_sample": (right_item.get("values") or [{}])[0].get("text", "")
+            if right_item.get("values")
+            else "",
+        }
+
     candidates = []
     for l_idx, left_item in enumerate(left_items or []):
         for r_idx, right_item in enumerate(right_items or []):
-            score, name_score, value_score = _similarity_for_properties(left_item, right_item)
-            if score < threshold:
+            # Keep attribute vs relation comparisons separate to avoid noisy cross-type matches.
+            if bool(left_item.get("relation")) != bool(right_item.get("relation")):
                 continue
+            score, name_score, value_score = _similarity_for_properties(left_item, right_item)
             candidates.append(
                 {
                     "l_idx": l_idx,
@@ -1589,29 +1882,45 @@ def _compute_property_matches(left_items, right_items, max_matches: int = 14, th
     used_right = set()
     rows = []
     for cand in candidates:
+        if cand["score"] < threshold:
+            continue
         if cand["l_idx"] in used_left or cand["r_idx"] in used_right:
             continue
         left_item = left_items[cand["l_idx"]]
         right_item = right_items[cand["r_idx"]]
         used_left.add(cand["l_idx"])
         used_right.add(cand["r_idx"])
-        rows.append(
-            {
-                "wdc_property": left_item.get("property", ""),
-                "wdc_short_property": left_item.get("short_property", ""),
-                "wikidata_property": right_item.get("property", ""),
-                "wikidata_short_property": right_item.get("short_property", ""),
-                "score": round(float(cand["score"]), 3),
-                "name_score": round(float(cand["name_score"]), 3),
-                "value_score": round(float(cand["value_score"]), 3),
-                "wdc_sample": (left_item.get("values") or [{}])[0].get("text", "") if left_item.get("values") else "",
-                "wikidata_sample": (right_item.get("values") or [{}])[0].get("text", "")
-                if right_item.get("values")
-                else "",
-            }
-        )
+        rows.append(_candidate_row(left_item, right_item, cand, reason="name_or_alias"))
         if len(rows) >= max_matches:
             break
+
+    # Fallback: for properties still unmatched, align by value similarity only.
+    # This catches cases like custom WDC keys mapping to Pxxxx when names differ.
+    value_fallback_threshold = 0.80
+    if len(rows) < max_matches:
+        fallback_candidates = [
+            row
+            for row in candidates
+            if row["value_score"] >= value_fallback_threshold
+            and row["l_idx"] not in used_left
+            and row["r_idx"] not in used_right
+        ]
+        fallback_candidates.sort(key=lambda row: (row["value_score"], row["score"]), reverse=True)
+        for cand in fallback_candidates:
+            if cand["l_idx"] in used_left or cand["r_idx"] in used_right:
+                continue
+            left_item = left_items[cand["l_idx"]]
+            right_item = right_items[cand["r_idx"]]
+            used_left.add(cand["l_idx"])
+            used_right.add(cand["r_idx"])
+            boosted = dict(cand)
+            boosted["score"] = max(float(boosted["score"]), 0.70)
+            rows.append(_candidate_row(left_item, right_item, boosted, reason="value_fallback"))
+            if len(rows) >= max_matches:
+                break
+
+    if len(rows) > max_matches:
+        rows = rows[:max_matches]
     return rows
 
 

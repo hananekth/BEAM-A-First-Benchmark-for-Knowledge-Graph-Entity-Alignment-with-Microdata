@@ -11,26 +11,25 @@
       --text:#e6edf3;
       --muted:#8b949e;
       --accent:#58a6ff;
-      --accent-2:#a5d6ff;
-      --ok:#238636;
-      --warn:#9e6a03;
+      --accent-soft:#dbeafe;
     }
     *{ box-sizing:border-box; }
     body { margin:0; font-family:"IBM Plex Sans", system-ui, sans-serif; color:var(--text); background:var(--bg); }
-    .page { max-width:1450px; margin:0 auto; padding:18px 20px 26px; }
+    .page { max-width:1340px; margin:0 auto; padding:18px 20px 24px; }
     .back-link {
       display:inline-block;
-      color:var(--accent-2);
+      color:var(--accent-soft);
       text-decoration:none;
       margin-bottom:10px;
       font-size:14px;
     }
     .card { background:var(--card); border:1px solid var(--border); border-radius:10px; }
-    .header-card { padding:14px 16px; margin-bottom:10px; }
-    .header-title { margin:0; font-size:24px; }
+    .header { padding:14px 16px; margin-bottom:10px; }
+    .title { margin:0; font-size:22px; }
     .small { color:var(--muted); font-size:12px; }
+
     .controls {
-      padding:12px 14px;
+      padding:10px 12px;
       display:grid;
       grid-template-columns:220px 1fr auto auto;
       gap:8px;
@@ -47,116 +46,125 @@
     }
     button { cursor:pointer; }
     button.secondary { background:#203049; }
-    button:disabled { cursor:not-allowed; opacity:0.5; }
-    .controls-right { display:flex; align-items:center; gap:8px; }
+    button:disabled { cursor:not-allowed; opacity:0.55; }
+    .pager { display:flex; gap:8px; }
+
     .layout {
       display:grid;
       grid-template-columns:340px 1fr;
       gap:10px;
-      min-height:640px;
+      min-height:600px;
     }
-    .list-card { padding:10px; display:flex; flex-direction:column; min-height:640px; }
-    .list-head { display:flex; justify-content:space-between; align-items:center; padding:4px 4px 8px; }
+
+    .list-panel { padding:10px; display:flex; flex-direction:column; }
+    .list-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
     .list-title { margin:0; font-size:16px; }
-    .list-body { overflow:auto; border:1px solid var(--border); border-radius:8px; }
+    .list-body { border:1px solid var(--border); border-radius:8px; overflow:auto; }
     .link-row {
-      display:block;
       width:100%;
       text-align:left;
-      padding:10px;
       border:none;
       border-bottom:1px solid #27303a;
       background:transparent;
       color:var(--text);
+      padding:9px 10px;
       cursor:pointer;
     }
     .link-row:last-child { border-bottom:none; }
-    .link-row:hover { background:#101825; }
+    .link-row:hover { background:#0f1a27; }
     .link-row.active { background:#13213a; outline:1px solid #315a8e; }
-    .row-main { font-size:12px; font-weight:700; color:#dbeafe; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .row-sub { margin-top:3px; font-size:11px; color:#a0aec0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .empty-box { padding:16px 12px; color:var(--muted); font-size:13px; }
-    .detail-card { padding:12px; }
-    .detail-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
-    .detail-title { margin:0; font-size:17px; }
-    .pair-line { margin-top:4px; font-size:12px; color:#dbeafe; word-break:break-all; }
-    .grid-two {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:10px;
-    }
-    .panel {
+    .row-main { font-size:12px; color:#dbeafe; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .row-sub { margin-top:3px; font-size:11px; color:#9fb1c3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .detail-panel { padding:12px; }
+    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; word-break:break-all; }
+
+    .equiv-box {
       border:1px solid var(--border);
       border-radius:8px;
       padding:10px;
       background:#0c141d;
-      min-height:180px;
     }
-    .panel h3 { margin:0 0 7px; font-size:14px; }
-    .node-list { display:flex; flex-wrap:wrap; gap:6px; }
-    .node-btn {
-      border:1px solid #30557f;
-      border-radius:999px;
-      background:#10233a;
-      color:#d4e6ff;
-      padding:4px 9px;
-      font-size:11px;
-      max-width:100%;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .node-btn.root { border-color:#5f9bf0; background:#15325a; }
-    .matches {
-      border:1px solid var(--border);
-      border-radius:8px;
-      padding:10px;
-      background:#0c141d;
-      margin-top:10px;
-    }
-    .matches h3 { margin:0 0 8px; font-size:14px; }
+    .equiv-title { margin:0 0 8px; font-size:15px; }
     table { width:100%; border-collapse:collapse; }
-    th, td { font-size:12px; text-align:left; padding:6px 7px; border-bottom:1px solid #27303a; vertical-align:top; }
-    th { color:#9fb6cf; font-weight:700; }
-    .score-badge {
-      display:inline-block;
-      min-width:48px;
-      text-align:center;
-      border-radius:999px;
-      padding:2px 8px;
-      font-size:11px;
-      border:1px solid #2e5742;
-      background:#113325;
-      color:#d6ffe9;
+    th, td { padding:7px 8px; font-size:12px; border-bottom:1px solid #27303a; vertical-align:top; }
+    th { text-align:left; color:#9fb6cf; font-weight:700; }
+    .empty { color:var(--muted); font-style:italic; }
+    .cell-prop { display:block; color:var(--accent-soft); font-weight:700; margin-bottom:3px; }
+    .cell-values { color:var(--muted); font-size:11px; line-height:1.35; word-break:break-word; }
+    .value-lines {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      margin-top:4px;
     }
-    .score-warn { border-color:#6d5527; background:#3a2b0f; color:#f6e4b4; }
-    .node-section { margin-top:10px; }
-    .node-section h4 { margin:0 0 6px; font-size:12px; color:#9fb6cf; text-transform:uppercase; letter-spacing:0.03em; }
-    .prop-row { display:grid; grid-template-columns:220px 1fr; gap:8px; font-size:12px; padding:4px 0; border-bottom:1px dashed #24303d; }
-    .prop-name { color:#b8d8ff; word-break:break-word; }
-    .prop-values { display:flex; flex-wrap:wrap; gap:5px; }
-    .value-pill {
-      display:inline-block;
-      border:1px solid #3b4a5a;
-      background:#121c28;
-      border-radius:999px;
-      padding:2px 8px;
+    .value-line {
+      display:block;
+      width:100%;
+      text-align:left;
+      border:none;
+      background:transparent;
+      color:#d1e4f8;
       font-size:11px;
-      max-width:360px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      line-height:1.3;
+      padding:0;
+      word-break:break-word;
+    }
+    .value-line.literal {
+      color:#b8cadb;
+    }
+    .value-line.node-static {
+      color:#b8cadb;
+    }
+    .node-tree {
+      margin:2px 0;
+      padding-left:8px;
+      border-left:1px dashed #3a4653;
+    }
+    .node-tree > summary {
+      cursor:pointer;
       color:#dbeafe;
+      font-size:11px;
+      line-height:1.3;
+      list-style:disclosure-closed;
     }
-    .value-pill.node { border-color:#355d90; background:#13263e; cursor:pointer; }
-    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    @media (max-width: 1140px) {
-      .layout { grid-template-columns:1fr; }
-      .list-card { min-height:260px; }
-      .grid-two { grid-template-columns:1fr; }
+    .node-tree[open] > summary {
+      list-style:disclosure-open;
+      margin-bottom:4px;
+    }
+    .node-tree-body {
+      border:1px solid #2f3e4d;
+      border-radius:7px;
+      background:#101925;
+      padding:6px 7px;
+    }
+    .tree-sections {
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+    }
+    .tree-section {
+      border:1px solid #2b3744;
+      border-radius:7px;
+      padding:6px;
+      background:#0d141d;
+    }
+    .tree-section-title { margin:0 0 6px; color:#9fb6cf; font-size:12px; }
+    .tree-prop { margin-bottom:8px; }
+    .tree-prop:last-child { margin-bottom:0; }
+    .tree-prop-title {
+      display:block;
+      color:#dbeafe;
+      font-size:11px;
+      margin-bottom:4px;
+      line-height:1.2;
+      word-break:break-word;
+    }
+    .tree-state { color:var(--muted); font-size:11px; }
+
+    @media (max-width: 1080px) {
       .controls { grid-template-columns:1fr; }
-      .controls-right { justify-content:space-between; }
+      .layout { grid-template-columns:1fr; }
     }
   </style>
 </head>
@@ -164,10 +172,10 @@
   <div class="page">
     <a class="back-link" href="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}">&larr; Back to build detail</a>
 
-    <div class="card header-card">
-      <h1 class="header-title">Link Explorer</h1>
+    <div class="card header">
+      <h1 class="title">Link Explorer</h1>
       <div class="small">Build: <span class="mono">{{ build.class_name }}</span> · <span class="mono">{{ build.build_name }}</span></div>
-      <div class="small">Variant currently loaded: <span id="selected-variant-label" class="mono">{{ selected_variant }}</span></div>
+      <div class="small">Simple view: property equivalents + recursive IRI tree</div>
     </div>
 
     <div class="card controls">
@@ -180,14 +188,14 @@
       </select>
       <input id="search-input" type="search" placeholder="Search in WDC/Wikidata IRIs..." value="{{ initial_query }}" autocomplete="off" />
       <button id="search-btn" class="secondary" type="button">Search</button>
-      <div class="controls-right">
+      <div class="pager">
         <button id="prev-btn" class="secondary" type="button">&larr; Prev</button>
         <button id="next-btn" class="secondary" type="button">Next &rarr;</button>
       </div>
     </div>
 
     <div class="layout">
-      <div class="card list-card">
+      <div class="card list-panel">
         <div class="list-head">
           <h2 class="list-title">Links</h2>
           <div id="links-meta" class="small"></div>
@@ -195,34 +203,11 @@
         <div id="links-list" class="list-body"></div>
       </div>
 
-      <div class="card detail-card">
-        <div class="detail-head">
-          <div>
-            <h2 id="detail-title" class="detail-title">Select a link</h2>
-            <div id="pair-line" class="pair-line mono"></div>
-          </div>
-          <div id="detail-badges" class="small"></div>
-        </div>
-
-        <div class="grid-two">
-          <div class="panel">
-            <h3>WDC Nodes</h3>
-            <div id="wdc-graph-nodes" class="node-list"></div>
-          </div>
-          <div class="panel">
-            <h3>Wikidata Nodes</h3>
-            <div id="wd-graph-nodes" class="node-list"></div>
-          </div>
-        </div>
-
-        <div class="matches">
-          <h3>Suggested Property Alignment</h3>
-          <div id="matches-content"></div>
-        </div>
-
-        <div class="grid-two">
-          <div class="panel" id="wdc-node-panel"></div>
-          <div class="panel" id="wd-node-panel"></div>
+      <div class="card detail-panel">
+        <div class="equiv-box">
+          <h3 class="equiv-title">Equivalent properties (WDC -> Wikidata)</h3>
+          <div id="equiv-context" class="small" style="margin-bottom:8px;"></div>
+          <div id="equiv-table-wrap"></div>
         </div>
       </div>
     </div>
@@ -230,6 +215,7 @@
 
   <script>
     const API_BASE = "/api/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}";
+    const MAX_TREE_DEPTH = 6;
     const state = {
       variant: {{ selected_variant|tojson }},
       q: {{ initial_query|tojson }},
@@ -239,6 +225,8 @@
       rows: {{ initial_rows|tojson }},
       detail: {{ initial_detail|tojson }},
       selectedIdx: {{ (initial_detail.idx if initial_detail else None)|tojson }},
+      nodeCache: new Map(),
+      nodeLoads: new Map(),
     };
 
     function escapeHtml(value) {
@@ -250,11 +238,16 @@
         .replaceAll("'", '&#39;');
     }
 
+    function truncateText(value, maxLen = 72) {
+      const text = String(value || '');
+      if (text.length <= maxLen) return text;
+      return `${text.slice(0, maxLen - 3)}...`;
+    }
+
     function shortIri(value) {
       const text = String(value || '');
-      if (!text) return '';
-      if (text.length <= 78) return text;
-      return `${text.slice(0, 35)}...${text.slice(-36)}`;
+      if (text.length <= 82) return text;
+      return `${text.slice(0, 37)}...${text.slice(-38)}`;
     }
 
     function buildUrl(path, params) {
@@ -267,35 +260,130 @@
       return `${path}${q ? `?${q}` : ''}`;
     }
 
-    function setBusy(isBusy) {
-      document.getElementById('prev-btn').disabled = isBusy;
-      document.getElementById('next-btn').disabled = isBusy;
-      document.getElementById('search-btn').disabled = isBusy;
-      document.getElementById('variant-select').disabled = isBusy;
+    function normalizeSide(value) {
+      const side = String(value || '').trim().toLowerCase();
+      if (side === 'wd' || side === 'wikidata' || side === 'right') return 'wd';
+      return 'wdc';
+    }
+
+    function nodeCacheKey(side, node) {
+      return `${normalizeSide(side)}|${String(node || '').trim()}`;
+    }
+
+    function rememberNodePayload(nodePayload) {
+      if (!nodePayload || typeof nodePayload !== 'object') return;
+      const node = String(nodePayload.node || '').trim();
+      if (!node) return;
+      const key = nodeCacheKey(nodePayload.side, node);
+      state.nodeCache.set(key, nodePayload);
+    }
+
+    function isLikelyNodeText(value) {
+      const text = String(value || '').trim();
+      if (!text) return false;
+      if (text.startsWith('_:')) return true;
+      if (/^https?:\/\//i.test(text)) return true;
+      if (/^[qp]\d+$/i.test(text)) return true;
+      return false;
+    }
+
+    function normalizeValueObject(value) {
+      if (value && typeof value === 'object') {
+        const text = String(value.text || value.node || '').trim();
+        const node = String(value.node || '').trim();
+        const isNode = Boolean(value.is_node || node);
+        const normalizedNode = isNode ? (node || text) : '';
+        const normalizedText = text || normalizedNode;
+        if (!normalizedText) return null;
+        return {
+          text: normalizedText,
+          is_node: isNode,
+          node: normalizedNode,
+        };
+      }
+      const text = String(value || '').trim();
+      if (!text) return null;
+      const isNode = isLikelyNodeText(text);
+      return {
+        text,
+        is_node: isNode,
+        node: isNode ? text : '',
+      };
+    }
+
+    function normalizeValues(values) {
+      const out = [];
+      const seen = new Set();
+      (Array.isArray(values) ? values : []).forEach((value) => {
+        const normalized = normalizeValueObject(value);
+        if (!normalized) return;
+        const signature = normalized.is_node ? `node:${normalized.node}` : `lit:${normalized.text}`;
+        if (seen.has(signature)) return;
+        seen.add(signature);
+        out.push(normalized);
+      });
+      return out;
+    }
+
+    function nodeDisplayParts(side, node, fallbackText = '') {
+      const nodeText = String(node || fallbackText || '').trim();
+      const shortNode = shortIri(nodeText);
+      const payload = state.nodeCache.get(nodeCacheKey(side, nodeText));
+      const label = String(payload && payload.summary_label || '').trim();
+      const description = String(payload && payload.summary_description || '').trim();
+      if (label && description) {
+        return {
+          text: `${label} - ${truncateText(description, 56)} (${shortNode})`,
+          title: `${label} - ${description} (${nodeText})`,
+        };
+      }
+      if (label) {
+        return {
+          text: `${label} (${shortNode})`,
+          title: `${label} (${nodeText})`,
+        };
+      }
+      if (description) {
+        return {
+          text: `${truncateText(description, 60)} (${shortNode})`,
+          title: `${description} (${nodeText})`,
+        };
+      }
+      return { text: shortNode, title: nodeText || shortNode };
+    }
+
+    function isExpandableNode(node) {
+      const text = String(node || '').trim();
+      return text.startsWith('_:');
+    }
+
+    function propertyTitle(prop, label, description) {
+      const pid = String(prop || '').trim();
+      const lbl = String(label || '').trim();
+      const desc = String(description || '').trim();
+      if (lbl && desc) return `${lbl} - ${desc} (${pid})`;
+      if (lbl) return `${lbl} (${pid})`;
+      if (desc) return `${desc} (${pid})`;
+      return pid;
     }
 
     function renderMeta() {
+      const meta = document.getElementById('links-meta');
       const from = state.total === 0 ? 0 : state.offset + 1;
       const to = Math.min(state.offset + state.rows.length, state.total);
-      const txt = state.total === 0
-        ? '0 results'
-        : `${from}-${to} / ${state.total}`;
-      const meta = document.getElementById('links-meta');
-      if (meta) meta.textContent = txt;
-      document.getElementById('selected-variant-label').textContent = state.variant;
+      meta.textContent = state.total === 0 ? '0 results' : `${from}-${to} / ${state.total}`;
       document.getElementById('prev-btn').disabled = state.offset <= 0;
       document.getElementById('next-btn').disabled = (state.offset + state.limit) >= state.total;
     }
 
     function renderLinks() {
-      const root = document.getElementById('links-list');
-      if (!root) return;
+      const list = document.getElementById('links-list');
       if (!Array.isArray(state.rows) || state.rows.length === 0) {
-        root.innerHTML = '<div class="empty-box">No links for this page/filter.</div>';
+        list.innerHTML = '<div class="small" style="padding:12px;">No links for this page/filter.</div>';
         renderMeta();
         return;
       }
-      root.innerHTML = state.rows.map((row) => {
+      list.innerHTML = state.rows.map((row) => {
         const active = Number(row.idx) === Number(state.selectedIdx) ? 'active' : '';
         return `
           <button class="link-row ${active}" type="button" data-role="select-link" data-idx="${escapeHtml(row.idx)}">
@@ -307,129 +395,328 @@
       renderMeta();
     }
 
-    function scoreClass(score) {
-      const n = Number(score || 0);
-      return n >= 0.85 ? 'score-badge' : 'score-badge score-warn';
+    function collectProps(nodeData) {
+      const byKey = new Map();
+      if (!nodeData) return [];
+      const push = (items) => {
+        (Array.isArray(items) ? items : []).forEach((it) => {
+          const prop = String(it && (it.short_property || it.property) || '').trim();
+          if (!prop) return;
+          const key = prop.toLowerCase();
+          let row = byKey.get(key);
+          if (!row) {
+            row = { prop, label: '', description: '', values: [], _seen: new Set() };
+            byKey.set(key, row);
+          }
+          const label = String(it && it.property_label || '').trim();
+          const description = String(it && it.property_description || '').trim();
+          if (!row.label && label) row.label = label;
+          if (!row.description && description) row.description = description;
+          const vals = Array.isArray(it && it.values) ? it.values : [];
+          vals.forEach((value) => {
+            const normalized = normalizeValueObject(value);
+            if (!normalized) return;
+            const signature = normalized.is_node ? `node:${normalized.node}` : `lit:${normalized.text}`;
+            if (row._seen.has(signature)) return;
+            row._seen.add(signature);
+            row.values.push(normalized);
+          });
+        });
+      };
+      push(nodeData.attr_items);
+      push(nodeData.rel_items);
+      return Array.from(byKey.values()).map((row) => ({
+        prop: row.prop,
+        label: row.label,
+        description: row.description,
+        values: row.values,
+      }));
     }
 
-    function renderMatches(matches) {
-      const root = document.getElementById('matches-content');
-      if (!root) return;
-      const rows = Array.isArray(matches) ? matches : [];
-      if (rows.length === 0) {
-        root.innerHTML = '<div class="small">No strong property similarity detected for this link.</div>';
+    function propMap(rows) {
+      const m = new Map();
+      (Array.isArray(rows) ? rows : []).forEach((r) => {
+        const key = String(r && r.prop || '').toLowerCase().trim();
+        if (!key) return;
+        if (!m.has(key)) m.set(key, r);
+      });
+      return m;
+    }
+
+    function sampleToValues(sample) {
+      const normalized = normalizeValueObject(sample);
+      return normalized ? [normalized] : [];
+    }
+
+    function buildEquivalentRows(detail) {
+      if (!detail) return [];
+      const rows = [];
+      const matchedLeft = new Set();
+      const matchedRight = new Set();
+      const matches = Array.isArray(detail.property_matches) ? detail.property_matches : [];
+      const leftRows = collectProps(detail.wdc_node);
+      const rightRows = collectProps(detail.wd_node);
+      const leftByProp = propMap(leftRows);
+      const rightByProp = propMap(rightRows);
+
+      matches.forEach((m) => {
+        const left = String(m.wdc_short_property || m.wdc_property || '').trim();
+        const right = String(m.wikidata_short_property || m.wikidata_property || '').trim();
+        const leftKey = left.toLowerCase();
+        const rightKey = right.toLowerCase();
+        if (left) matchedLeft.add(leftKey);
+        if (right) matchedRight.add(rightKey);
+        const leftData = leftByProp.get(leftKey);
+        const rightData = rightByProp.get(rightKey);
+        rows.push({
+          left,
+          right,
+          leftSide: 'wdc',
+          rightSide: 'wd',
+          leftValues: (leftData && leftData.values && leftData.values.length > 0)
+            ? leftData.values
+            : sampleToValues(m.wdc_sample),
+          rightValues: (rightData && rightData.values && rightData.values.length > 0)
+            ? rightData.values
+            : sampleToValues(m.wikidata_sample),
+          leftLabel: (leftData && leftData.label) ? leftData.label : String(m.wdc_property_label || ''),
+          leftDescription: (leftData && leftData.description) ? leftData.description : String(m.wdc_property_description || ''),
+          rightLabel: (rightData && rightData.label) ? rightData.label : String(m.wikidata_property_label || ''),
+          rightDescription: (rightData && rightData.description) ? rightData.description : String(m.wikidata_property_description || ''),
+        });
+      });
+
+      leftRows.forEach((item) => {
+        const key = String(item.prop || '').toLowerCase();
+        if (!key || matchedLeft.has(key)) return;
+        rows.push({
+          left: item.prop,
+          right: '',
+          leftSide: 'wdc',
+          rightSide: 'wd',
+          leftValues: item.values || [],
+          rightValues: [],
+          leftLabel: item.label || '',
+          leftDescription: item.description || '',
+          rightLabel: '',
+          rightDescription: '',
+        });
+      });
+      rightRows.forEach((item) => {
+        const key = String(item.prop || '').toLowerCase();
+        if (!key || matchedRight.has(key)) return;
+        rows.push({
+          left: '',
+          right: item.prop,
+          leftSide: 'wdc',
+          rightSide: 'wd',
+          leftValues: [],
+          rightValues: item.values || [],
+          leftLabel: '',
+          leftDescription: '',
+          rightLabel: item.label || '',
+          rightDescription: item.description || '',
+        });
+      });
+
+      return rows;
+    }
+
+    function renderNodeValue(value, side, depth) {
+      const node = String(value && (value.node || value.text) || '').trim();
+      if (!node) return '';
+      const sideNorm = normalizeSide(side);
+      const display = nodeDisplayParts(sideNorm, node, value && value.text);
+      if (!isExpandableNode(node)) {
+        return `<div class="value-line node-static mono" title="${escapeHtml(display.title)}">${escapeHtml(display.text)}</div>`;
+      }
+      if (depth >= MAX_TREE_DEPTH) {
+        return `<div class="value-line literal mono" title="${escapeHtml(display.title)}">${escapeHtml(display.text)}</div>`;
+      }
+      return `
+        <details class="node-tree" data-role="node-tree" data-side="${escapeHtml(sideNorm)}" data-node="${escapeHtml(node)}" data-depth="${escapeHtml(depth)}">
+          <summary class="mono" title="${escapeHtml(display.title)}">${escapeHtml(display.text)}</summary>
+          <div class="node-tree-body" data-role="node-tree-body">
+            <div class="tree-state">Expand to load properties.</div>
+          </div>
+        </details>
+      `;
+    }
+
+    function renderValueLine(value, side, depth) {
+      const text = String(value && value.text || '').trim();
+      if (!text) return '';
+      if (!value || !value.is_node) {
+        return `<div class="value-line literal mono" title="${escapeHtml(text)}">${escapeHtml(text)}</div>`;
+      }
+      return renderNodeValue(value, side, depth);
+    }
+
+    function renderValueList(values, side, depth = 0) {
+      const normalized = normalizeValues(values);
+      if (normalized.length === 0) return '<span class="empty">-</span>';
+      const linesHtml = normalized.map((value) => renderValueLine(value, side, depth)).join('');
+      return `<div class="value-lines">${linesHtml}</div>`;
+    }
+
+    function renderTreeProperties(items, side, depth) {
+      const rows = Array.isArray(items) ? items : [];
+      if (rows.length === 0) return '<div class="tree-state">None</div>';
+      return rows.map((item) => {
+        const prop = String(item && (item.short_property || item.property) || '').trim();
+        const title = propertyTitle(prop, item.property_label || '', item.property_description || '');
+        return `
+          <div class="tree-prop">
+            <span class="tree-prop-title">${escapeHtml(title)}</span>
+            ${renderValueList(item.values || [], side, depth)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderNodeTreeBody(nodePayload, side, nextDepth) {
+      const attrItems = Array.isArray(nodePayload && nodePayload.attr_items) ? nodePayload.attr_items : [];
+      const relItems = Array.isArray(nodePayload && nodePayload.rel_items) ? nodePayload.rel_items : [];
+      if (attrItems.length === 0 && relItems.length === 0) {
+        return '<div class="tree-state">No properties found for this node.</div>';
+      }
+      return `
+        <div class="tree-sections">
+          <div class="tree-section">
+            <h4 class="tree-section-title">Attributes</h4>
+            ${renderTreeProperties(attrItems, side, nextDepth)}
+          </div>
+          <div class="tree-section">
+            <h4 class="tree-section-title">Relations</h4>
+            ${renderTreeProperties(relItems, side, nextDepth)}
+          </div>
+        </div>
+      `;
+    }
+
+    function updateNodeTreeSummary(detailsEl, side, node) {
+      const summaryEl = detailsEl.querySelector('summary');
+      if (!summaryEl) return;
+      const display = nodeDisplayParts(side, node, node);
+      summaryEl.textContent = display.text;
+      summaryEl.title = display.title;
+    }
+
+    function bindNodeTreeEvents(root) {
+      const scope = root || document;
+      scope.querySelectorAll('[data-role="node-tree"]').forEach((detailsEl) => {
+        if (detailsEl.dataset.bound === '1') return;
+        detailsEl.dataset.bound = '1';
+        detailsEl.addEventListener('toggle', () => {
+          if (!detailsEl.open) return;
+          ensureNodeTreeLoaded(detailsEl);
+        });
+      });
+    }
+
+    async function loadNode(side, node) {
+      const sideNorm = normalizeSide(side);
+      const nodeText = String(node || '').trim();
+      if (!nodeText) return null;
+      const key = nodeCacheKey(sideNorm, nodeText);
+      if (state.nodeCache.has(key)) return state.nodeCache.get(key);
+      if (state.nodeLoads.has(key)) return state.nodeLoads.get(key);
+
+      const requestPromise = (async () => {
+        try {
+          const url = buildUrl(`${API_BASE}/node`, { variant: state.variant, side: sideNorm, node: nodeText });
+          const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const payload = await res.json();
+          const nodePayload = payload && payload.node ? payload.node : null;
+          if (nodePayload) rememberNodePayload(nodePayload);
+          return nodePayload;
+        } catch (err) {
+          console.error(err);
+          return null;
+        } finally {
+          state.nodeLoads.delete(key);
+        }
+      })();
+      state.nodeLoads.set(key, requestPromise);
+      return requestPromise;
+    }
+
+    async function ensureNodeTreeLoaded(detailsEl) {
+      if (!detailsEl || detailsEl.dataset.role !== 'node-tree') return;
+      if (detailsEl.dataset.loaded === '1' || detailsEl.dataset.loading === '1') return;
+      const sideNorm = normalizeSide(detailsEl.dataset.side || 'wdc');
+      const nodeText = String(detailsEl.dataset.node || '').trim();
+      if (!nodeText) return;
+      const bodyEl = detailsEl.querySelector('[data-role="node-tree-body"]');
+      if (!bodyEl) return;
+
+      detailsEl.dataset.loading = '1';
+      bodyEl.innerHTML = '<div class="tree-state">Loading...</div>';
+      const nodePayload = await loadNode(sideNorm, nodeText);
+      detailsEl.dataset.loading = '';
+
+      if (!nodePayload) {
+        bodyEl.innerHTML = '<div class="tree-state">Could not load node properties.</div>';
         return;
       }
-      root.innerHTML = `
+      detailsEl.dataset.loaded = '1';
+      updateNodeTreeSummary(detailsEl, sideNorm, nodeText);
+
+      const depth = Number(detailsEl.dataset.depth || '0');
+      const nextDepth = Number.isFinite(depth) ? (depth + 1) : 1;
+      bodyEl.innerHTML = renderNodeTreeBody(nodePayload, sideNorm, nextDepth);
+      bindNodeTreeEvents(detailsEl);
+    }
+
+    function renderCell(prop, values, label, description, side) {
+      if (!prop) return '<span class="empty">-</span>';
+      const title = propertyTitle(prop, label, description);
+      return `
+        <span class="cell-prop">${escapeHtml(title)}</span>
+        <div class="cell-values">${renderValueList(values, side, 0)}</div>
+      `;
+    }
+
+    function renderDetail(detail) {
+      const context = document.getElementById('equiv-context');
+      const wrap = document.getElementById('equiv-table-wrap');
+
+      if (!detail) {
+        context.textContent = 'Select a link';
+        wrap.innerHTML = '<div class="small">No link selected.</div>';
+        return;
+      }
+
+      rememberNodePayload(detail.wdc_node);
+      rememberNodePayload(detail.wd_node);
+      context.textContent = `Link #${detail.idx}`;
+
+      const rows = buildEquivalentRows(detail);
+      if (rows.length === 0) {
+        wrap.innerHTML = '<div class="small">No properties found for this link.</div>';
+        return;
+      }
+
+      wrap.innerHTML = `
         <table>
           <thead>
             <tr>
-              <th>WDC property</th>
-              <th>Score</th>
-              <th>Wikidata property</th>
+              <th>Property WDC</th>
+              <th>Property Wikidata</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.map((row) => `
+            ${rows.map((r) => `
               <tr>
-                <td>
-                  <div class="mono">${escapeHtml(row.wdc_short_property || row.wdc_property || '')}</div>
-                  <div class="small">${escapeHtml(row.wdc_sample || '')}</div>
-                </td>
-                <td>
-                  <span class="${scoreClass(row.score)}">${escapeHtml(row.score)}</span>
-                  <div class="small">name ${escapeHtml(row.name_score)} · value ${escapeHtml(row.value_score)}</div>
-                </td>
-                <td>
-                  <div class="mono">${escapeHtml(row.wikidata_short_property || row.wikidata_property || '')}</div>
-                  <div class="small">${escapeHtml(row.wikidata_sample || '')}</div>
-                </td>
+                <td>${renderCell(r.left, r.leftValues, r.leftLabel, r.leftDescription, r.leftSide)}</td>
+                <td>${renderCell(r.right, r.rightValues, r.rightLabel, r.rightDescription, r.rightSide)}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
       `;
-    }
-
-    function renderPropertyRows(items, relation, side) {
-      const rows = Array.isArray(items) ? items : [];
-      if (rows.length === 0) return '<div class="small">none</div>';
-      return rows.map((item) => `
-        <div class="prop-row">
-          <div class="prop-name mono">${escapeHtml(item.short_property || item.property || '')}</div>
-          <div class="prop-values">
-            ${(Array.isArray(item.values) ? item.values : []).map((v) => {
-              if (relation && v && v.is_node) {
-                return `<button class="value-pill node mono" type="button" data-role="open-node" data-side="${escapeHtml(side)}" data-node="${escapeHtml(v.node || v.text || '')}">${escapeHtml(shortIri(v.text || ''))}</button>`;
-              }
-              return `<span class="value-pill mono">${escapeHtml(shortIri(v && v.text ? v.text : ''))}</span>`;
-            }).join('')}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderNodePanel(containerId, title, nodeData) {
-      const root = document.getElementById(containerId);
-      if (!root) return;
-      if (!nodeData) {
-        root.innerHTML = `<h3>${escapeHtml(title)}</h3><div class="small">No node selected.</div>`;
-        return;
-      }
-      const side = String(nodeData.side || '').toLowerCase() === 'wd' ? 'wd' : 'wdc';
-      root.innerHTML = `
-        <h3>${escapeHtml(title)}</h3>
-        <div class="small mono">${escapeHtml(nodeData.node || '')}</div>
-        <div class="small">Attributes: ${escapeHtml(nodeData.attr_count || 0)} · Relations: ${escapeHtml(nodeData.rel_count || 0)}</div>
-        <div class="node-section">
-          <h4>Attributes</h4>
-          ${renderPropertyRows(nodeData.attr_items, false, side)}
-        </div>
-        <div class="node-section">
-          <h4>Relations</h4>
-          ${renderPropertyRows(nodeData.rel_items, true, side)}
-        </div>
-      `;
-    }
-
-    function renderNodeList(containerId, rows) {
-      const root = document.getElementById(containerId);
-      if (!root) return;
-      const list = Array.isArray(rows) ? rows : [];
-      if (list.length === 0) {
-        root.innerHTML = '<div class="small">No related nodes in this view.</div>';
-        return;
-      }
-      root.innerHTML = list.map((row) => {
-        const cls = row && row.root ? 'node-btn root mono' : 'node-btn mono';
-        const side = row && row.side ? row.side : 'wdc';
-        return `<button class="${cls}" type="button" data-role="open-node" data-side="${escapeHtml(side)}" data-node="${escapeHtml(row.node || '')}">${escapeHtml(shortIri(row.node || ''))}</button>`;
-      }).join('');
-    }
-
-    function renderDetail(detail) {
-      const title = document.getElementById('detail-title');
-      const pair = document.getElementById('pair-line');
-      const badges = document.getElementById('detail-badges');
-      if (!detail) {
-        title.textContent = 'Select a link';
-        pair.textContent = '';
-        badges.textContent = '';
-        renderNodeList('wdc-graph-nodes', []);
-        renderNodeList('wd-graph-nodes', []);
-        renderMatches([]);
-        renderNodePanel('wdc-node-panel', 'WDC node', null);
-        renderNodePanel('wd-node-panel', 'Wikidata node', null);
-        return;
-      }
-      title.textContent = `Link #${detail.idx}`;
-      pair.textContent = `${detail.wdc_iri || ''}  <->  ${detail.wikidata_uri || ''}`;
-      badges.textContent = `Property matches: ${(detail.property_matches || []).length}`;
-      renderNodeList('wdc-graph-nodes', detail.wdc_graph_nodes || []);
-      renderNodeList('wd-graph-nodes', detail.wd_graph_nodes || []);
-      renderMatches(detail.property_matches || []);
-      renderNodePanel('wdc-node-panel', 'WDC node', detail.wdc_node || null);
-      renderNodePanel('wd-node-panel', 'Wikidata node', detail.wd_node || null);
+      bindNodeTreeEvents(wrap);
     }
 
     async function loadLinks() {
@@ -439,7 +726,6 @@
         offset: state.offset,
         limit: state.limit,
       });
-      setBusy(true);
       try {
         const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -454,26 +740,19 @@
           renderDetail(null);
           return;
         }
-        const stillVisible = state.rows.some((row) => Number(row.idx) === Number(state.selectedIdx));
-        if (!stillVisible) {
+        const visible = state.rows.some((row) => Number(row.idx) === Number(state.selectedIdx));
+        if (!visible) {
           await loadDetail(state.rows[0].idx);
           return;
         }
         renderDetail(state.detail);
       } catch (err) {
         console.error(err);
-      } finally {
-        setBusy(false);
-        renderMeta();
       }
     }
 
     async function loadDetail(idx) {
-      const url = buildUrl(`${API_BASE}/link`, {
-        variant: state.variant,
-        idx,
-      });
-      setBusy(true);
+      const url = buildUrl(`${API_BASE}/link`, { variant: state.variant, idx });
       try {
         const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -484,51 +763,14 @@
         renderDetail(state.detail);
       } catch (err) {
         console.error(err);
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    async function loadNode(side, node) {
-      const nodeValue = String(node || '').trim();
-      if (!nodeValue) return;
-      const url = buildUrl(`${API_BASE}/node`, {
-        variant: state.variant,
-        side,
-        node: nodeValue,
-      });
-      try {
-        const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const payload = await res.json();
-        const nodeData = payload.node || null;
-        if (!nodeData) return;
-        const sideNorm = String(nodeData.side || '').toLowerCase();
-        if (sideNorm === 'wd') {
-          renderNodePanel('wd-node-panel', 'Wikidata node (focused)', nodeData);
-        } else {
-          renderNodePanel('wdc-node-panel', 'WDC node (focused)', nodeData);
-        }
-      } catch (err) {
-        console.error(err);
       }
     }
 
     document.addEventListener('click', (event) => {
       const selectBtn = event.target.closest('[data-role="select-link"]');
-      if (selectBtn) {
-        const idx = Number(selectBtn.dataset.idx || '');
-        if (Number.isFinite(idx)) {
-          loadDetail(idx);
-        }
-        return;
-      }
-      const nodeBtn = event.target.closest('[data-role="open-node"]');
-      if (nodeBtn) {
-        const side = nodeBtn.dataset.side || 'wdc';
-        const node = nodeBtn.dataset.node || '';
-        loadNode(side, node);
-      }
+      if (!selectBtn) return;
+      const idx = Number(selectBtn.dataset.idx || '');
+      if (Number.isFinite(idx)) loadDetail(idx);
     });
 
     document.getElementById('search-btn').addEventListener('click', () => {
@@ -558,6 +800,8 @@
       loadLinks();
     });
 
+    rememberNodePayload(state.detail && state.detail.wdc_node);
+    rememberNodePayload(state.detail && state.detail.wd_node);
     renderLinks();
     renderDetail(state.detail);
     renderMeta();
