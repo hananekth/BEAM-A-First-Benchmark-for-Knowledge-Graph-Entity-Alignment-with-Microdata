@@ -1,0 +1,566 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Link Explorer</title>
+  <style>
+    :root{
+      --bg:#0e1117;
+      --card:#161b22;
+      --border:#30363d;
+      --text:#e6edf3;
+      --muted:#8b949e;
+      --accent:#58a6ff;
+      --accent-2:#a5d6ff;
+      --ok:#238636;
+      --warn:#9e6a03;
+    }
+    *{ box-sizing:border-box; }
+    body { margin:0; font-family:"IBM Plex Sans", system-ui, sans-serif; color:var(--text); background:var(--bg); }
+    .page { max-width:1450px; margin:0 auto; padding:18px 20px 26px; }
+    .back-link {
+      display:inline-block;
+      color:var(--accent-2);
+      text-decoration:none;
+      margin-bottom:10px;
+      font-size:14px;
+    }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:10px; }
+    .header-card { padding:14px 16px; margin-bottom:10px; }
+    .header-title { margin:0; font-size:24px; }
+    .small { color:var(--muted); font-size:12px; }
+    .controls {
+      padding:12px 14px;
+      display:grid;
+      grid-template-columns:220px 1fr auto auto;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+    select, input, button {
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:#0f1720;
+      color:var(--text);
+      font-size:13px;
+      padding:9px 11px;
+    }
+    button { cursor:pointer; }
+    button.secondary { background:#203049; }
+    button:disabled { cursor:not-allowed; opacity:0.5; }
+    .controls-right { display:flex; align-items:center; gap:8px; }
+    .layout {
+      display:grid;
+      grid-template-columns:340px 1fr;
+      gap:10px;
+      min-height:640px;
+    }
+    .list-card { padding:10px; display:flex; flex-direction:column; min-height:640px; }
+    .list-head { display:flex; justify-content:space-between; align-items:center; padding:4px 4px 8px; }
+    .list-title { margin:0; font-size:16px; }
+    .list-body { overflow:auto; border:1px solid var(--border); border-radius:8px; }
+    .link-row {
+      display:block;
+      width:100%;
+      text-align:left;
+      padding:10px;
+      border:none;
+      border-bottom:1px solid #27303a;
+      background:transparent;
+      color:var(--text);
+      cursor:pointer;
+    }
+    .link-row:last-child { border-bottom:none; }
+    .link-row:hover { background:#101825; }
+    .link-row.active { background:#13213a; outline:1px solid #315a8e; }
+    .row-main { font-size:12px; font-weight:700; color:#dbeafe; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .row-sub { margin-top:3px; font-size:11px; color:#a0aec0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .empty-box { padding:16px 12px; color:var(--muted); font-size:13px; }
+    .detail-card { padding:12px; }
+    .detail-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+    .detail-title { margin:0; font-size:17px; }
+    .pair-line { margin-top:4px; font-size:12px; color:#dbeafe; word-break:break-all; }
+    .grid-two {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .panel {
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:10px;
+      background:#0c141d;
+      min-height:180px;
+    }
+    .panel h3 { margin:0 0 7px; font-size:14px; }
+    .node-list { display:flex; flex-wrap:wrap; gap:6px; }
+    .node-btn {
+      border:1px solid #30557f;
+      border-radius:999px;
+      background:#10233a;
+      color:#d4e6ff;
+      padding:4px 9px;
+      font-size:11px;
+      max-width:100%;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .node-btn.root { border-color:#5f9bf0; background:#15325a; }
+    .matches {
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:10px;
+      background:#0c141d;
+      margin-top:10px;
+    }
+    .matches h3 { margin:0 0 8px; font-size:14px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { font-size:12px; text-align:left; padding:6px 7px; border-bottom:1px solid #27303a; vertical-align:top; }
+    th { color:#9fb6cf; font-weight:700; }
+    .score-badge {
+      display:inline-block;
+      min-width:48px;
+      text-align:center;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      border:1px solid #2e5742;
+      background:#113325;
+      color:#d6ffe9;
+    }
+    .score-warn { border-color:#6d5527; background:#3a2b0f; color:#f6e4b4; }
+    .node-section { margin-top:10px; }
+    .node-section h4 { margin:0 0 6px; font-size:12px; color:#9fb6cf; text-transform:uppercase; letter-spacing:0.03em; }
+    .prop-row { display:grid; grid-template-columns:220px 1fr; gap:8px; font-size:12px; padding:4px 0; border-bottom:1px dashed #24303d; }
+    .prop-name { color:#b8d8ff; word-break:break-word; }
+    .prop-values { display:flex; flex-wrap:wrap; gap:5px; }
+    .value-pill {
+      display:inline-block;
+      border:1px solid #3b4a5a;
+      background:#121c28;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      max-width:360px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      color:#dbeafe;
+    }
+    .value-pill.node { border-color:#355d90; background:#13263e; cursor:pointer; }
+    .mono { font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    @media (max-width: 1140px) {
+      .layout { grid-template-columns:1fr; }
+      .list-card { min-height:260px; }
+      .grid-two { grid-template-columns:1fr; }
+      .controls { grid-template-columns:1fr; }
+      .controls-right { justify-content:space-between; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a class="back-link" href="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}">&larr; Back to build detail</a>
+
+    <div class="card header-card">
+      <h1 class="header-title">Link Explorer</h1>
+      <div class="small">Build: <span class="mono">{{ build.class_name }}</span> · <span class="mono">{{ build.build_name }}</span></div>
+      <div class="small">Variant currently loaded: <span id="selected-variant-label" class="mono">{{ selected_variant }}</span></div>
+    </div>
+
+    <div class="card controls">
+      <select id="variant-select" aria-label="Select variant">
+        {% for v in available_variants %}
+          <option value="{{ v.name }}" {% if selected_variant == v.name %}selected{% endif %} {% if not v.has_ent_links %}disabled{% endif %}>
+            {{ v.name }}{% if not v.has_ent_links %} (no ent_links){% endif %}
+          </option>
+        {% endfor %}
+      </select>
+      <input id="search-input" type="search" placeholder="Search in WDC/Wikidata IRIs..." value="{{ initial_query }}" autocomplete="off" />
+      <button id="search-btn" class="secondary" type="button">Search</button>
+      <div class="controls-right">
+        <button id="prev-btn" class="secondary" type="button">&larr; Prev</button>
+        <button id="next-btn" class="secondary" type="button">Next &rarr;</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div class="card list-card">
+        <div class="list-head">
+          <h2 class="list-title">Links</h2>
+          <div id="links-meta" class="small"></div>
+        </div>
+        <div id="links-list" class="list-body"></div>
+      </div>
+
+      <div class="card detail-card">
+        <div class="detail-head">
+          <div>
+            <h2 id="detail-title" class="detail-title">Select a link</h2>
+            <div id="pair-line" class="pair-line mono"></div>
+          </div>
+          <div id="detail-badges" class="small"></div>
+        </div>
+
+        <div class="grid-two">
+          <div class="panel">
+            <h3>WDC Nodes</h3>
+            <div id="wdc-graph-nodes" class="node-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Wikidata Nodes</h3>
+            <div id="wd-graph-nodes" class="node-list"></div>
+          </div>
+        </div>
+
+        <div class="matches">
+          <h3>Suggested Property Alignment</h3>
+          <div id="matches-content"></div>
+        </div>
+
+        <div class="grid-two">
+          <div class="panel" id="wdc-node-panel"></div>
+          <div class="panel" id="wd-node-panel"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "/api/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}";
+    const state = {
+      variant: {{ selected_variant|tojson }},
+      q: {{ initial_query|tojson }},
+      offset: {{ initial_offset|tojson }},
+      limit: {{ initial_limit|tojson }},
+      total: {{ initial_total|tojson }},
+      rows: {{ initial_rows|tojson }},
+      detail: {{ initial_detail|tojson }},
+      selectedIdx: {{ (initial_detail.idx if initial_detail else None)|tojson }},
+    };
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function shortIri(value) {
+      const text = String(value || '');
+      if (!text) return '';
+      if (text.length <= 78) return text;
+      return `${text.slice(0, 35)}...${text.slice(-36)}`;
+    }
+
+    function buildUrl(path, params) {
+      const query = new URLSearchParams();
+      Object.entries(params || {}).forEach(([k, v]) => {
+        if (v === null || v === undefined || v === '') return;
+        query.set(k, String(v));
+      });
+      const q = query.toString();
+      return `${path}${q ? `?${q}` : ''}`;
+    }
+
+    function setBusy(isBusy) {
+      document.getElementById('prev-btn').disabled = isBusy;
+      document.getElementById('next-btn').disabled = isBusy;
+      document.getElementById('search-btn').disabled = isBusy;
+      document.getElementById('variant-select').disabled = isBusy;
+    }
+
+    function renderMeta() {
+      const from = state.total === 0 ? 0 : state.offset + 1;
+      const to = Math.min(state.offset + state.rows.length, state.total);
+      const txt = state.total === 0
+        ? '0 results'
+        : `${from}-${to} / ${state.total}`;
+      const meta = document.getElementById('links-meta');
+      if (meta) meta.textContent = txt;
+      document.getElementById('selected-variant-label').textContent = state.variant;
+      document.getElementById('prev-btn').disabled = state.offset <= 0;
+      document.getElementById('next-btn').disabled = (state.offset + state.limit) >= state.total;
+    }
+
+    function renderLinks() {
+      const root = document.getElementById('links-list');
+      if (!root) return;
+      if (!Array.isArray(state.rows) || state.rows.length === 0) {
+        root.innerHTML = '<div class="empty-box">No links for this page/filter.</div>';
+        renderMeta();
+        return;
+      }
+      root.innerHTML = state.rows.map((row) => {
+        const active = Number(row.idx) === Number(state.selectedIdx) ? 'active' : '';
+        return `
+          <button class="link-row ${active}" type="button" data-role="select-link" data-idx="${escapeHtml(row.idx)}">
+            <div class="row-main mono">${escapeHtml(shortIri(row.wdc_iri))}</div>
+            <div class="row-sub mono">${escapeHtml(shortIri(row.wikidata_uri))}</div>
+          </button>
+        `;
+      }).join('');
+      renderMeta();
+    }
+
+    function scoreClass(score) {
+      const n = Number(score || 0);
+      return n >= 0.85 ? 'score-badge' : 'score-badge score-warn';
+    }
+
+    function renderMatches(matches) {
+      const root = document.getElementById('matches-content');
+      if (!root) return;
+      const rows = Array.isArray(matches) ? matches : [];
+      if (rows.length === 0) {
+        root.innerHTML = '<div class="small">No strong property similarity detected for this link.</div>';
+        return;
+      }
+      root.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>WDC property</th>
+              <th>Score</th>
+              <th>Wikidata property</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>
+                  <div class="mono">${escapeHtml(row.wdc_short_property || row.wdc_property || '')}</div>
+                  <div class="small">${escapeHtml(row.wdc_sample || '')}</div>
+                </td>
+                <td>
+                  <span class="${scoreClass(row.score)}">${escapeHtml(row.score)}</span>
+                  <div class="small">name ${escapeHtml(row.name_score)} · value ${escapeHtml(row.value_score)}</div>
+                </td>
+                <td>
+                  <div class="mono">${escapeHtml(row.wikidata_short_property || row.wikidata_property || '')}</div>
+                  <div class="small">${escapeHtml(row.wikidata_sample || '')}</div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPropertyRows(items, relation, side) {
+      const rows = Array.isArray(items) ? items : [];
+      if (rows.length === 0) return '<div class="small">none</div>';
+      return rows.map((item) => `
+        <div class="prop-row">
+          <div class="prop-name mono">${escapeHtml(item.short_property || item.property || '')}</div>
+          <div class="prop-values">
+            ${(Array.isArray(item.values) ? item.values : []).map((v) => {
+              if (relation && v && v.is_node) {
+                return `<button class="value-pill node mono" type="button" data-role="open-node" data-side="${escapeHtml(side)}" data-node="${escapeHtml(v.node || v.text || '')}">${escapeHtml(shortIri(v.text || ''))}</button>`;
+              }
+              return `<span class="value-pill mono">${escapeHtml(shortIri(v && v.text ? v.text : ''))}</span>`;
+            }).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderNodePanel(containerId, title, nodeData) {
+      const root = document.getElementById(containerId);
+      if (!root) return;
+      if (!nodeData) {
+        root.innerHTML = `<h3>${escapeHtml(title)}</h3><div class="small">No node selected.</div>`;
+        return;
+      }
+      const side = String(nodeData.side || '').toLowerCase() === 'wd' ? 'wd' : 'wdc';
+      root.innerHTML = `
+        <h3>${escapeHtml(title)}</h3>
+        <div class="small mono">${escapeHtml(nodeData.node || '')}</div>
+        <div class="small">Attributes: ${escapeHtml(nodeData.attr_count || 0)} · Relations: ${escapeHtml(nodeData.rel_count || 0)}</div>
+        <div class="node-section">
+          <h4>Attributes</h4>
+          ${renderPropertyRows(nodeData.attr_items, false, side)}
+        </div>
+        <div class="node-section">
+          <h4>Relations</h4>
+          ${renderPropertyRows(nodeData.rel_items, true, side)}
+        </div>
+      `;
+    }
+
+    function renderNodeList(containerId, rows) {
+      const root = document.getElementById(containerId);
+      if (!root) return;
+      const list = Array.isArray(rows) ? rows : [];
+      if (list.length === 0) {
+        root.innerHTML = '<div class="small">No related nodes in this view.</div>';
+        return;
+      }
+      root.innerHTML = list.map((row) => {
+        const cls = row && row.root ? 'node-btn root mono' : 'node-btn mono';
+        const side = row && row.side ? row.side : 'wdc';
+        return `<button class="${cls}" type="button" data-role="open-node" data-side="${escapeHtml(side)}" data-node="${escapeHtml(row.node || '')}">${escapeHtml(shortIri(row.node || ''))}</button>`;
+      }).join('');
+    }
+
+    function renderDetail(detail) {
+      const title = document.getElementById('detail-title');
+      const pair = document.getElementById('pair-line');
+      const badges = document.getElementById('detail-badges');
+      if (!detail) {
+        title.textContent = 'Select a link';
+        pair.textContent = '';
+        badges.textContent = '';
+        renderNodeList('wdc-graph-nodes', []);
+        renderNodeList('wd-graph-nodes', []);
+        renderMatches([]);
+        renderNodePanel('wdc-node-panel', 'WDC node', null);
+        renderNodePanel('wd-node-panel', 'Wikidata node', null);
+        return;
+      }
+      title.textContent = `Link #${detail.idx}`;
+      pair.textContent = `${detail.wdc_iri || ''}  <->  ${detail.wikidata_uri || ''}`;
+      badges.textContent = `Property matches: ${(detail.property_matches || []).length}`;
+      renderNodeList('wdc-graph-nodes', detail.wdc_graph_nodes || []);
+      renderNodeList('wd-graph-nodes', detail.wd_graph_nodes || []);
+      renderMatches(detail.property_matches || []);
+      renderNodePanel('wdc-node-panel', 'WDC node', detail.wdc_node || null);
+      renderNodePanel('wd-node-panel', 'Wikidata node', detail.wd_node || null);
+    }
+
+    async function loadLinks() {
+      const url = buildUrl(`${API_BASE}/links`, {
+        variant: state.variant,
+        q: state.q,
+        offset: state.offset,
+        limit: state.limit,
+      });
+      setBusy(true);
+      try {
+        const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+        state.variant = payload.variant || state.variant;
+        state.total = Number(payload.total || 0);
+        state.rows = Array.isArray(payload.rows) ? payload.rows : [];
+        renderLinks();
+        if (state.rows.length === 0) {
+          state.selectedIdx = null;
+          state.detail = null;
+          renderDetail(null);
+          return;
+        }
+        const stillVisible = state.rows.some((row) => Number(row.idx) === Number(state.selectedIdx));
+        if (!stillVisible) {
+          await loadDetail(state.rows[0].idx);
+          return;
+        }
+        renderDetail(state.detail);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setBusy(false);
+        renderMeta();
+      }
+    }
+
+    async function loadDetail(idx) {
+      const url = buildUrl(`${API_BASE}/link`, {
+        variant: state.variant,
+        idx,
+      });
+      setBusy(true);
+      try {
+        const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+        state.detail = payload.detail || null;
+        state.selectedIdx = state.detail ? state.detail.idx : null;
+        renderLinks();
+        renderDetail(state.detail);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function loadNode(side, node) {
+      const nodeValue = String(node || '').trim();
+      if (!nodeValue) return;
+      const url = buildUrl(`${API_BASE}/node`, {
+        variant: state.variant,
+        side,
+        node: nodeValue,
+      });
+      try {
+        const res = await fetch(url, { method: 'GET', credentials: 'same-origin', cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+        const nodeData = payload.node || null;
+        if (!nodeData) return;
+        const sideNorm = String(nodeData.side || '').toLowerCase();
+        if (sideNorm === 'wd') {
+          renderNodePanel('wd-node-panel', 'Wikidata node (focused)', nodeData);
+        } else {
+          renderNodePanel('wdc-node-panel', 'WDC node (focused)', nodeData);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.addEventListener('click', (event) => {
+      const selectBtn = event.target.closest('[data-role="select-link"]');
+      if (selectBtn) {
+        const idx = Number(selectBtn.dataset.idx || '');
+        if (Number.isFinite(idx)) {
+          loadDetail(idx);
+        }
+        return;
+      }
+      const nodeBtn = event.target.closest('[data-role="open-node"]');
+      if (nodeBtn) {
+        const side = nodeBtn.dataset.side || 'wdc';
+        const node = nodeBtn.dataset.node || '';
+        loadNode(side, node);
+      }
+    });
+
+    document.getElementById('search-btn').addEventListener('click', () => {
+      state.q = String(document.getElementById('search-input').value || '').trim();
+      state.offset = 0;
+      loadLinks();
+    });
+    document.getElementById('search-input').addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      state.q = String(document.getElementById('search-input').value || '').trim();
+      state.offset = 0;
+      loadLinks();
+    });
+    document.getElementById('variant-select').addEventListener('change', (event) => {
+      state.variant = String(event.target.value || '').trim();
+      state.offset = 0;
+      loadLinks();
+    });
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      state.offset = Math.max(0, state.offset - state.limit);
+      loadLinks();
+    });
+    document.getElementById('next-btn').addEventListener('click', () => {
+      if ((state.offset + state.limit) >= state.total) return;
+      state.offset = state.offset + state.limit;
+      loadLinks();
+    });
+
+    renderLinks();
+    renderDetail(state.detail);
+    renderMeta();
+  </script>
+</body>
+</html>

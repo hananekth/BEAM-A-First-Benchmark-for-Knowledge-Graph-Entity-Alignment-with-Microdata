@@ -61,6 +61,41 @@ def _make_build_tree(build_root: Path, links_count: int = 2, class_name: str = "
     _write_variant_files(build_root / "without_link_code", links_count=links_count)
 
 
+def _write_link_explorer_variant(variant_dir: Path):
+    variant_dir.mkdir(parents=True, exist_ok=True)
+    (variant_dir / "ent_links").write_text(
+        "wdc_iri\twikidata_uri\n"
+        "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q100\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "attr_triples_1").write_text(
+        'http://example.org/wdc/entity1\thttp://schema.org/name\t"Alpha City"\n'
+        'http://example.org/wdc/entity1\thttp://schema.org/telephone\t"+33 1 23 45 67"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_1").write_text(
+        "http://example.org/wdc/entity1\thttp://schema.org/sameAs\thttp://www.wikidata.org/entity/Q100\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "attr_triples_2").write_text(
+        'http://www.wikidata.org/entity/Q100\thttp://www.w3.org/2000/01/rdf-schema#label\t"Alpha City"\n'
+        'http://www.wikidata.org/entity/Q100\thttp://www.wikidata.org/prop/direct/P1329\t"+331234567"\n',
+        encoding="utf-8",
+    )
+    (variant_dir / "rel_triples_2").write_text(
+        "http://www.wikidata.org/entity/Q100\thttp://www.wikidata.org/prop/direct/P31\thttp://www.wikidata.org/entity/Q515\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "prop_stats_wdc.tsv").write_text(
+        "property\tcount\nhttp://schema.org/name\t1\nhttp://schema.org/telephone\t1\n",
+        encoding="utf-8",
+    )
+    (variant_dir / "prop_stats_wd.tsv").write_text(
+        "property\tcount\nhttp://www.wikidata.org/prop/direct/P1329\t1\n",
+        encoding="utf-8",
+    )
+
+
 def _client_with_test_classes(monkeypatch, test_wdc_classes):
     import beam.db as beam_db
     import webapp.main as web_main
@@ -520,6 +555,57 @@ def test_build_detail_page_missing_build_redirects_to_index(monkeypatch, test_wd
     location = resp.headers.get("location", "")
     assert location.startswith("/?test_mode=1&")
     assert "form_error=Build+not+found." in location
+
+
+def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120012"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+    _write_link_explorer_variant(build_root / "with_link_code")
+
+    with client:
+        page = client.get(f"/builds/TestClass/{build_name}/links?test_mode=1")
+        links_resp = client.get(f"/api/builds/TestClass/{build_name}/links?variant=with_link_code")
+        detail_resp = client.get(f"/api/builds/TestClass/{build_name}/link?variant=with_link_code&idx=0")
+        node_resp = client.get(
+            f"/api/builds/TestClass/{build_name}/node",
+            params={
+                "variant": "with_link_code",
+                "side": "wdc",
+                "node": "http://example.org/wdc/entity1",
+            },
+        )
+
+    assert page.status_code == 200
+    assert "Link Explorer" in page.text
+    assert "Suggested Property Alignment" in page.text
+    assert "WDC Nodes" in page.text
+
+    assert links_resp.status_code == 200
+    links_payload = links_resp.json()
+    assert links_payload["ok"] is True
+    assert links_payload["variant"] == "with_link_code"
+    assert links_payload["total"] >= 1
+    assert links_payload["rows"][0]["wdc_iri"] == "http://example.org/wdc/entity1"
+
+    assert detail_resp.status_code == 200
+    detail_payload = detail_resp.json()
+    assert detail_payload["ok"] is True
+    detail = detail_payload["detail"]
+    assert detail["wdc_iri"] == "http://example.org/wdc/entity1"
+    assert detail["wikidata_uri"] == "http://www.wikidata.org/entity/Q100"
+    assert any(
+        row.get("wdc_short_property") == "name" and row.get("wikidata_short_property") == "label"
+        for row in detail.get("property_matches", [])
+    )
+
+    assert node_resp.status_code == 200
+    node_payload = node_resp.json()
+    assert node_payload["ok"] is True
+    assert node_payload["node"]["side"] == "wdc"
+    assert node_payload["node"]["node"] == "http://example.org/wdc/entity1"
+    assert node_payload["node"]["attr_count"] >= 1
 
 
 def test_delete_build_removes_directory_and_job_rows(monkeypatch, test_wdc_classes):

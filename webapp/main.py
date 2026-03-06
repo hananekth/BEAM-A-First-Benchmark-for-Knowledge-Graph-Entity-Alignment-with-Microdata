@@ -15,7 +15,7 @@ from urllib.parse import urljoin, quote_plus
 
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Form
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Form, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
@@ -1226,6 +1226,440 @@ def _build_summary_from_dir(base: Path):
     return build
 
 
+_LINK_EXPLORER_VARIANTS = ("with_link_code", "without_link_code")
+_LINK_EXPLORER_PROP_ALIASES = {
+    "name": "label",
+    "label": "label",
+    "rdfslabel": "label",
+    "preflabel": "label",
+    "altlabel": "label",
+    "title": "label",
+    "description": "description",
+    "schemaorgdescription": "description",
+    "telephone": "phone",
+    "phone": "phone",
+    "contactpoint": "phone",
+    "p1329": "phone",
+    "sameas": "sameas",
+    "url": "url",
+    "website": "url",
+    "officialwebsite": "url",
+    "p856": "url",
+    "identifier": "identifier",
+    "code": "identifier",
+    "eidr": "identifier",
+    "p2704": "identifier",
+}
+
+
+def _normalize_node_token(value: str) -> str:
+    raw = _clean_text(value).strip().strip("<>").strip()
+    if not raw:
+        return ""
+    try:
+        wd_iri = align_script.extract_wd_entity_iri(raw)
+    except Exception:
+        wd_iri = None
+    if wd_iri:
+        return wd_iri
+    return raw
+
+
+def _short_predicate(value: str) -> str:
+    text = _clean_text(value).strip().strip("<>")
+    if not text:
+        return ""
+    if "#" in text:
+        text = text.rsplit("#", 1)[-1]
+    if "/" in text:
+        text = text.rsplit("/", 1)[-1]
+    if ":" in text and "/" not in text and "#" not in text:
+        text = text.split(":", 1)[-1]
+    return text
+
+
+def _predicate_token(value: str) -> str:
+    raw = _short_predicate(value).lower()
+    return re.sub(r"[^a-z0-9]+", "", raw)
+
+
+def _predicate_alias_key(value: str) -> str:
+    token = _predicate_token(value)
+    return _LINK_EXPLORER_PROP_ALIASES.get(token, token)
+
+
+def _normalize_compare_text(value: str) -> str:
+    raw = _clean_text(value)
+    if not raw:
+        return ""
+    base = align_script.normalize_for_matching(raw)
+    return re.sub(r"[^a-z0-9]+", "", base.lower())
+
+
+def _object_value_info(obj: str):
+    literal = _literal_lex(obj)
+    if literal is not None:
+        return {
+            "text": literal,
+            "is_node": False,
+            "node": "",
+            "norm": _normalize_compare_text(literal),
+        }
+    node = _normalize_node_token(obj)
+    text = node or _clean_text(obj).strip().strip("<>")
+    return {
+        "text": text,
+        "is_node": True,
+        "node": node or text,
+        "norm": _normalize_compare_text(text),
+    }
+
+
+def _parse_ent_link_line(line: str):
+    text = (line or "").rstrip("\n")
+    if not text:
+        return None
+    parts = text.split("\t")
+    if len(parts) < 2:
+        return None
+    left = _clean_text(parts[0])
+    right = _clean_text(parts[1])
+    if _looks_like_ent_links_header(f"{left}\t{right}"):
+        return None
+    wdc_iri = _normalize_node_token(left)
+    wd_iri = _normalize_node_token(right)
+    if not wdc_iri or not wd_iri:
+        return None
+    return wdc_iri, wd_iri
+
+
+def _resolve_link_explorer_variant_dir(build_dir: Path, variant: Optional[str] = None):
+    requested = _clean_text(variant)
+    names = []
+    if requested in _LINK_EXPLORER_VARIANTS:
+        names.append(requested)
+    for default_name in _LINK_EXPLORER_VARIANTS:
+        if default_name not in names:
+            names.append(default_name)
+
+    for name in names:
+        p = build_dir / name
+        if p.exists() and p.is_dir() and (p / "ent_links").exists():
+            return p, name
+    for name in names:
+        p = build_dir / name
+        if p.exists() and p.is_dir():
+            return p, name
+    return None, None
+
+
+def _scan_ent_links_page(path: Path, offset: int = 0, limit: int = 30, query: str = ""):
+    if not path.exists() or not path.is_file():
+        return {"rows": [], "total": 0}
+    offset = max(0, int(offset))
+    limit = max(1, min(int(limit), 200))
+    q = _clean_text(query).lower()
+
+    rows = []
+    total = 0
+    logical_idx = -1
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            parsed = _parse_ent_link_line(line)
+            if not parsed:
+                continue
+            logical_idx += 1
+            wdc_iri, wd_iri = parsed
+            if q and q not in wdc_iri.lower() and q not in wd_iri.lower():
+                continue
+            if total >= offset and len(rows) < limit:
+                rows.append(
+                    {
+                        "idx": logical_idx,
+                        "wdc_iri": wdc_iri,
+                        "wikidata_uri": wd_iri,
+                    }
+                )
+            total += 1
+    return {"rows": rows, "total": total}
+
+
+def _scan_ent_link_by_index(path: Path, idx: int):
+    if not path.exists() or not path.is_file():
+        return None
+    if idx is None:
+        return None
+    try:
+        target = int(idx)
+    except Exception:
+        return None
+    if target < 0:
+        return None
+
+    logical_idx = -1
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            parsed = _parse_ent_link_line(line)
+            if not parsed:
+                continue
+            logical_idx += 1
+            if logical_idx != target:
+                continue
+            wdc_iri, wd_iri = parsed
+            return {
+                "idx": logical_idx,
+                "wdc_iri": wdc_iri,
+                "wikidata_uri": wd_iri,
+            }
+    return None
+
+
+def _scan_subject_triples(path: Path, subject_key: str, max_rows: int = 4000):
+    rows = []
+    if not path.exists() or not path.is_file() or not subject_key:
+        return rows
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            parts = line.rstrip("\n").split("\t", 2)
+            if len(parts) < 3:
+                continue
+            s = _clean_text(parts[0])
+            p = _clean_text(parts[1]).strip().strip("<>")
+            o = _clean_text(parts[2])
+            if not s or not p:
+                continue
+            if _normalize_node_token(s) != subject_key:
+                continue
+            rows.append((p, o))
+            if len(rows) >= max_rows:
+                break
+    return rows
+
+
+def _aggregate_property_items(rows, relation: bool, max_values: int = 8):
+    by_pred = {}
+    for p, o in rows:
+        pred = _clean_text(p).strip().strip("<>")
+        if not pred:
+            continue
+        info = _object_value_info(o)
+        if not info["text"]:
+            continue
+        item = by_pred.get(pred)
+        if item is None:
+            item = {
+                "property": pred,
+                "short_property": _short_predicate(pred),
+                "count": 0,
+                "values": [],
+                "value_norms": set(),
+                "_seen": set(),
+                "relation": relation,
+            }
+            by_pred[pred] = item
+        item["count"] += 1
+        signature = ("node" if info["is_node"] else "literal", info["node"] if info["is_node"] else info["text"])
+        if signature in item["_seen"]:
+            continue
+        item["_seen"].add(signature)
+        if info["norm"]:
+            item["value_norms"].add(info["norm"])
+        if len(item["values"]) < max_values:
+            payload = {
+                "text": info["text"],
+                "is_node": info["is_node"],
+            }
+            if info["is_node"]:
+                payload["node"] = info["node"]
+            item["values"].append(payload)
+
+    items = []
+    for pred, item in by_pred.items():
+        items.append(
+            {
+                "property": pred,
+                "short_property": item["short_property"],
+                "count": item["count"],
+                "values": item["values"],
+                "value_norms": sorted(item["value_norms"]),
+                "relation": relation,
+            }
+        )
+    items.sort(key=lambda r: (-int(r.get("count", 0)), r.get("property", "")))
+    return items
+
+
+def _side_files(variant_dir: Path, side: str):
+    side_norm = _clean_text(side).lower()
+    if side_norm in {"wd", "wikidata", "right"}:
+        return {
+            "side": "wd",
+            "attr": variant_dir / "attr_triples_2",
+            "rel": variant_dir / "rel_triples_2",
+        }
+    return {
+        "side": "wdc",
+        "attr": variant_dir / "attr_triples_1",
+        "rel": variant_dir / "rel_triples_1",
+    }
+
+
+def _build_node_payload(variant_dir: Path, side: str, node: str):
+    files = _side_files(variant_dir, side)
+    node_key = _normalize_node_token(node)
+    if not node_key:
+        return {
+            "side": files["side"],
+            "node": "",
+            "attr_items": [],
+            "rel_items": [],
+            "attr_count": 0,
+            "rel_count": 0,
+        }
+    attr_rows = _scan_subject_triples(files["attr"], node_key)
+    rel_rows = _scan_subject_triples(files["rel"], node_key)
+    attr_items = _aggregate_property_items(attr_rows, relation=False)
+    rel_items = _aggregate_property_items(rel_rows, relation=True)
+    return {
+        "side": files["side"],
+        "node": node_key,
+        "attr_items": attr_items,
+        "rel_items": rel_items,
+        "attr_count": sum(int(r.get("count", 0)) for r in attr_items),
+        "rel_count": sum(int(r.get("count", 0)) for r in rel_items),
+    }
+
+
+def _similarity_for_properties(left_item: dict, right_item: dict):
+    left_prop = left_item.get("property", "")
+    right_prop = right_item.get("property", "")
+    left_token = _predicate_token(left_prop)
+    right_token = _predicate_token(right_prop)
+    if not left_token or not right_token:
+        return 0.0, 0.0, 0.0
+
+    name_score = 0.0
+    if left_token == right_token:
+        name_score = 1.0
+    else:
+        left_alias = _predicate_alias_key(left_prop)
+        right_alias = _predicate_alias_key(right_prop)
+        if left_alias and left_alias == right_alias:
+            name_score = 0.93
+        else:
+            ratio = difflib.SequenceMatcher(None, left_token, right_token).ratio()
+            if left_token in right_token or right_token in left_token:
+                ratio = max(ratio, 0.86)
+            name_score = ratio
+
+    left_values = set(left_item.get("value_norms") or [])
+    right_values = set(right_item.get("value_norms") or [])
+    value_score = 0.0
+    if left_values and right_values:
+        inter = len(left_values & right_values)
+        union = len(left_values | right_values)
+        if union > 0:
+            value_score = inter / union
+
+    score = (0.65 * name_score) + (0.35 * value_score)
+    if name_score >= 0.93 and score < 0.93:
+        score = 0.93
+    return score, name_score, value_score
+
+
+def _compute_property_matches(left_items, right_items, max_matches: int = 14, threshold: float = 0.55):
+    candidates = []
+    for l_idx, left_item in enumerate(left_items or []):
+        for r_idx, right_item in enumerate(right_items or []):
+            score, name_score, value_score = _similarity_for_properties(left_item, right_item)
+            if score < threshold:
+                continue
+            candidates.append(
+                {
+                    "l_idx": l_idx,
+                    "r_idx": r_idx,
+                    "score": score,
+                    "name_score": name_score,
+                    "value_score": value_score,
+                }
+            )
+    candidates.sort(key=lambda row: row["score"], reverse=True)
+
+    used_left = set()
+    used_right = set()
+    rows = []
+    for cand in candidates:
+        if cand["l_idx"] in used_left or cand["r_idx"] in used_right:
+            continue
+        left_item = left_items[cand["l_idx"]]
+        right_item = right_items[cand["r_idx"]]
+        used_left.add(cand["l_idx"])
+        used_right.add(cand["r_idx"])
+        rows.append(
+            {
+                "wdc_property": left_item.get("property", ""),
+                "wdc_short_property": left_item.get("short_property", ""),
+                "wikidata_property": right_item.get("property", ""),
+                "wikidata_short_property": right_item.get("short_property", ""),
+                "score": round(float(cand["score"]), 3),
+                "name_score": round(float(cand["name_score"]), 3),
+                "value_score": round(float(cand["value_score"]), 3),
+                "wdc_sample": (left_item.get("values") or [{}])[0].get("text", "") if left_item.get("values") else "",
+                "wikidata_sample": (right_item.get("values") or [{}])[0].get("text", "")
+                if right_item.get("values")
+                else "",
+            }
+        )
+        if len(rows) >= max_matches:
+            break
+    return rows
+
+
+def _node_graph_preview(node_payload: dict, max_neighbors: int = 10):
+    items = []
+    if not node_payload:
+        return items
+    root = _clean_text(node_payload.get("node"))
+    side = _clean_text(node_payload.get("side"))
+    if root:
+        items.append({"node": root, "side": side, "root": True})
+    seen = {root}
+    for rel_item in (node_payload.get("rel_items") or []):
+        for value in (rel_item.get("values") or []):
+            if not value.get("is_node"):
+                continue
+            node = _clean_text(value.get("node"))
+            if not node or node in seen:
+                continue
+            seen.add(node)
+            items.append({"node": node, "side": side, "root": False})
+            if len(items) >= max_neighbors + 1:
+                return items
+    return items
+
+
+def _build_link_detail_payload(variant_dir: Path, idx: int):
+    ent_links_path = variant_dir / "ent_links"
+    link_row = _scan_ent_link_by_index(ent_links_path, idx)
+    if not link_row:
+        return None
+    wdc_node = _build_node_payload(variant_dir, "wdc", link_row["wdc_iri"])
+    wd_node = _build_node_payload(variant_dir, "wd", link_row["wikidata_uri"])
+    left_items = (wdc_node.get("attr_items") or []) + (wdc_node.get("rel_items") or [])
+    right_items = (wd_node.get("attr_items") or []) + (wd_node.get("rel_items") or [])
+    matches = _compute_property_matches(left_items, right_items)
+    return {
+        "idx": link_row["idx"],
+        "wdc_iri": link_row["wdc_iri"],
+        "wikidata_uri": link_row["wikidata_uri"],
+        "wdc_node": wdc_node,
+        "wd_node": wd_node,
+        "property_matches": matches,
+        "wdc_graph_nodes": _node_graph_preview(wdc_node),
+        "wd_graph_nodes": _node_graph_preview(wd_node),
+    }
+
+
 def _normalized_path_text(value: str) -> str:
     raw = _clean_text(value)
     if not raw:
@@ -1627,6 +2061,160 @@ def build_detail_page(
             "is_test_mode": is_test_mode,
         },
     )
+
+
+@app.get("/builds/{class_name}/{build_name}/links", response_class=HTMLResponse)
+def build_links_page(
+    request: Request,
+    class_name: str,
+    build_name: str,
+    variant: Optional[str] = None,
+    q: str = "",
+    offset: int = 0,
+    limit: int = 30,
+    test_mode: Optional[str] = None,
+):
+    is_test_mode = _bool_from_any(test_mode)
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        query = "test_mode=1&" if is_test_mode else ""
+        query += f"form_error={quote_plus('Build not found.')}"
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    build = _build_summary_from_dir(build_dir)
+    if not build:
+        query = "test_mode=1&" if is_test_mode else ""
+        query += f"form_error={quote_plus('Build not found.')}"
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
+    if not variant_dir or not variant_name:
+        query = "test_mode=1&" if is_test_mode else ""
+        query += f"form_error={quote_plus('No link files available for this build.')}"
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    ent_links_path = variant_dir / "ent_links"
+    page = _scan_ent_links_page(ent_links_path, offset=offset, limit=limit, query=q)
+    rows = page["rows"]
+    total = page["total"]
+    initial_idx = rows[0]["idx"] if rows else None
+    initial_detail = _build_link_detail_payload(variant_dir, initial_idx) if initial_idx is not None else None
+
+    available_variants = []
+    for name in _LINK_EXPLORER_VARIANTS:
+        p = build_dir / name
+        if not p.exists() or not p.is_dir():
+            continue
+        available_variants.append(
+            {
+                "name": name,
+                "has_ent_links": (p / "ent_links").exists(),
+            }
+        )
+    if not available_variants:
+        available_variants = [{"name": variant_name, "has_ent_links": ent_links_path.exists()}]
+
+    return templates.TemplateResponse(
+        request,
+        "link_explorer.html",
+        {
+            "build": build,
+            "is_test_mode": is_test_mode,
+            "selected_variant": variant_name,
+            "available_variants": available_variants,
+            "initial_query": _clean_text(q),
+            "initial_offset": max(0, int(offset)),
+            "initial_limit": max(1, min(int(limit), 200)),
+            "initial_total": total,
+            "initial_rows": rows,
+            "initial_detail": initial_detail,
+        },
+    )
+
+
+@app.get("/api/builds/{class_name}/{build_name}/links")
+def build_links_api(
+    class_name: str,
+    build_name: str,
+    variant: Optional[str] = None,
+    q: str = "",
+    offset: int = 0,
+    limit: int = 30,
+):
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        raise HTTPException(status_code=404, detail="Build not found.")
+    variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
+    if not variant_dir or not variant_name:
+        raise HTTPException(status_code=404, detail="No link files available for this build.")
+
+    ent_links_path = variant_dir / "ent_links"
+    page = _scan_ent_links_page(ent_links_path, offset=offset, limit=limit, query=q)
+    return {
+        "ok": True,
+        "class_name": class_name,
+        "build_name": build_name,
+        "variant": variant_name,
+        "q": _clean_text(q),
+        "offset": max(0, int(offset)),
+        "limit": max(1, min(int(limit), 200)),
+        "total": page["total"],
+        "rows": page["rows"],
+    }
+
+
+@app.get("/api/builds/{class_name}/{build_name}/link")
+def build_link_detail_api(
+    class_name: str,
+    build_name: str,
+    idx: int,
+    variant: Optional[str] = None,
+):
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        raise HTTPException(status_code=404, detail="Build not found.")
+    variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
+    if not variant_dir or not variant_name:
+        raise HTTPException(status_code=404, detail="No link files available for this build.")
+
+    payload = _build_link_detail_payload(variant_dir, idx)
+    if not payload:
+        raise HTTPException(status_code=404, detail="Link not found at this index.")
+    return {
+        "ok": True,
+        "class_name": class_name,
+        "build_name": build_name,
+        "variant": variant_name,
+        "detail": payload,
+    }
+
+
+@app.get("/api/builds/{class_name}/{build_name}/node")
+def build_link_node_api(
+    class_name: str,
+    build_name: str,
+    node: str,
+    side: str = "wdc",
+    variant: Optional[str] = None,
+):
+    node_value = _clean_text(node)
+    if not node_value:
+        raise HTTPException(status_code=400, detail="node is required.")
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        raise HTTPException(status_code=404, detail="Build not found.")
+    variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
+    if not variant_dir or not variant_name:
+        raise HTTPException(status_code=404, detail="No link files available for this build.")
+
+    payload = _build_node_payload(variant_dir, side, node_value)
+    return {
+        "ok": True,
+        "class_name": class_name,
+        "build_name": build_name,
+        "variant": variant_name,
+        "node": payload,
+    }
 
 
 @app.get("/api/dashboard")

@@ -37,6 +37,8 @@
       color:#dbe5f2;
       cursor:pointer;
       font-size:13px;
+      text-decoration:none;
+      display:inline-block;
     }
     .btn.danger { background:#5b1f29; color:#ffd9df; border-color:#8f3a49; }
     .tiles { margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px; }
@@ -72,6 +74,7 @@
       <div class="small">Path: {{ build.path }}</div>
 
       <div class="actions">
+        <a class="btn" href="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}/links{% if is_test_mode %}?test_mode=1{% endif %}">Explore links</a>
         <form method="get" action="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}/download">
           <button class="btn" type="submit">Download build</button>
         </form>
