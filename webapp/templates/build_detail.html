@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Build Detail</title>
+  <style>
+    :root{
+      --bg:#0e1117;
+      --card:#161b22;
+      --border:#30363d;
+      --text:#e6edf3;
+      --muted:#8b949e;
+      --primary:#2f81f7;
+    }
+    *{ box-sizing:border-box; }
+    body { margin:0; font-family:"IBM Plex Sans", system-ui, sans-serif; color:var(--text); background:var(--bg); }
+    .page { max-width:1100px; margin:0 auto; padding:24px; }
+    .back-link {
+      display:inline-block;
+      color:#93c5fd;
+      text-decoration:none;
+      margin-bottom:12px;
+    }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+    h1 { margin:0 0 8px; font-size:24px; }
+    h2 { margin:18px 0 8px; font-size:18px; }
+    .small { color:var(--muted); font-size:12px; }
+    .actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+    .actions form { margin:0; }
+    .btn {
+      width:auto;
+      margin-top:0;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:#2a3442;
+      color:#dbe5f2;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .btn.danger { background:#5b1f29; color:#ffd9df; border-color:#8f3a49; }
+    .tiles { margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px; }
+    .tile { border:1px solid var(--border); border-radius:8px; padding:10px 12px; background:#0b0f1722; }
+    .tile-label { color:var(--muted); font-size:12px; }
+    .tile-value { margin-top:2px; font-size:18px; font-weight:700; }
+    .qa-box, .config-box, .parts-box {
+      margin-top:12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:10px 12px;
+      background:#0b0f171a;
+    }
+    .qa-kv, .cfg-row, .part-row { display:grid; grid-template-columns:1fr auto; gap:10px; font-size:12px; padding:2px 0; }
+    .cfg-row { grid-template-columns:240px 1fr; }
+    .cfg-key { color:#93c5fd; }
+    .cfg-group + .cfg-group { margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); }
+    .cfg-title { color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; font-size:12px; margin-bottom:4px; }
+    .part-name { word-break:break-all; }
+    .section-sep { margin-top:12px; border-top:1px dashed var(--border); padding-top:12px; }
+    @media (max-width: 820px) {
+      .cfg-row { grid-template-columns:1fr; gap:4px; }
+      .actions .btn { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a class="back-link" href="/{% if is_test_mode %}?test_mode=1{% endif %}">&larr; Back to dashboard</a>
+    <div class="card">
+      <h1>{{ build.class_name }} · {{ build.build_name }}</h1>
+      <div class="small">Completed: {{ build.done_at or "N/A" }}</div>
+      <div class="small">Path: {{ build.path }}</div>
+
+      <div class="actions">
+        <form method="get" action="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}/download">
+          <button class="btn" type="submit">Download build</button>
+        </form>
+        <form method="post" action="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}/rerun">
+          <button class="btn" type="submit">Rerun same config</button>
+        </form>
+        <form method="post" action="/builds/{{ build.class_name|urlencode }}/{{ build.build_name|urlencode }}/delete">
+          <button class="btn danger" type="submit">Delete build</button>
+        </form>
+      </div>
+
+      {% if build.with_link %}
+      <div class="section-sep">
+        <h2>Variant: with_link_code</h2>
+        <div class="tiles">
+          <div class="tile"><div class="tile-label">Total Size</div><div class="tile-value">{{ build.with_link.size_total_h }}</div></div>
+          <div class="tile"><div class="tile-label">Entity Links</div><div class="tile-value">{{ build.with_link.links_count }}</div></div>
+          <div class="tile"><div class="tile-label">WDC Properties</div><div class="tile-value">{{ build.with_link.wdc_props }}</div></div>
+          <div class="tile"><div class="tile-label">WD Properties</div><div class="tile-value">{{ build.with_link.wd_props }}</div></div>
+        </div>
+        <div class="qa-box">
+          <div><b>Result QA</b></div>
+          {% if build.with_link.qa_warnings %}
+            <div class="small">{{ build.with_link.qa_warnings | join("; ") }}</div>
+          {% else %}
+            <div class="small">No major issues detected.</div>
+          {% endif %}
+          {% if build.with_link.sample_links %}
+            <div class="section-sep">
+              <div class="small"><b>Sample entity links</b></div>
+              {% for row in build.with_link.sample_links %}
+              <div class="qa-kv">
+                <div>{{ row.wdc_iri }}</div>
+                <div class="small">{{ row.wikidata_uri }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if build.without_link and not build.variants_same %}
+      <div class="section-sep">
+        <h2>Variant: without_link_code</h2>
+        <div class="tiles">
+          <div class="tile"><div class="tile-label">Total Size</div><div class="tile-value">{{ build.without_link.size_total_h }}</div></div>
+          <div class="tile"><div class="tile-label">Entity Links</div><div class="tile-value">{{ build.without_link.links_count }}</div></div>
+          <div class="tile"><div class="tile-label">WDC Properties</div><div class="tile-value">{{ build.without_link.wdc_props }}</div></div>
+          <div class="tile"><div class="tile-label">WD Properties</div><div class="tile-value">{{ build.without_link.wd_props }}</div></div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="config-box">
+        <div><b>Config</b></div>
+        {% for g in build.config_groups %}
+        <div class="cfg-group">
+          <div class="cfg-title">{{ g["title"] }}</div>
+          {% for k, val in g["items"] %}
+          <div class="cfg-row">
+            <div class="cfg-key">{{ k }}</div>
+            <div>{{ val }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if build.parts_manifest %}
+      <div class="parts-box">
+        <div><b>Parts Used</b> <span class="small">({{ build.parts_count }})</span></div>
+        {% if build.parts_total_size_human %}<div class="small">Total: {{ build.parts_total_size_human }}</div>{% endif %}
+        <div class="section-sep">
+          {% for p in build.parts_manifest %}
+          <div class="part-row">
+            <div class="part-name">{{ p.get("name", "") }}</div>
+            <div class="small">{{ p.get("size_human", "") }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

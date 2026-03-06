@@ -472,6 +472,56 @@ def test_builds_render_and_download(monkeypatch, test_wdc_classes):
     assert zipped.headers["content-type"].startswith("application/zip")
 
 
+def test_history_card_exposes_build_detail_url(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120010"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+
+    with client:
+        resp = client.get("/?test_mode=1")
+
+    assert resp.status_code == 200
+    soup = BeautifulSoup(resp.text, "html.parser")
+    card = soup.select_one("#build-list .build[data-class-name='TestClass']")
+    assert card is not None
+    assert card.get("data-build-name") == build_name
+    assert card.get("data-build-detail-url") == f"/builds/TestClass/{build_name}?test_mode=1"
+
+    open_btn = card.select_one(".js-toggle-build")
+    assert open_btn is not None
+    assert open_btn.get("title") == "Open details"
+
+
+def test_build_detail_page_renders_existing_build(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120011"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root)
+
+    with client:
+        resp = client.get(f"/builds/TestClass/{build_name}?test_mode=1")
+
+    assert resp.status_code == 200
+    assert "<title>Build Detail</title>" in resp.text
+    assert "Back to dashboard" in resp.text
+    assert "/?test_mode=1" in resp.text
+    assert "Variant: with_link_code" in resp.text
+    assert "Parts Used" in resp.text
+
+
+def test_build_detail_page_missing_build_redirects_to_index(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+
+    with client:
+        resp = client.get("/builds/TestClass/beam_missing?test_mode=1", follow_redirects=False)
+
+    assert resp.status_code == 303
+    location = resp.headers.get("location", "")
+    assert location.startswith("/?test_mode=1&")
+    assert "form_error=Build+not+found." in location
+
+
 def test_delete_build_removes_directory_and_job_rows(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     build_name = "beam_20260212_120001"

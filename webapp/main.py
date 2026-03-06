@@ -1096,36 +1096,9 @@ def _scan_builds(limit=30):
     markers.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
     for marker in markers[:limit]:
         base = marker.parent
-        st = marker.stat()
-        build_config = None
-        cfg_path = base / "BUILD_CONFIG.json"
-        if cfg_path.exists():
-            try:
-                build_config = json.loads(cfg_path.read_text(encoding="utf-8"))
-            except Exception:
-                build_config = None
-        with_link = _variant_stats(base, "with_link_code")
-        without_link = _variant_stats(base, "without_link_code")
-        variants_same = False
-        if with_link and without_link:
-            variants_same = (
-                with_link["size_total_b"] == without_link["size_total_b"]
-                and with_link["links_count"] == without_link["links_count"]
-                and with_link["wdc_props"] == without_link["wdc_props"]
-                and with_link["wd_props"] == without_link["wd_props"]
-            )
-        builds.append(
-            {
-                "class_name": base.parent.name,
-                "build_name": base.name,
-                "path": str(base),
-                "done_at": _fmt_ts(st.st_mtime),
-                "with_link": with_link,
-                "without_link": without_link,
-                "variants_same": variants_same,
-                "build_config": build_config,
-            }
-        )
+        summary = _build_summary_from_dir(base)
+        if summary:
+            builds.append(summary)
     return builds
 
 
@@ -1189,6 +1162,68 @@ def _resolve_build_dir(class_name: str, build_name: str):
     if not (base / "BUILD_DONE").exists():
         return None
     return base
+
+
+def _build_summary_from_dir(base: Path):
+    if not base or not base.exists() or not base.is_dir():
+        return None
+    marker = base / "BUILD_DONE"
+    if not marker.exists() or not marker.is_file():
+        return None
+    try:
+        st = marker.stat()
+    except Exception:
+        return None
+
+    build_config = None
+    cfg_path = base / "BUILD_CONFIG.json"
+    if cfg_path.exists():
+        try:
+            build_config = json.loads(cfg_path.read_text(encoding="utf-8"))
+        except Exception:
+            build_config = None
+
+    with_link = _variant_stats(base, "with_link_code")
+    without_link = _variant_stats(base, "without_link_code")
+    variants_same = False
+    if with_link and without_link:
+        variants_same = (
+            with_link["size_total_b"] == without_link["size_total_b"]
+            and with_link["links_count"] == without_link["links_count"]
+            and with_link["wdc_props"] == without_link["wdc_props"]
+            and with_link["wd_props"] == without_link["wd_props"]
+        )
+
+    build = {
+        "class_name": base.parent.name,
+        "build_name": base.name,
+        "path": str(base),
+        "done_at": _fmt_ts(st.st_mtime),
+        "with_link": with_link,
+        "without_link": without_link,
+        "variants_same": variants_same,
+        "build_config": build_config,
+    }
+
+    config = build_config if isinstance(build_config, dict) else None
+    if config:
+        build["config"] = config
+    else:
+        build["config"] = {
+            "class_name": build["class_name"],
+            "build_name": build["build_name"],
+            "result_path": build["path"],
+            "config_source": "inferred",
+        }
+
+    parts = build["config"].get("parts_manifest")
+    if not isinstance(parts, list):
+        parts = []
+    build["parts_manifest"] = parts
+    build["parts_count"] = build["config"].get("parts_count", len(parts))
+    build["parts_total_size_human"] = build["config"].get("parts_total_size_human")
+    build["config_groups"] = _build_config_groups(build["config"])
+    return build
 
 
 def _normalized_path_text(value: str) -> str:
@@ -1559,6 +1594,36 @@ def index(
             "class_meta": class_meta,
             "class_parts_info": class_parts_info,
             "form_error": _clean_text(form_error),
+            "is_test_mode": is_test_mode,
+        },
+    )
+
+
+@app.get("/builds/{class_name}/{build_name}", response_class=HTMLResponse)
+def build_detail_page(
+    request: Request,
+    class_name: str,
+    build_name: str,
+    test_mode: Optional[str] = None,
+):
+    is_test_mode = _bool_from_any(test_mode)
+    build_dir = _resolve_build_dir(class_name, build_name)
+    if not build_dir:
+        query = "test_mode=1&" if is_test_mode else ""
+        query += f"form_error={quote_plus('Build not found.')}"
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    build = _build_summary_from_dir(build_dir)
+    if not build:
+        query = "test_mode=1&" if is_test_mode else ""
+        query += f"form_error={quote_plus('Build not found.')}"
+        return RedirectResponse(url=f"/?{query}", status_code=303)
+
+    return templates.TemplateResponse(
+        request,
+        "build_detail.html",
+        {
+            "build": build,
             "is_test_mode": is_test_mode,
         },
     )

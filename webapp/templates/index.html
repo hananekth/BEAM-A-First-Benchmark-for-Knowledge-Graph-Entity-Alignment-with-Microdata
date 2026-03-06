@@ -674,10 +674,10 @@
       {% if builds %}
       {% for b in builds %}
       {% set v = b.with_link or b.without_link %}
-      <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}" data-class-name="{{ b.class_name }}" data-links-count="{{ (v.links_count if v and v.links_count is not none else 0) }}">
+      <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}" data-class-name="{{ b.class_name }}" data-build-name="{{ b.build_name }}" data-build-detail-url="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}" data-build-done-at="{{ b.done_at or '' }}" data-links-count="{{ (v.links_count if v and v.links_count is not none else 0) }}">
         <div class="build-head">
           <div class="header-left">
-            <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}">-</button>
+            <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}" title="Open details" aria-label="Open details">&#8599;</button>
             <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}</span></div>
           </div>
           <div class="head-actions">
@@ -2158,7 +2158,9 @@ function setBuildCollapsed(buildId, collapsed) {
   const card = document.getElementById('build-card-' + buildId);
   if (!body || !btn) return;
   body.classList.toggle('collapsed', !!collapsed);
-  btn.textContent = collapsed ? '+' : '-';
+  btn.textContent = '↗';
+  btn.title = 'Open details';
+  btn.setAttribute('aria-label', 'Open details');
   if (card) card.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 }
 
@@ -2172,17 +2174,33 @@ function toggleBuildCollapsed(buildId) {
   saveMinimizedBuilds(state);
 }
 
+function buildDetailUrlFromCard(card) {
+  if (!card) return '';
+  const explicit = normalizeFormText(card.dataset.buildDetailUrl);
+  if (explicit) return explicit;
+  const className = normalizeFormText(card.dataset.className);
+  const buildName = normalizeFormText(card.dataset.buildName);
+  if (!className || !buildName) return '';
+  return `/builds/${encodeURIComponent(className)}/${encodeURIComponent(buildName)}${DASHBOARD_TEST_MODE ? '?test_mode=1' : ''}`;
+}
+
+function openBuildDetailFromCard(card) {
+  const url = buildDetailUrlFromCard(card);
+  if (!url) return;
+  window.location.assign(url);
+}
+
 function bindBuildMinimize() {
-  const minimized = getMinimizedBuilds();
   document.querySelectorAll('.js-toggle-build').forEach((btn) => {
     const buildId = btn.dataset.buildId;
-    const initialCollapsed = minimized[buildId] !== 0;
-    setBuildCollapsed(buildId, initialCollapsed);
+    setBuildCollapsed(buildId, true);
     if (btn.dataset.bound === '1') return;
     btn.dataset.bound = '1';
     btn.addEventListener('click', (event) => {
       event.stopPropagation();
-      toggleBuildCollapsed(buildId);
+      const card = document.getElementById('build-card-' + buildId);
+      if (!card) return;
+      openBuildDetailFromCard(card);
     });
   });
   document.querySelectorAll('.build[data-build-id]').forEach((card) => {
@@ -2192,7 +2210,7 @@ function bindBuildMinimize() {
     card.dataset.bound = '1';
     card.addEventListener('click', (event) => {
       if (shouldIgnoreCardToggle(event)) return;
-      toggleBuildCollapsed(buildId);
+      openBuildDetailFromCard(card);
     });
   });
 }
@@ -2227,6 +2245,16 @@ function parseBuildCardId(card) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function parseBuildCardDoneAt(card) {
+  if (!card) return Number.NEGATIVE_INFINITY;
+  const raw = String(card.dataset.buildDoneAt || '').trim();
+  if (!raw) return Number.NEGATIVE_INFINITY;
+  const normalized = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  const parsed = Date.parse(normalized);
+  if (Number.isFinite(parsed)) return parsed;
+  return Number.NEGATIVE_INFINITY;
+}
+
 function applyHistorySortOrder() {
   const list = document.getElementById('build-list');
   if (!list) return;
@@ -2244,7 +2272,10 @@ function applyHistorySortOrder() {
       const d = parseBuildCardLinksCount(a) - parseBuildCardLinksCount(b);
       return d !== 0 ? d : (aId - bId);
     }
-    return aId - bId;
+    const aDone = parseBuildCardDoneAt(a);
+    const bDone = parseBuildCardDoneAt(b);
+    if (aDone !== bDone) return bDone - aDone;
+    return bId - aId;
   });
   sorted.forEach((card) => list.appendChild(card));
 }
@@ -2324,6 +2355,7 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
   const path = escapeHtml(build.path || '');
   const actionClass = encodeURIComponent(className);
   const actionBuild = encodeURIComponent(buildName);
+  const detailAction = `/builds/${actionClass}/${actionBuild}${DASHBOARD_TEST_MODE ? '?test_mode=1' : ''}`;
   const downloadAction = `/builds/${actionClass}/${actionBuild}/download`;
   const deleteAction = `/builds/${actionClass}/${actionBuild}/delete`;
   const variant = build.with_link || build.without_link || null;
@@ -2426,10 +2458,10 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
     `;
   }
   return `
-    <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}" data-class-name="${escapeHtml(className)}" data-links-count="${linksCount}">
+    <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}" data-class-name="${escapeHtml(className)}" data-build-name="${escapeHtml(buildName)}" data-build-detail-url="${detailAction}" data-build-done-at="${doneAt}" data-links-count="${linksCount}">
       <div class="build-head">
         <div class="header-left">
-          <button type="button" class="btn-icon js-toggle-build" data-build-id="${buildId}">-</button>
+          <button type="button" class="btn-icon js-toggle-build" data-build-id="${buildId}" title="Open details" aria-label="Open details">&#8599;</button>
           <div><b>${escapeHtml(className)}</b> <span class="small">· Completed: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span></div>
         </div>
         <div class="head-actions">
