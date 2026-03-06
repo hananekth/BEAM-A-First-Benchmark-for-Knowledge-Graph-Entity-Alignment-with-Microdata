@@ -77,37 +77,103 @@
       cursor:pointer;
     }
     .char-option input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
-    .char-option-input-wrap {
-      padding:0 8px;
-      cursor:text;
-      flex:0 1 300px;
+    .ignore-chars-custom-panel {
+      margin-top:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
     }
-    .char-option-input-label {
-      color:var(--muted);
-      font-size:12px;
-      white-space:nowrap;
+    .ignore-chars-custom-add-row {
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      flex:0 0 auto;
+      cursor:default;
+      padding:6px 8px;
     }
-    .char-options-inline-input {
+    .ignore-chars-custom-add-input {
       margin-top:0;
-      width:100%;
-      min-width:120px;
-      flex:1 1 auto;
-      padding:0;
-      height:auto;
-      min-height:0;
+      width:180px;
+      min-width:160px;
+      max-width:100%;
       border:none;
       border-radius:0;
       background:transparent;
       color:var(--text);
-      font-size:13px;
+      padding:0;
       line-height:1.2;
-      outline:none;
+      box-shadow:none;
     }
-    .char-option-input-wrap:focus-within {
+    .ignore-chars-custom-add-btn {
+      width:auto;
+      min-width:auto;
+      height:auto;
+      margin-top:0;
+      padding:0 2px;
+      border:none;
+      border-radius:0;
+      background:transparent;
+      color:var(--muted);
+      font-size:18px;
+      line-height:1;
+      cursor:pointer;
+    }
+    .ignore-chars-custom-add-btn:hover { color:var(--text); }
+    .ignore-chars-custom-add-btn:disabled,
+    .ignore-chars-custom-remove-btn:disabled {
+      opacity:0.45;
+      cursor:not-allowed;
+    }
+    .ignore-chars-custom-list {
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:8px;
+      margin-top:0;
+    }
+    .ignore-chars-custom-item {
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      cursor:default;
+      padding:6px 8px;
+    }
+    .ignore-chars-custom-item-input {
+      margin-top:0;
+      width:auto;
+      min-width:4ch;
+      max-width:24ch;
+      border:none;
+      border-radius:0;
+      background:transparent;
+      color:var(--text);
+      padding:0;
+      line-height:1.2;
+      box-shadow:none;
+    }
+    .ignore-chars-custom-remove-btn {
+      width:auto;
+      min-width:auto;
+      height:auto;
+      margin-top:0;
+      padding:0 2px;
+      border:none;
+      border-radius:0;
+      background:transparent;
+      color:var(--muted);
+      cursor:pointer;
+      font-size:16px;
+      line-height:1;
+    }
+    .ignore-chars-custom-remove-btn:hover { color:#fca5a5; }
+    .ignore-chars-custom-add-row:focus-within,
+    .ignore-chars-custom-item:focus-within {
       border-color:var(--primary);
       box-shadow:0 0 0 2px rgba(37,99,235,0.2);
     }
-    .char-option-input-wrap .char-options-inline-input:focus {
+    .ignore-chars-custom-add-input:focus,
+    .ignore-chars-custom-item-input:focus {
       outline:none;
       border:none;
       box-shadow:none;
@@ -153,7 +219,8 @@
     .field-group { margin-top:10px; }
     .field-group.hidden { display:none; }
     .class-scope-subsection,
-    .property-mapping-subsection {
+    .property-mapping-subsection,
+    .parts-subsection {
       margin-top:12px;
       padding:10px 12px;
       border:1px solid var(--border);
@@ -161,7 +228,8 @@
       background:#0b0f171a;
     }
     .class-scope-subsection .subsection-title,
-    .property-mapping-subsection .subsection-title {
+    .property-mapping-subsection .subsection-title,
+    .parts-subsection .subsection-title {
       margin:0;
       color:var(--muted);
       font-size:12px;
@@ -170,7 +238,8 @@
       letter-spacing:0.04em;
     }
     .class-scope-subsection .subsection-help,
-    .property-mapping-subsection .subsection-help {
+    .property-mapping-subsection .subsection-help,
+    .parts-subsection .subsection-help {
       margin-top:4px;
     }
     .class-scope-grid {
@@ -206,6 +275,25 @@
       white-space:nowrap;
     }
     .parts-inline-toggle .help-tip { flex:0 0 auto; }
+    .parts-controls-container { margin-top:8px; }
+    .parts-controls-grid {
+      display:flex;
+      gap:16px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .parts-controls-main {
+      flex:1 1 360px;
+      min-width:300px;
+    }
+    .parts-controls-flags {
+      flex:1 1 320px;
+      min-width:280px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .parts-controls-flags .checkrow:first-child { margin-top:0; }
     .ready-list { display:grid; gap:6px; margin-top:6px; }
     .ready-item {
       display:flex;
@@ -350,6 +438,10 @@
       .subjobs { grid-template-columns:1fr; }
       .class-scope-grid { grid-template-columns:1fr; }
       .property-mapping-grid { flex-direction:column; }
+      .parts-controls-grid {
+        flex-direction:column;
+        align-items:stretch;
+      }
       .parts-label-row {
         flex-direction:column;
         align-items:flex-start;
@@ -489,49 +581,58 @@
           <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="comma">,</label>
           <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="slash">/</label>
           <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="underscore">_</label>
-          <label class="char-option char-option-input-wrap" for="ignore-chars-custom-input">
-            <span class="char-option-input-label">other tokens</span>
-            <input id="ignore-chars-custom-input" type="text" class="char-options-inline-input" value="" placeholder="token1;token2" />
-          </label>
+        </div>
+        <div id="ignore-chars-custom-panel" class="ignore-chars-custom-panel">
+          <div class="char-option ignore-chars-custom-add-row">
+            <input id="ignore-chars-custom-input" type="text" class="ignore-chars-custom-add-input" value="" placeholder="Additional token to remove" />
+            <button id="ignore-chars-custom-add-btn" class="ignore-chars-custom-add-btn" type="button" aria-label="Add additional token">+</button>
+          </div>
+          <div id="ignore-chars-custom-list" class="ignore-chars-custom-list" aria-live="polite"></div>
         </div>
         <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
         <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
       </div>
     </div>
 
-    <div class="row" style="margin-top:8px;">
-      <div class="col">
-        <div class="parts-label-row">
-          <label class="parts-label">
-            <span class="label-help">
-              Parts to process
-              <span class="help-tip" tabindex="0" title="Choose which class parts to scan: all, a list like 1,2,4, or a range like 1-10.">?</span>
-            </span>
+    <div class="parts-controls-container">
+      <div class="parts-controls-grid">
+        <div class="parts-controls-main">
+        <div class="parts-subsection">
+          <p class="subsection-title">Parts</p>
+          <div class="small subsection-help">Choose which parts of the selected class should be processed.</div>
+          <div class="parts-label-row">
+            <label class="parts-label">
+              <span class="label-help">
+                Parts to process
+                <span class="help-tip" tabindex="0" title="Choose which class parts to scan: all, a list like 1,2,4, or a range like 1-10.">?</span>
+              </span>
+            </label>
+            <label class="checkrow parts-inline-toggle">
+              <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
+              Use local parts only (no downloads)
+              <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
+            </label>
+          </div>
+          <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all, 1,2,4, or 1-10" />
+        </div>
+        </div>
+        <div class="parts-controls-flags">
+          <label class="checkrow">
+            <input id="force-align-checkbox" type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
+            Ignore align cache (force re-run align)
+            <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
           </label>
-          <label class="checkrow parts-inline-toggle">
-            <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
-            Use local parts only (no downloads)
-            <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
+          <label class="checkrow">
+            <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
+            Keep only 1-to-1 links (drop ambiguous links)
+            <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the Wikidata entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
+          </label>
+          <label class="checkrow">
+            <input id="dedup-wdc-exact-subgraph-checkbox" type="checkbox" name="dedup_wdc_exact_subgraph_by_link_value" {% if form.dedup_wdc_exact_subgraph_by_link_value %}checked{% endif %}>
+            Deduplicate identical WDC mentions by exact subgraph (before 1-to-1)
+            <span class="help-tip" tabindex="0" title="Within the same linking value (e.g. same phone/code/label), compare the full outgoing WDC subgraph of each subject. Bnode IDs are ignored but their contents are compared recursively. Exact duplicates are collapsed before optional 1-to-1 filtering.">?</span>
           </label>
         </div>
-        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all, 1,2,4, or 1-10" />
-      </div>
-      <div class="col">
-        <label class="checkrow">
-          <input id="force-align-checkbox" type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
-          Ignore align cache (force re-run align)
-          <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
-        </label>
-        <label class="checkrow">
-          <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
-          Keep only 1-to-1 links (drop ambiguous links)
-          <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the Wikidata entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
-        </label>
-        <label class="checkrow">
-          <input id="dedup-wdc-exact-subgraph-checkbox" type="checkbox" name="dedup_wdc_exact_subgraph_by_link_value" {% if form.dedup_wdc_exact_subgraph_by_link_value %}checked{% endif %}>
-          Deduplicate identical WDC mentions by exact subgraph (before 1-to-1)
-          <span class="help-tip" tabindex="0" title="Within the same linking value (e.g. same phone/code/label), compare the full outgoing WDC subgraph of each subject. Bnode IDs are ignored but their contents are compared recursively. Exact duplicates are collapsed before optional 1-to-1 filtering.">?</span>
-        </label>
       </div>
     </div>
     <div id="form-error-box" class="warn" {% if not form_error %}style="display:none"{% endif %}>{{ form_error or "" }}</div>
@@ -1406,6 +1507,103 @@ function parseIgnoreCharsSpec(spec) {
   return { known, custom };
 }
 
+function getIgnoreCharsCustomList() {
+  return document.getElementById('ignore-chars-custom-list');
+}
+
+function getIgnoreCharsCustomRowInputs() {
+  return Array.from(document.querySelectorAll('.ignore-chars-custom-item-input'));
+}
+
+function resizeIgnoreCharsTokenInput(input, minChars = 4, maxChars = 24) {
+  if (!input) return;
+  const raw = String(input.value || '').trim();
+  const placeholder = String(input.placeholder || '').trim();
+  const basis = raw || placeholder || '';
+  const next = Math.min(maxChars, Math.max(minChars, basis.length + 1));
+  input.size = next;
+}
+
+function readIgnoreCharsCustomTokens() {
+  return getIgnoreCharsCustomRowInputs()
+    .map((el) => normalizeFormText(el.value))
+    .filter(Boolean);
+}
+
+function _createIgnoreCharsCustomRow(value = '') {
+  const row = document.createElement('div');
+  row.className = 'char-option ignore-chars-custom-item';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ignore-chars-custom-item-input';
+  input.placeholder = 'token';
+  input.value = normalizeFormText(value);
+  resizeIgnoreCharsTokenInput(input, 4, 24);
+  input.addEventListener('input', () => {
+    resizeIgnoreCharsTokenInput(input, 4, 24);
+    onIgnoreCharsChanged();
+  });
+  input.addEventListener('change', () => {
+    resizeIgnoreCharsTokenInput(input, 4, 24);
+    onIgnoreCharsChanged();
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'ignore-chars-custom-remove-btn';
+  removeBtn.textContent = '×';
+  removeBtn.setAttribute('aria-label', 'Remove token');
+  removeBtn.title = 'Remove token';
+  removeBtn.addEventListener('click', () => {
+    row.remove();
+    onIgnoreCharsChanged();
+  });
+
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function setIgnoreCharsCustomRows(tokens) {
+  const list = getIgnoreCharsCustomList();
+  if (!list) return;
+  list.innerHTML = '';
+  (tokens || []).forEach((token) => {
+    list.appendChild(_createIgnoreCharsCustomRow(token));
+  });
+}
+
+function addIgnoreCharsCustomRow(value = '', focus = false) {
+  const list = getIgnoreCharsCustomList();
+  if (!list) return null;
+  const row = _createIgnoreCharsCustomRow(value);
+  list.appendChild(row);
+  if (focus) {
+    const input = row.querySelector('.ignore-chars-custom-item-input');
+    if (input) input.focus();
+  }
+  return row;
+}
+
+function addIgnoreCharsCustomTokensFromInput(rawValue = '', focusLast = false) {
+  const chunks = String(rawValue || '')
+    .split(/[;\n]+/)
+    .map((s) => normalizeFormText(s))
+    .filter(Boolean);
+  if (!chunks.length) return 0;
+  const existing = new Set(readIgnoreCharsCustomTokens().map((t) => t.toLowerCase()));
+  let added = 0;
+  chunks.forEach((token, idx) => {
+    const key = token.toLowerCase();
+    if (existing.has(key)) return;
+    existing.add(key);
+    addIgnoreCharsCustomRow(token, focusLast && idx === chunks.length - 1);
+    added += 1;
+  });
+  return added;
+}
+
 function syncIgnoreCharsUiFromHidden() {
   const hidden = document.getElementById('ignore-chars-input');
   if (!hidden) return;
@@ -1415,9 +1613,10 @@ function syncIgnoreCharsUiFromHidden() {
     const token = String(cb.dataset.token || '').trim();
     cb.checked = knownSet.has(token);
   });
+  setIgnoreCharsCustomRows(custom);
   const customInput = document.getElementById('ignore-chars-custom-input');
   if (customInput) {
-    customInput.value = custom.join(';');
+    customInput.value = '';
   }
 }
 
@@ -1434,21 +1633,25 @@ function syncIgnoreCharsHiddenFromUi() {
     seen.add(spec);
     selected.push(spec);
   });
-  const customInput = document.getElementById('ignore-chars-custom-input');
-  if (customInput) {
-    const customTokens = String(customInput.value || '')
-      .split(';')
-      .map((s) => String(s || '').trim())
-      .filter(Boolean);
-    customTokens.forEach((token) => {
-      const mapped = IGNORE_CHAR_ALIAS_TO_TOKEN[token.toLowerCase()] || token;
-      const spec = IGNORE_CHAR_TOKEN_TO_SPEC[mapped] || mapped;
-      if (!spec || seen.has(spec)) return;
-      seen.add(spec);
-      selected.push(spec);
-    });
-  }
+  const customTokens = readIgnoreCharsCustomTokens();
+  customTokens.forEach((token) => {
+    const mapped = IGNORE_CHAR_ALIAS_TO_TOKEN[token.toLowerCase()] || token;
+    const spec = IGNORE_CHAR_TOKEN_TO_SPEC[mapped] || mapped;
+    if (!spec || seen.has(spec)) return;
+    seen.add(spec);
+    selected.push(spec);
+  });
   hidden.value = selected.join(';');
+}
+
+function onIgnoreCharsChanged() {
+  syncIgnoreCharsHiddenFromUi();
+  updateMatchingGuidance();
+  showFormError('');
+  const preflightBox = document.getElementById('preflight-box');
+  if (preflightBox) {
+    preflightBox.dataset.risk = '';
+  }
 }
 
 function isEffectiveWikidataUrlMode() {
@@ -1501,18 +1704,35 @@ function syncWikidataPropertyState() {
 
   const ignoreCharsLabel = document.getElementById('ignore-chars-label');
   const ignoreCharsOptions = document.getElementById('ignore-chars-options');
-  const ignoreCharsCustom = document.getElementById('ignore-chars-custom-input');
+  const ignoreCharsCustomPanel = document.getElementById('ignore-chars-custom-panel');
+  const ignoreCharsCustomInput = document.getElementById('ignore-chars-custom-input');
+  const ignoreCharsCustomAddBtn = document.getElementById('ignore-chars-custom-add-btn');
+  const ignoreCharsCustomRowInputs = getIgnoreCharsCustomRowInputs();
+  const ignoreCharsCustomRemoveBtns = Array.from(document.querySelectorAll('.ignore-chars-custom-remove-btn'));
   const ignoreCharsChecks = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
   if (ignoreCharsLabel) ignoreCharsLabel.classList.toggle('field-disabled', !!isWikidata);
   if (ignoreCharsOptions) ignoreCharsOptions.classList.toggle('field-disabled', !!isWikidata);
+  if (ignoreCharsCustomPanel) ignoreCharsCustomPanel.classList.toggle('field-disabled', !!isWikidata);
   ignoreCharsChecks.forEach((cb) => {
     cb.disabled = !!isWikidata;
     cb.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
   });
-  if (ignoreCharsCustom) {
-    ignoreCharsCustom.disabled = !!isWikidata;
-    ignoreCharsCustom.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  if (ignoreCharsCustomInput) {
+    ignoreCharsCustomInput.disabled = !!isWikidata;
+    ignoreCharsCustomInput.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
   }
+  if (ignoreCharsCustomAddBtn) {
+    ignoreCharsCustomAddBtn.disabled = !!isWikidata;
+    ignoreCharsCustomAddBtn.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  }
+  ignoreCharsCustomRowInputs.forEach((input) => {
+    input.disabled = !!isWikidata;
+    input.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  });
+  ignoreCharsCustomRemoveBtns.forEach((btn) => {
+    btn.disabled = !!isWikidata;
+    btn.setAttribute('aria-disabled', isWikidata ? 'true' : 'false');
+  });
 
   const modeSelect = document.getElementById('matching-mode-select');
   if (modeSelect) {
@@ -2661,6 +2881,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wikidataPropertyInput = document.getElementById('wikidata-property-input');
   const ignoreCharsInput = document.getElementById('ignore-chars-input');
   const ignoreCharsCustomInput = document.getElementById('ignore-chars-custom-input');
+  const ignoreCharsCustomAddBtn = document.getElementById('ignore-chars-custom-add-btn');
   const ignoreCharsCheckboxes = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
   const useLocalOnlyCheckbox = document.getElementById('use-local-only-checkbox');
 
@@ -2704,21 +2925,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
-  const onIgnoreCharsChanged = () => {
-    syncIgnoreCharsHiddenFromUi();
-    updateMatchingGuidance();
-    showFormError('');
-    const preflightBox = document.getElementById('preflight-box');
-    if (preflightBox) {
-      preflightBox.dataset.risk = '';
-    }
-  };
   ignoreCharsCheckboxes.forEach((cb) => {
     cb.addEventListener('change', onIgnoreCharsChanged);
   });
+  const addIgnoreCharsCustomFromInput = () => {
+    const raw = normalizeFormText(ignoreCharsCustomInput?.value);
+    if (!raw) return;
+    const added = addIgnoreCharsCustomTokensFromInput(raw, true);
+    if (!added) return;
+    if (ignoreCharsCustomInput) {
+      ignoreCharsCustomInput.value = '';
+      ignoreCharsCustomInput.focus();
+    }
+    onIgnoreCharsChanged();
+  };
+  if (ignoreCharsCustomAddBtn) {
+    ignoreCharsCustomAddBtn.addEventListener('click', addIgnoreCharsCustomFromInput);
+  }
   if (ignoreCharsCustomInput) {
-    ignoreCharsCustomInput.addEventListener('input', onIgnoreCharsChanged);
-    ignoreCharsCustomInput.addEventListener('change', onIgnoreCharsChanged);
+    ignoreCharsCustomInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addIgnoreCharsCustomFromInput();
+    });
   }
   if (ignoreCharsInput) {
     ignoreCharsInput.addEventListener('change', () => {
