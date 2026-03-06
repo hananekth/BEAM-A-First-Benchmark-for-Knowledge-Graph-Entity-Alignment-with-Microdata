@@ -1,12 +1,81 @@
+import json
+import os
 import re
+from pathlib import Path
+
 import requests
 from bs4 import BeautifulSoup
 
 WDC_STATS_URL = "https://webdatacommons.org/structureddata/2024-12/stats/schema_org_subsets.html"
+DEFAULT_CATALOG_PATH = Path(__file__).resolve().parents[1] / "catalog" / "wdc_classes_catalog.json"
 
 _CLASS_LINK_RE = re.compile(r"schema\.org/[^/]+$", re.IGNORECASE)
 _SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(KB|MB|GB|TB)", re.IGNORECASE)
 _PARTS_RE = re.compile(r"\((\d+)\)")
+
+
+def _resolve_catalog_path(catalog_path=None):
+    override = str(os.environ.get("WDC_CLASSES_CATALOG_PATH") or "").strip()
+    if catalog_path:
+        return Path(catalog_path)
+    if override:
+        return Path(override)
+    return DEFAULT_CATALOG_PATH
+
+
+def _normalize_catalog_rows(rows):
+    out = []
+    seen = set()
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        class_name = str(row.get("class_name") or "").strip()
+        if not class_name or class_name in seen:
+            continue
+        num_parts = row.get("num_parts")
+        try:
+            if num_parts is not None and str(num_parts).strip() != "":
+                num_parts = int(num_parts)
+            else:
+                num_parts = None
+        except Exception:
+            num_parts = None
+        size_human = row.get("size_human")
+        size_human = str(size_human).strip() if size_human is not None else None
+        if size_human == "":
+            size_human = None
+        out.append(
+            {
+                "class_name": class_name,
+                "num_parts": num_parts,
+                "size_human": size_human,
+            }
+        )
+        seen.add(class_name)
+    return out
+
+
+def load_wdc_classes_catalog(catalog_path=None):
+    path = _resolve_catalog_path(catalog_path)
+    if not path.exists() or not path.is_file():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8") or "[]")
+    if isinstance(payload, dict):
+        rows = payload.get("classes")
+    else:
+        rows = payload
+    if not isinstance(rows, list):
+        return []
+    return _normalize_catalog_rows(rows)
+
+
+def save_wdc_classes_catalog(rows, catalog_path=None):
+    path = _resolve_catalog_path(catalog_path)
+    normalized = _normalize_catalog_rows(rows)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(normalized, ensure_ascii=True, indent=2)
+    path.write_text(payload + "\n", encoding="utf-8")
+    return path
 
 
 def _is_class_anchor(a):

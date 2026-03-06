@@ -103,7 +103,9 @@ def _full_config_hash(params):
 
 def _normalize_matching_mode(value, fallback_wdc_value_is_wikidata=False):
     mode = str(value or "").strip().lower()
-    if mode in {"property", "identifier", "sameas"}:
+    if mode == "identifier":
+        return "property"
+    if mode in {"property", "sameas"}:
         return mode
     return "sameas" if bool(fallback_wdc_value_is_wikidata) else "property"
 

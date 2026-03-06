@@ -63,12 +63,13 @@
     }
     .checkrow { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:500; }
     .checkrow input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
-    .char-options { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .char-options { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center; }
     .char-option {
       display:inline-flex;
       align-items:center;
       gap:6px;
       padding:6px 8px;
+      min-height:30px;
       border:1px solid var(--border);
       border-radius:8px;
       background:#0b0f17;
@@ -76,9 +77,135 @@
       cursor:pointer;
     }
     .char-option input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
+    .char-option-input-wrap {
+      padding:0 8px;
+      cursor:text;
+      flex:0 1 300px;
+    }
+    .char-option-input-label {
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .char-options-inline-input {
+      margin-top:0;
+      width:100%;
+      min-width:120px;
+      flex:1 1 auto;
+      padding:0;
+      height:auto;
+      min-height:0;
+      border:none;
+      border-radius:0;
+      background:transparent;
+      color:var(--text);
+      font-size:13px;
+      line-height:1.2;
+      outline:none;
+    }
+    .char-option-input-wrap:focus-within {
+      border-color:var(--primary);
+      box-shadow:0 0 0 2px rgba(37,99,235,0.2);
+    }
+    .char-option-input-wrap .char-options-inline-input:focus {
+      outline:none;
+      border:none;
+      box-shadow:none;
+    }
+    .pattern-list { display:grid; gap:8px; margin-top:6px; }
+    .pattern-row { display:flex; gap:8px; align-items:center; }
+    .pattern-row input { margin-top:0; }
+    .pattern-row-remove {
+      width:auto;
+      min-width:86px;
+      margin-top:0;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#3a2025;
+      color:#ffd9df;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+    }
+    .pattern-row-remove:disabled {
+      cursor:not-allowed;
+      opacity:0.6;
+      background:#2b313a;
+      color:#9aa4b2;
+      border-color:#3b4452;
+    }
+    .pattern-actions { display:flex; gap:8px; margin-top:8px; }
+    .pattern-add-btn {
+      width:auto;
+      min-width:108px;
+      margin-top:0;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#2a3442;
+      color:#dbe5f2;
+      cursor:pointer;
+      font-size:13px;
+      font-weight:600;
+    }
     .field-disabled { opacity:0.52; }
     .field-group { margin-top:10px; }
     .field-group.hidden { display:none; }
+    .class-scope-subsection,
+    .property-mapping-subsection {
+      margin-top:12px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#0b0f171a;
+    }
+    .class-scope-subsection .subsection-title,
+    .property-mapping-subsection .subsection-title {
+      margin:0;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.04em;
+    }
+    .class-scope-subsection .subsection-help,
+    .property-mapping-subsection .subsection-help {
+      margin-top:4px;
+    }
+    .class-scope-grid {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(220px, 1fr));
+      gap:12px;
+      margin-top:8px;
+    }
+    .class-scope-grid .field-group {
+      margin-top:0;
+    }
+    .property-mapping-grid {
+      display:flex;
+      gap:12px;
+      margin-top:8px;
+    }
+    .property-mapping-grid .field-group {
+      margin-top:8px;
+      flex:1 1 0;
+      min-width:0;
+    }
+    .parts-label-row {
+      display:flex;
+      gap:12px;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:12px;
+    }
+    .parts-label-row .parts-label { margin-top:0; }
+    .parts-inline-toggle {
+      width:auto;
+      margin-top:0;
+      white-space:nowrap;
+    }
+    .parts-inline-toggle .help-tip { flex:0 0 auto; }
     .ready-list { display:grid; gap:6px; margin-top:6px; }
     .ready-item {
       display:flex;
@@ -221,6 +348,15 @@
       .build-actions .btn { width:100%; }
       .form-actions .btn { width:100%; }
       .subjobs { grid-template-columns:1fr; }
+      .class-scope-grid { grid-template-columns:1fr; }
+      .property-mapping-grid { flex-direction:column; }
+      .parts-label-row {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .parts-inline-toggle {
+        white-space:normal;
+      }
     }
   </style>
 </head>
@@ -263,48 +399,66 @@
         </span>
       </label>
       <select id="matching-mode-select" name="matching_mode">
-        <option value="property" {% if form.matching_mode == "property" %}selected{% endif %}>Property (label, telephone...)</option>
-        <option value="identifier" {% if form.matching_mode == "identifier" %}selected{% endif %}>Identifier code</option>
+        <option value="property" {% if form.matching_mode == "property" %}selected{% endif %}>Property (label, telephone, code...)</option>
         <option value="sameas" {% if form.matching_mode == "sameas" %}selected{% endif %}>sameAs</option>
       </select>
     </div>
-    <div class="row" style="margin-top:8px;">
-      <div class="col">
-        <label>
-          <span class="label-help">
-            Class name
-            <span id="required-class-name" class="required-star active" aria-label="required">*</span>
-            <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language).">?</span>
-          </span>
-        </label>
-        <select id="class-name-select" name="class_name" required>
-          <option value="">(select class)</option>
-          {% for name, meta in class_meta.items() %}
-            <option value="{{ name }}" {% if form.class_name == name %}selected{% endif %}>{{ name }}</option>
-          {% endfor %}
-          {% if form.class_name and form.class_name not in class_meta %}
-            <option value="{{ form.class_name }}" selected>{{ form.class_name }} (not in cached list)</option>
-          {% endif %}
-        </select>
 
-        <label>
-          <span class="label-help">
-            Parts to process
-            <span class="help-tip" tabindex="0" title="Choose which class parts to scan: all, a list like 1,2,4, or a range like 1-10.">?</span>
-          </span>
-        </label>
-        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all, 1,2,4, or 1-10" />
+    <div class="class-scope-subsection">
+      <p class="subsection-title">Class Scope</p>
+      <div class="small subsection-help">Select the WDC class and the Wikidata class filter used for matching.</div>
+      <div class="class-scope-grid">
+        <div class="field-group">
+          <label>
+            <span class="label-help">
+              Class name
+              <span id="required-class-name" class="required-star active" aria-label="required">*</span>
+              <span class="help-tip" tabindex="0" title="Choose the WDC class to process (for example City, Movie, Language).">?</span>
+            </span>
+          </label>
+          <select id="class-name-select" name="class_name" required>
+            <option value="">(select class)</option>
+            {% for name, meta in class_meta.items() %}
+              <option value="{{ name }}" {% if form.class_name == name %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+            {% if form.class_name and form.class_name not in class_meta %}
+              <option value="{{ form.class_name }}" selected>{{ form.class_name }} (not in cached list)</option>
+            {% endif %}
+          </select>
+        </div>
 
+        <div class="field-group" id="wkd-class-group">
+          <label>
+            <span class="label-help">
+              Wikidata class (QID)
+              <span id="required-wkd-class" class="required-star" aria-label="required">*</span>
+              <span class="help-tip" tabindex="0" title="Restricts Wikidata entities to a class hierarchy. Useful with label matching or existing links (sameAs/url). Example for City: Q486972.">?</span>
+            </span>
+          </label>
+          <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q486972 (example)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="property-mapping-subsection">
+      <p class="subsection-title">Property Mapping</p>
+      <div class="small subsection-help">Configure how WDC values are matched to Wikidata values.</div>
+
+      <div class="property-mapping-grid">
         <div class="field-group" id="wdc-pattern-group">
           <label>
             <span class="label-help">
-              WDC property pattern
+              Considered pattern for WDC properties
               <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Type one or more keywords from the WDC property IRI (case-insensitive). Separate multiple patterns with commas or semicolons. Example: sameAs, url">?</span>
+              <span class="help-tip" tabindex="0" title="Add one or more editable pattern fields. You can remove fields; only non-empty values are used.">?</span>
             </span>
           </label>
-          <input id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" placeholder="name / sameAs / url / eidr / telephone (or sameAs, url)" required />
-          <div class="small">Example: <code>isrc</code> matches <code>isrcCode</code>, <code>isrc</code>, <code>codeIsrc</code>... You can combine patterns: <code>sameAs, url</code>.</div>
+          <div id="wdc-pattern-list" class="pattern-list" aria-live="polite"></div>
+          <div class="pattern-actions">
+            <button id="wdc-pattern-add-btn" class="pattern-add-btn" type="button">Add pattern</button>
+          </div>
+          <input type="hidden" id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" required />
+          <div class="small">Each row is editable/removable. Example values: <code>name</code>, <code>sameAs</code>, <code>url</code>, <code>eidr</code>.</div>
         </div>
 
         <div class="field-group" id="wikidata-property-group">
@@ -319,48 +473,54 @@
           <div class="small">Use the exact Wikidata property to query. Examples: <code>rdfs:label</code>, <code>P1329</code>, <code>P2704</code>.</div>
         </div>
       </div>
+
+      <div class="field-group" id="ignore-chars-group">
+        <label id="ignore-chars-label">
+          <span class="label-help">
+            Normalization: characters to remove
+            <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and Wikidata values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
+          </span>
+        </label>
+        <div class="char-options" id="ignore-chars-options">
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="spaces">spaces</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="dot">.</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="semicolon">;</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="hyphen">-</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="comma">,</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="slash">/</label>
+          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="underscore">_</label>
+          <label class="char-option char-option-input-wrap" for="ignore-chars-custom-input">
+            <span class="char-option-input-label">other</span>
+            <input id="ignore-chars-custom-input" type="text" class="char-options-inline-input" value="" placeholder="token1;token2" />
+          </label>
+        </div>
+        <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
+        <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
       <div class="col">
-        <div class="field-group" id="wkd-class-group">
-          <label>
+        <div class="parts-label-row">
+          <label class="parts-label">
             <span class="label-help">
-              Wikidata class (QID)
-              <span id="required-wkd-class" class="required-star" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Restricts Wikidata entities to a class hierarchy. Useful with label matching or existing links (sameAs/url). Example for City: Q486972.">?</span>
+              Parts to process
+              <span class="help-tip" tabindex="0" title="Choose which class parts to scan: all, a list like 1,2,4, or a range like 1-10.">?</span>
             </span>
           </label>
-          <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q486972 (example)" />
-        </div>
-
-        <div class="field-group" id="ignore-chars-group">
-          <label id="ignore-chars-label">
-            <span class="label-help">
-              Normalization: characters to remove
-              <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and Wikidata values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
-            </span>
+          <label class="checkrow parts-inline-toggle">
+            <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
+            Use local parts only (no downloads)
+            <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
           </label>
-          <div class="char-options" id="ignore-chars-options">
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="spaces">spaces</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="dot">.</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="semicolon">;</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="hyphen">-</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="comma">,</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="slash">/</label>
-            <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="underscore">_</label>
-          </div>
-          <input id="ignore-chars-custom-input" value="" placeholder="Other tokens (optional), separated by ;" />
-          <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
-          <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
-
+        <input id="parts-spec-input" name="parts_spec" value="{{ form.parts_spec }}" placeholder="all, 1,2,4, or 1-10" />
+      </div>
+      <div class="col">
         <label class="checkrow">
           <input id="force-align-checkbox" type="checkbox" name="force_align" {% if form.force_align %}checked{% endif %}>
           Ignore align cache (force re-run align)
           <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
-        </label>
-        <label class="checkrow">
-          <input id="use-local-only-checkbox" type="checkbox" name="use_local_only" {% if form.use_local_only %}checked{% endif %}>
-          Use local parts only (no downloads)
-          <span class="help-tip" tabindex="0" title="Process only parts already present in Download/ClassName and never download missing parts from WDC.">?</span>
         </label>
         <label class="checkrow">
           <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
@@ -902,6 +1062,148 @@ function normalizeFormText(value) {
   return String(value || '').trim();
 }
 
+function normalizeMatchingMode(value) {
+  const mode = normalizeFormText(value).toLowerCase();
+  if (mode === 'identifier') return 'property';
+  if (['property', 'sameas'].includes(mode)) return mode;
+  return '';
+}
+
+function parseWdcPatternSpec(value) {
+  const raw = String(value || '')
+    .split(/[\n,;]+/)
+    .map((s) => normalizeFormText(s))
+    .filter(Boolean);
+  return raw;
+}
+
+function formatWdcPatternSpec(tokens) {
+  return (tokens || []).map((t) => normalizeFormText(t)).filter(Boolean).join('; ');
+}
+
+function getWdcPatternHiddenInput() {
+  return document.getElementById('wdc-pattern-input');
+}
+
+function getWdcPatternList() {
+  return document.getElementById('wdc-pattern-list');
+}
+
+function getWdcPatternRowInputs() {
+  return Array.from(document.querySelectorAll('.wdc-pattern-item-input'));
+}
+
+function syncWdcPatternRemoveButtons() {
+  const list = getWdcPatternList();
+  if (!list) return;
+  const rows = Array.from(list.querySelectorAll('.pattern-row'));
+  const canRemove = rows.length > 1;
+  rows.forEach((row) => {
+    const removeBtn = row.querySelector('.pattern-row-remove');
+    if (!removeBtn) return;
+    removeBtn.disabled = !canRemove;
+    removeBtn.setAttribute('aria-disabled', !canRemove ? 'true' : 'false');
+    removeBtn.title = canRemove
+      ? 'Remove this pattern'
+      : 'Add another pattern before removing this one.';
+  });
+}
+
+function readWdcPatternRows() {
+  return getWdcPatternRowInputs()
+    .map((el) => normalizeFormText(el.value))
+    .filter(Boolean);
+}
+
+function syncWdcPatternHiddenFromRows() {
+  const hidden = getWdcPatternHiddenInput();
+  if (!hidden) return [];
+  const tokens = readWdcPatternRows();
+  hidden.value = formatWdcPatternSpec(tokens);
+  return tokens;
+}
+
+function onWdcPatternRowsChanged() {
+  syncWdcPatternRemoveButtons();
+  syncWdcPatternHiddenFromRows();
+  syncWikidataPropertyState();
+  updateMatchingGuidance();
+  showFormError('');
+  const preflightBox = document.getElementById('preflight-box');
+  if (preflightBox) {
+    preflightBox.dataset.risk = '';
+  }
+}
+
+function _createWdcPatternRow(value = '') {
+  const row = document.createElement('div');
+  row.className = 'pattern-row';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'wdc-pattern-item-input';
+  input.placeholder = 'name / sameAs / url / eidr / telephone';
+  input.value = normalizeFormText(value);
+  input.addEventListener('input', onWdcPatternRowsChanged);
+  input.addEventListener('change', onWdcPatternRowsChanged);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'pattern-row-remove';
+  removeBtn.textContent = 'Remove';
+  removeBtn.addEventListener('click', () => {
+    if (getWdcPatternRowInputs().length <= 1) {
+      syncWdcPatternRemoveButtons();
+      return;
+    }
+    row.remove();
+    ensureWdcPatternRowsNotEmpty();
+    onWdcPatternRowsChanged();
+  });
+
+  row.appendChild(input);
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function ensureWdcPatternRowsNotEmpty() {
+  const list = getWdcPatternList();
+  if (!list) return;
+  if (getWdcPatternRowInputs().length === 0) {
+    list.appendChild(_createWdcPatternRow(''));
+  }
+  syncWdcPatternRemoveButtons();
+}
+
+function addWdcPatternRow(value = '', focus = false) {
+  const list = getWdcPatternList();
+  if (!list) return;
+  const row = _createWdcPatternRow(value);
+  list.appendChild(row);
+  if (focus) {
+    const input = row.querySelector('.wdc-pattern-item-input');
+    if (input) input.focus();
+  }
+  onWdcPatternRowsChanged();
+}
+
+function syncWdcPatternRowsFromHidden() {
+  const list = getWdcPatternList();
+  const hidden = getWdcPatternHiddenInput();
+  if (!list || !hidden) return;
+  const tokens = parseWdcPatternSpec(hidden.value);
+  list.innerHTML = '';
+  if (!tokens.length) {
+    list.appendChild(_createWdcPatternRow(''));
+  } else {
+    tokens.forEach((token) => {
+      list.appendChild(_createWdcPatternRow(token));
+    });
+  }
+  syncWdcPatternRemoveButtons();
+  syncWdcPatternHiddenFromRows();
+}
+
 function setFieldGroupVisible(groupId, visible) {
   const el = document.getElementById(groupId);
   if (!el) return;
@@ -909,22 +1211,17 @@ function setFieldGroupVisible(groupId, visible) {
 }
 
 function inferMatchingModeFromForm() {
-  const selectedMode = normalizeFormText(document.getElementById('matching-mode-select')?.value).toLowerCase();
-  if (['property', 'identifier', 'sameas'].includes(selectedMode)) return selectedMode;
+  const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value);
+  if (selectedMode) return selectedMode;
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value).toLowerCase();
   const prop = normalizeFormText(document.getElementById('wikidata-property-input')?.value).toLowerCase();
-  if (pattern.includes('telephone') || prop === 'p1329' || prop === 'wdt:p1329') return 'property';
   if (/(sameas|url)/i.test(pattern) && !prop) return 'sameas';
-  if (prop === 'rdfs:label') return 'property';
-  if (pattern || prop) return 'identifier';
   return 'property';
 }
 
 function applyMatchingMode(mode, fromUser = false) {
   const select = document.getElementById('matching-mode-select');
-  const normalizedMode = ['property', 'identifier', 'sameas'].includes(String(mode || ''))
-    ? String(mode)
-    : 'property';
+  const normalizedMode = normalizeMatchingMode(mode) || 'property';
   const previousMode = inferMatchingModeFromForm();
   if (select && select.value !== normalizedMode) {
     select.value = normalizedMode;
@@ -937,7 +1234,6 @@ function applyMatchingMode(mode, fromUser = false) {
     const current = normalizeFormText(patternInput.value);
     const defaultPatternByMode = {
       property: 'name',
-      identifier: 'eidr',
       sameas: 'sameAs',
     };
     const shouldResetPattern = (
@@ -949,6 +1245,7 @@ function applyMatchingMode(mode, fromUser = false) {
       patternInput.value = defaultPatternByMode[normalizedMode] || current;
     }
   }
+  syncWdcPatternRowsFromHidden();
 
   if (fromUser && propInput) {
     const currentProp = normalizeFormText(propInput.value);
@@ -957,7 +1254,6 @@ function applyMatchingMode(mode, fromUser = false) {
     } else {
       const defaultPropertyByMode = {
         property: 'rdfs:label',
-        identifier: 'P2704',
       };
       const shouldResetProp = (!currentProp || previousMode !== normalizedMode);
       if (shouldResetProp) {
@@ -1006,7 +1302,7 @@ function updateReadyChecklist() {
     detail: className ? className : 'Choose a class name.',
   });
   items.push({
-    label: 'Predicate filter set',
+    label: 'Considered pattern set',
     ok: !!pattern,
     detail: pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).',
   });
@@ -1238,6 +1534,7 @@ function updateMatchingGuidance() {
 }
 
 function validateGenerateForm(opts = {}) {
+  syncWdcPatternHiddenFromRows();
   const requireWikidataInputs = opts.requireWikidataInputs !== false;
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
@@ -1246,7 +1543,7 @@ function validateGenerateForm(opts = {}) {
   const isWikidata = isEffectiveWikidataUrlMode();
 
   if (!className) return 'Class name is required.';
-  if (!pattern) return 'WDC property pattern is required.';
+  if (!pattern) return 'Considered pattern for WDC properties is required.';
   if (!requireWikidataInputs) return '';
   if (isWikidata) {
     if (!wkdClass) return 'Wikidata class (QID) is required when WDC values are Wikidata URLs.';
@@ -2359,6 +2656,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const classNameSelect = document.getElementById('class-name-select');
   const partsSpecInput = document.getElementById('parts-spec-input');
   const patternInput = document.getElementById('wdc-pattern-input');
+  const patternAddBtn = document.getElementById('wdc-pattern-add-btn');
   const wkdClassInput = document.getElementById('wkd-class-input');
   const wikidataPropertyInput = document.getElementById('wikidata-property-input');
   const ignoreCharsInput = document.getElementById('ignore-chars-input');
@@ -2368,7 +2666,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   syncIgnoreCharsUiFromHidden();
   syncIgnoreCharsHiddenFromUi();
+  syncWdcPatternRowsFromHidden();
   applyMatchingMode(inferMatchingModeFromForm(), false);
+  if (patternAddBtn) {
+    patternAddBtn.addEventListener('click', () => {
+      addWdcPatternRow('', true);
+    });
+  }
   if (matchingModeSelect) {
     matchingModeSelect.addEventListener('change', () => {
       applyMatchingMode(matchingModeSelect.value, true);

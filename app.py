@@ -8,7 +8,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 from beam import db
-from beam.wdc_classes import fetch_wdc_classes
+from beam.wdc_classes import fetch_wdc_classes, load_wdc_classes_catalog, save_wdc_classes_catalog
 from beam.pipeline import _count_local_parts
 
 
@@ -60,6 +60,26 @@ def _discover_local_class_rows(download_root: str = "Download"):
         )
     return rows
 
+
+def _seed_wdc_classes_from_local_catalog():
+    try:
+        rows = load_wdc_classes_catalog()
+    except Exception:
+        return 0
+    if not rows:
+        return 0
+    db.upsert_wdc_classes(rows)
+    return len(rows)
+
+
+def _refresh_wdc_classes_from_remote():
+    rows = fetch_wdc_classes()
+    if not rows:
+        raise RuntimeError("WDC class refresh returned no rows")
+    save_wdc_classes_catalog(rows)
+    db.upsert_wdc_classes(rows)
+    return len(rows)
+
 # Live refresh controls
 with st.sidebar:
     st.header("Live Refresh")
@@ -75,21 +95,20 @@ with st.sidebar:
         db.clear_wdc_classes()
         st.success("Cache cleared")
     if st.button("Refresh classes"):
-        with st.spinner("Fetching WDC classes..."):
-            rows = fetch_wdc_classes()
-            db.upsert_wdc_classes(rows)
-        st.success("Classes updated")
+        try:
+            with st.spinner("Fetching WDC classes..."):
+                _refresh_wdc_classes_from_remote()
+            st.success("Classes updated")
+        except Exception as exc:
+            st.error(f"Refresh failed; local cache/catalog kept unchanged. ({exc})")
     updated_at = db.latest_wdc_update()
     if updated_at:
         st.caption(time.strftime("Last update: %Y-%m-%d %H:%M:%S", time.localtime(updated_at)))
 
 wdc_classes = db.list_wdc_classes()
 if not wdc_classes:
-    with st.spinner("Fetching WDC classes..."):
-        rows = fetch_wdc_classes()
-        if rows:
-            db.upsert_wdc_classes(rows)
-            wdc_classes = db.list_wdc_classes()
+    _seed_wdc_classes_from_local_catalog()
+    wdc_classes = db.list_wdc_classes()
 local_rows = _discover_local_class_rows("Download")
 if local_rows:
     db.upsert_wdc_classes(local_rows)
@@ -98,7 +117,7 @@ class_options = [r["class_name"] for r in wdc_classes]
 class_meta = {r["class_name"]: dict(r) for r in wdc_classes}
 
 presets = {
-    "Bigger local benchmark (TestClassLarge / language label)": {
+    "Bigger local benchmark (via TestClassLarge / language label)": {
         "class_name": "TestClassLarge",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -107,7 +126,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "Quick local test (TestClass / language label)": {
+    "Quick local test (via TestClass / language label)": {
         "class_name": "TestClass",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -116,7 +135,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "TestClass label matching (name -> rdfs:label)": {
+    "TestClass label matching (via name -> rdfs:label)": {
         "class_name": "TestClassLabel",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -125,7 +144,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "TestClass identifier matching (eidr -> P2704)": {
+    "TestClass identifier matching (via eidr -> P2704)": {
         "class_name": "TestClassIdentifier",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -134,7 +153,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "TestClass Wikidata links (url -> P31 city)": {
+    "TestClass Wikidata links (via url -> P31 city)": {
         "class_name": "TestClassWikidataUrl",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",
@@ -143,7 +162,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": True,
     },
-    "TestClass Wikidata links (sameAs -> P31 country)": {
+    "TestClass Wikidata links (via sameAs -> P31 country)": {
         "class_name": "TestClassWikidataSameAs",
         "parts_spec": "all",
         "wdc_predicate_pattern": "sameas",
@@ -152,7 +171,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": True,
     },
-    "Match with property (Movie / EIDR)": {
+    "Match via property (Movie / EIDR)": {
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -161,7 +180,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "Match with label (Language / rdfs:label)": {
+    "Match via label (Language / rdfs:label)": {
         "class_name": "Language",
         "parts_spec": "all",
         "wdc_predicate_pattern": "name",
@@ -170,7 +189,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "Match with property (Country / ISO 3166-1 alpha-2)": {
+    "Match via property (Country / ISO 3166-1 alpha-2)": {
         "class_name": "Country",
         "parts_spec": "all",
         "wdc_predicate_pattern": "iso",
@@ -179,7 +198,7 @@ presets = {
         "ignore_chars": "",
         "wdc_value_is_wikidata": False,
     },
-    "Match with existing Wikidata link (City / url)": {
+    "Match via existing Wikidata link (City / url)": {
         "class_name": "City",
         "parts_spec": "all",
         "wdc_predicate_pattern": "url",

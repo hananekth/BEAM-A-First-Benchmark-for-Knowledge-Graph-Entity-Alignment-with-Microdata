@@ -24,6 +24,7 @@ Data and state locations:
 - `Download/<ClassName>/`: local WDC parts and align cache
 - `data/<ClassName>/beam_<timestamp>/`: build outputs
 - `jobs.db`: job queue/status/events database
+- `catalog/wdc_classes_catalog.json`: local WDC class catalog seed (offline fallback)
 - `logs/webapp.log`, `logs/worker.log`: runtime logs
 
 ## Prerequisites
@@ -231,6 +232,7 @@ Worker/process control:
 - `MAX_CONCURRENT_JOBS` (default: `8`)
 - `JOB_POLL_INTERVAL` (default: `1` second)
 - `MAX_WORKERS_PER_JOB` (default: `8`)
+- `WDC_CLASSES_CATALOG_PATH` (optional custom path for local class catalog JSON)
 
 Align/Wikidata query tuning:
 - `ALIGN_MAX_WORKERS` (default: `8`)
@@ -301,6 +303,10 @@ Jobs stay stale in UI:
 - uncheck `Use local parts only`
 - or place required `part_*.nq` files under `Download/<ClassName>/`
 
+WDC class refresh fails (Mannheim down):
+- startup now uses local DB + `catalog/wdc_classes_catalog.json` (no auto-scrape)
+- `GET /refresh_classes` is manual and keeps existing DB/catalog unchanged on failure
+
 Build marked error with `No alignments found (0); build skipped.`:
 - this means alignment produced zero links
 - verify class/predicate/property/class filter combo
@@ -310,4 +316,3 @@ Build marked error with `No alignments found (0); build skipped.`:
 
 - `app.py` (Streamlit) exists as legacy tooling; the supported UI is `webapp/main.py` with FastAPI.
 - `jobs.db` can grow over time; clean old jobs/builds from the UI when needed.
-

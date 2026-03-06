@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.background import BackgroundTask
 
 from beam import db
-from beam.wdc_classes import fetch_wdc_classes
+from beam.wdc_classes import fetch_wdc_classes, load_wdc_classes_catalog, save_wdc_classes_catalog
 from scripts import align as align_script
 
 app = FastAPI()
@@ -41,7 +41,7 @@ _TRIPLE_RE = re.compile(
 
 PRESETS = {
     "testclass_large_benchmark": {
-        "label": "TestClassLarge - property (label)",
+        "label": "TestClassLarge - via property (label)",
         "matching_mode": "property",
         "class_name": "TestClassLarge",
         "parts_spec": "all",
@@ -53,7 +53,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_quick": {
-        "label": "TestClass - property (label)",
+        "label": "TestClass - via property (label)",
         "matching_mode": "property",
         "class_name": "TestClass",
         "parts_spec": "all",
@@ -65,7 +65,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_label": {
-        "label": "TestClassLabel - property (label)",
+        "label": "TestClassLabel - via property (label)",
         "matching_mode": "property",
         "class_name": "TestClassLabel",
         "parts_spec": "all",
@@ -77,8 +77,8 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_identifier": {
-        "label": "TestClassIdentifier - identifier code",
-        "matching_mode": "identifier",
+        "label": "TestClassIdentifier - via property (code)",
+        "matching_mode": "property",
         "class_name": "TestClassIdentifier",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -89,7 +89,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_wikidata_url": {
-        "label": "TestClassWikidataUrl - sameAs",
+        "label": "TestClassWikidataUrl - via sameAs",
         "matching_mode": "sameas",
         "class_name": "TestClassWikidataUrl",
         "parts_spec": "all",
@@ -101,7 +101,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "testclass_wikidata_sameas": {
-        "label": "TestClassWikidataSameAs - sameAs",
+        "label": "TestClassWikidataSameAs - via sameAs",
         "matching_mode": "sameas",
         "class_name": "TestClassWikidataSameAs",
         "parts_spec": "all",
@@ -113,8 +113,8 @@ PRESETS = {
         "use_local_only": False,
     },
     "code_movie": {
-        "label": "Movie - via code (EIDR)",
-        "matching_mode": "identifier",
+        "label": "Movie - via property (code/EIDR)",
+        "matching_mode": "property",
         "class_name": "Movie",
         "parts_spec": "all",
         "wdc_predicate_pattern": "eidr",
@@ -125,7 +125,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "label_language": {
-        "label": "Language - property (label)",
+        "label": "Language - via property (label)",
         "matching_mode": "property",
         "class_name": "Language",
         "parts_spec": "all",
@@ -137,7 +137,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "property_college_or_university_telephone": {
-        "label": "CollegeOrUniversity - property (telephone)",
+        "label": "CollegeOrUniversity - via property (telephone)",
         "matching_mode": "property",
         "class_name": "CollegeOrUniversity",
         "parts_spec": "all",
@@ -149,7 +149,7 @@ PRESETS = {
         "use_local_only": False,
     },
     "wikidata_link_city": {
-        "label": "City - sameAs",
+        "label": "City - via sameAs",
         "matching_mode": "sameas",
         "class_name": "City",
         "parts_spec": "all",
@@ -189,7 +189,9 @@ def _clean_text(value: Optional[str]) -> str:
 
 def _normalize_matching_mode(value: Optional[str], fallback_wdc_value_is_wikidata: bool = False) -> str:
     mode = _clean_text(value).lower()
-    if mode in {"property", "identifier", "sameas"}:
+    if mode == "identifier":
+        return "property"
+    if mode in {"property", "sameas"}:
         return mode
     return "sameas" if bool(fallback_wdc_value_is_wikidata) else "property"
 
@@ -224,7 +226,7 @@ def _validate_and_normalize_job_params(raw_params: dict):
     if not params["class_name"]:
         return params, "Class name is required."
     if not params["wdc_predicate_pattern"]:
-        return params, "WDC property pattern is required."
+        return params, "Considered pattern for WDC properties is required."
 
     if _is_wikidata_url_mode(params):
         params["wikidata_property"] = ""
@@ -653,7 +655,7 @@ def _build_preflight_report(
         report["summary"] = "Class name is required."
         return report
     if not pattern:
-        report["summary"] = "WDC property pattern is required."
+        report["summary"] = "Considered pattern for WDC properties is required."
         return report
 
     selected_files, select_warnings = _select_local_part_files(class_name, parts_spec)
@@ -748,7 +750,7 @@ def _build_preflight_report(
             for pred, cnt in predicate_counts.most_common(8)
         ]
         report["risk"] = "high"
-        report["summary"] = "No triple matched this WDC property pattern in sampled local data."
+        report["summary"] = "No triple matched the considered pattern for WDC properties in sampled local data."
     elif wdc_value_is_wikidata and wikidata_like_values == 0:
         report["risk"] = "high"
         report["summary"] = "Pattern matched, but no Wikidata URL-like values were found."
@@ -850,6 +852,29 @@ def _discover_local_class_rows(download_root: str = "Download"):
             }
         )
     return rows
+
+
+def _seed_wdc_classes_from_local_catalog():
+    try:
+        rows = load_wdc_classes_catalog()
+    except Exception:
+        return 0
+    if not rows:
+        return 0
+    try:
+        db.upsert_wdc_classes(rows)
+    except Exception:
+        return 0
+    return len(rows)
+
+
+def _refresh_wdc_classes_from_remote():
+    rows = fetch_wdc_classes()
+    if not rows:
+        raise RuntimeError("WDC class refresh returned no rows")
+    save_wdc_classes_catalog(rows)
+    db.upsert_wdc_classes(rows)
+    return len(rows)
 
 
 def _part_number_from_name(name: str):
@@ -1466,14 +1491,9 @@ def index(
     test_mode: Optional[str] = None,
 ):
     is_test_mode = _bool_from_any(test_mode)
-    # Ensure classes cached
+    # Seed from local catalog first. Do not auto-scrape remote stats on startup.
     if not db.list_wdc_classes():
-        try:
-            rows = fetch_wdc_classes()
-            if rows:
-                db.upsert_wdc_classes(rows)
-        except Exception:
-            pass
+        _seed_wdc_classes_from_local_catalog()
     local_rows = _discover_local_class_rows("Download")
     if local_rows:
         try:
@@ -1780,9 +1800,11 @@ def create_job(
 
 @app.get("/refresh_classes")
 def refresh_classes():
-    rows = fetch_wdc_classes()
-    if rows:
-        db.upsert_wdc_classes(rows)
+    try:
+        _refresh_wdc_classes_from_remote()
+    except Exception as exc:
+        msg = f"Class refresh failed; local cache/catalog kept unchanged. ({exc})"
+        return RedirectResponse(url=f"/?form_error={quote_plus(msg)}", status_code=303)
     return RedirectResponse(url="/", status_code=303)
 
 

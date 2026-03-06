@@ -65,3 +65,40 @@ def test_fetch_wdc_classes_parses_testclass_rows(monkeypatch):
 
     assert "NoDownloadClass" not in by_name
     assert len([row for row in rows if row["class_name"] == "TestClass"]) == 1
+
+
+def test_load_and_save_wdc_classes_catalog_roundtrip(tmp_path, monkeypatch):
+    catalog_path = tmp_path / "wdc_catalog.json"
+    monkeypatch.setenv("WDC_CLASSES_CATALOG_PATH", str(catalog_path))
+
+    wdc_classes.save_wdc_classes_catalog(
+        [
+            {"class_name": "City", "num_parts": "12", "size_human": "1.0 GB"},
+            {"class_name": "City", "num_parts": 99, "size_human": "ignored duplicate"},
+            {"class_name": "Language", "num_parts": None, "size_human": ""},
+            {"class_name": "", "num_parts": 1, "size_human": "bad row"},
+        ]
+    )
+    loaded = wdc_classes.load_wdc_classes_catalog()
+    assert loaded == [
+        {"class_name": "City", "num_parts": 12, "size_human": "1.0 GB"},
+        {"class_name": "Language", "num_parts": None, "size_human": None},
+    ]
+
+
+def test_load_wdc_classes_catalog_accepts_object_payload(tmp_path, monkeypatch):
+    catalog_path = tmp_path / "wdc_catalog.json"
+    monkeypatch.setenv("WDC_CLASSES_CATALOG_PATH", str(catalog_path))
+    catalog_path.write_text(
+        """
+        {
+          "classes": [
+            {"class_name": "Movie", "num_parts": 3, "size_human": "2.0 MB"}
+          ]
+        }
+        """.strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    loaded = wdc_classes.load_wdc_classes_catalog()
+    assert loaded == [{"class_name": "Movie", "num_parts": 3, "size_human": "2.0 MB"}]

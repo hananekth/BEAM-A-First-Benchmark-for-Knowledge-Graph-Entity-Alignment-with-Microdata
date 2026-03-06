@@ -65,6 +65,10 @@ def _client_with_test_classes(monkeypatch, test_wdc_classes):
     import beam.db as beam_db
     import webapp.main as web_main
 
+    catalog_path = Path("wdc_classes_catalog.test.json")
+    catalog_path.write_text(json.dumps(list(test_wdc_classes)), encoding="utf-8")
+    monkeypatch.setenv("WDC_CLASSES_CATALOG_PATH", str(catalog_path))
+
     importlib.reload(web_main)
     monkeypatch.setattr(web_main.db, "DB_PATH", beam_db.DB_PATH)
     monkeypatch.setattr(web_main, "fetch_wdc_classes", lambda: list(test_wdc_classes))
@@ -81,7 +85,15 @@ def test_index_populates_testclass_list(monkeypatch, test_wdc_classes):
     mode_select = soup.find("select", {"id": "matching-mode-select"})
     assert mode_select is not None
     mode_values = {opt.get("value", "") for opt in mode_select.find_all("option")}
-    assert {"property", "identifier", "sameas"} <= mode_values
+    assert {"property", "sameas"} <= mode_values
+    assert "identifier" not in mode_values
+    pattern_list = soup.find("div", {"id": "wdc-pattern-list"})
+    assert pattern_list is not None
+    pattern_hidden_input = soup.find("input", {"id": "wdc-pattern-input"})
+    assert pattern_hidden_input is not None
+    assert pattern_hidden_input.get("type") == "hidden"
+    pattern_add_btn = soup.find("button", {"id": "wdc-pattern-add-btn"})
+    assert pattern_add_btn is not None
     assert soup.find("div", {"id": "ready-checklist"}) is not None
     assert soup.find("input", {"id": "history-search-input"}) is not None
     assert soup.find("select", {"id": "history-sort-select"}) is not None
@@ -188,6 +200,25 @@ def test_refresh_classes_updates_cache(monkeypatch, test_wdc_classes):
     assert resp.status_code == 303
     rows = [dict(r) for r in web_main.db.list_wdc_classes()]
     assert {r["class_name"] for r in rows} >= {"TestClass", "TestClassTwo"}
+
+
+def test_refresh_classes_failure_keeps_existing_cache(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    web_main.db.upsert_wdc_classes(
+        [
+            {"class_name": "CachedOnly", "num_parts": 7, "size_human": "7.0 MB"},
+        ]
+    )
+    monkeypatch.setattr(web_main, "fetch_wdc_classes", lambda: (_ for _ in ()).throw(RuntimeError("offline")))
+
+    with client:
+        resp = client.get("/refresh_classes", follow_redirects=False)
+
+    assert resp.status_code == 303
+    location = resp.headers.get("location") or ""
+    assert "form_error=" in location
+    rows = [dict(r) for r in web_main.db.list_wdc_classes()]
+    assert any(r["class_name"] == "CachedOnly" for r in rows)
 
 
 def test_index_discovers_local_testclass_parts(monkeypatch):

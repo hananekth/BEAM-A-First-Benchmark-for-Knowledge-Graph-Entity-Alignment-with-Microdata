@@ -53,7 +53,7 @@ def test_webapp_presets_use_valid_wikidata_ids():
     testclass_identifier = presets["testclass_identifier"]
     assert testclass_identifier["wikidata_property"] == "wdt:P2704"
     assert testclass_identifier["wkd_class"] == "Q11424"
-    assert testclass_identifier["matching_mode"] == "identifier"
+    assert testclass_identifier["matching_mode"] == "property"
 
     testclass_wikidata_url = presets["testclass_wikidata_url"]
     assert testclass_wikidata_url["wikidata_property"] == "wdt:P31"

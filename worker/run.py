@@ -123,7 +123,9 @@ def _parse_eta_seconds(value):
 def _cfg_eta_fingerprint(params):
     data = params if isinstance(params, dict) else {}
     mode = str(data.get("matching_mode") or "").strip().lower()
-    if mode not in {"property", "identifier", "sameas"}:
+    if mode == "identifier":
+        mode = "property"
+    elif mode not in {"property", "sameas"}:
         mode = "sameas" if bool(data.get("wdc_value_is_wikidata")) else "property"
     def _txt(k):
         return str(data.get(k) or "").strip()
