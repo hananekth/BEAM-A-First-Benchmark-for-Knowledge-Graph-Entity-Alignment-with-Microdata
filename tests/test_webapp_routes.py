@@ -671,7 +671,7 @@ def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
 
     assert page.status_code == 200
     assert "Link Explorer" in page.text
-    assert "Equivalent properties (WDC -> Wikidata)" in page.text
+    assert "Equivalent properties (WDC -> target)" in page.text
     assert "Simple view: property equivalents + recursive IRI tree" in page.text
     assert "IRI WDC" not in page.text
     assert "IRI Wikidata" not in page.text
@@ -706,6 +706,41 @@ def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
     assert node_payload["node"]["node"] == "http://example.org/wdc/entity1"
     assert node_payload["node"]["summary_label"] == "Alpha City"
     assert node_payload["node"]["attr_count"] >= 1
+
+
+def test_link_explorer_links_api_fast_mode_for_large_files(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_120012_fast"
+    build_root = Path("data") / "TestClass" / build_name
+    _make_build_tree(build_root, links_count=6)
+
+    # Force fast scan mode on this tiny fixture to validate behavior.
+    monkeypatch.setattr(web_main, "_LINK_EXPLORER_FAST_SCAN_BYTES", 1)
+
+    with client:
+        links_resp = client.get(
+            f"/api/builds/TestClass/{build_name}/links",
+            params={"variant": "with_link_code", "offset": 0, "limit": 2},
+        )
+        filtered_resp = client.get(
+            f"/api/builds/TestClass/{build_name}/links",
+            params={"variant": "with_link_code", "q": "entity", "offset": 0, "limit": 2},
+        )
+
+    assert links_resp.status_code == 200
+    links_payload = links_resp.json()
+    assert links_payload["ok"] is True
+    assert links_payload["total"] is None
+    assert links_payload["has_more"] is True
+    assert len(links_payload["rows"]) == 2
+
+    # With a query, we still compute exact totals.
+    assert filtered_resp.status_code == 200
+    filtered_payload = filtered_resp.json()
+    assert filtered_payload["ok"] is True
+    assert filtered_payload["total"] == 6
+    assert filtered_payload["has_more"] is True
+    assert len(filtered_payload["rows"]) == 2
 
 
 def test_link_explorer_falls_back_to_wikidata_property_meta(monkeypatch, test_wdc_classes):

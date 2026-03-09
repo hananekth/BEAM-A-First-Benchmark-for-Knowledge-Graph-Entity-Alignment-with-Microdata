@@ -30,6 +30,29 @@ from bs4 import BeautifulSoup
 # Configuration
 WDC_BASE_URL = "https://data.dws.informatik.uni-mannheim.de/structureddata/2024-12/quads/classspecific/"
 WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql"
+TARGET_ENDPOINTS = {
+    "wikidata": {
+        "label": "Wikidata",
+        "sparql_url": WIKIDATA_ENDPOINT,
+        "supports_qid": True,
+    },
+    "dbpedia": {
+        "label": "DBpedia",
+        "sparql_url": "https://dbpedia.org/sparql",
+        "supports_qid": False,
+    },
+    "yago": {
+        "label": "YAGO",
+        "sparql_url": "https://yago-knowledge.org/sparql/query",
+        "supports_qid": False,
+    },
+    "custom": {
+        "label": "Custom",
+        "sparql_url": "",
+        "supports_qid": False,
+    },
+}
+_PREFIX_DECL_RE = re.compile(r"^PREFIX\s+([A-Za-z][A-Za-z0-9_-]*)\s*:\s*<([^>\s]+)>\s*$", re.IGNORECASE)
 _CPU_COUNT = max(1, os.cpu_count() or 1)
 MAX_PARALLEL_WORKERS = int(os.environ.get("ALIGN_MAX_WORKERS", str(_CPU_COUNT)))
 ALIGN_CPU_SHARE = float(os.environ.get("ALIGN_CPU_SHARE", "0.95"))
@@ -806,6 +829,98 @@ def normalize_wikidata_property(wikidata_property):
     if re.match(r'^[A-Za-z_][A-Za-z0-9_-]*$', wikidata_property):
         return "wdt:" + wikidata_property
     return wikidata_property
+
+
+def normalize_target_endpoint_key(target_endpoint):
+    key = str(target_endpoint or "").strip().lower()
+    if key in TARGET_ENDPOINTS:
+        return key
+    return "wikidata"
+
+
+def resolve_target_endpoint_url(target_endpoint, target_endpoint_url=None):
+    key = normalize_target_endpoint_key(target_endpoint)
+    custom = str(target_endpoint_url or "").strip()
+    if key == "custom":
+        return custom
+    default_url = str((TARGET_ENDPOINTS.get(key) or {}).get("sparql_url") or "").strip()
+    return custom or default_url
+
+
+def normalize_target_class(target_class, target_endpoint="wikidata"):
+    key = normalize_target_endpoint_key(target_endpoint)
+    if key == "wikidata":
+        return normalize_wkd_class(target_class)
+    raw = str(target_class or "").strip()
+    if not raw:
+        return None
+    if raw.startswith("<") and raw.endswith(">"):
+        return raw
+    if raw.startswith("http://") or raw.startswith("https://"):
+        return f"<{raw}>"
+    return raw
+
+
+def normalize_target_property(target_property, target_endpoint="wikidata"):
+    key = normalize_target_endpoint_key(target_endpoint)
+    if key == "wikidata":
+        return normalize_wikidata_property(target_property)
+    raw = str(target_property or "").strip()
+    if not raw:
+        return None
+    if raw.startswith("<") and raw.endswith(">"):
+        return raw
+    if raw.startswith("http://") or raw.startswith("https://"):
+        return f"<{raw}>"
+    return raw
+
+
+def normalize_prefix_declarations(prefix_text):
+    text = str(prefix_text or "").strip()
+    if not text:
+        return []
+    out = []
+    seen = set()
+    for raw_line in text.splitlines():
+        line = str(raw_line or "").strip()
+        if not line:
+            continue
+        m = _PREFIX_DECL_RE.match(line)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        iri = m.group(2).strip()
+        key = f"{name.lower()}|{iri}"
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(f"PREFIX {name}: <{iri}>")
+    return out
+
+
+def render_prefix_declarations(prefix_text):
+    rows = normalize_prefix_declarations(prefix_text)
+    if not rows:
+        return ""
+    return "\n".join(rows)
+
+
+def extract_target_entity_iri(value, target_endpoint="wikidata", target_endpoint_url=None):
+    key = normalize_target_endpoint_key(target_endpoint)
+    if key == "wikidata":
+        return extract_wd_entity_iri(value)
+    raw = str(value or "").strip()
+    if raw.startswith("<") and raw.endswith(">"):
+        raw = raw[1:-1].strip()
+    if not raw:
+        return None
+    try:
+        parsed = urlparse(unquote(raw))
+    except Exception:
+        return None
+    if parsed.scheme not in {"http", "https"}:
+        return None
+    return raw
 
 def extract_wd_entity_iri(value):
     if not value:
@@ -1904,11 +2019,12 @@ def _chunk_list(values, chunk_size):
         yield values[i : i + chunk_size]
 
 
-def _run_sparql_query_with_retry(query, headers, timeout_s, max_attempts, base_delay):
+def _run_sparql_query_with_retry_to_endpoint(endpoint_url, query, headers, timeout_s, max_attempts, base_delay):
+    endpoint = str(endpoint_url or "").strip() or WIKIDATA_ENDPOINT
     for attempt in range(1, max_attempts + 1):
         try:
             response = requests.post(
-                WIKIDATA_ENDPOINT,
+                endpoint,
                 data={"query": query, "format": "json"},
                 headers=headers,
                 timeout=timeout_s,
@@ -1926,6 +2042,17 @@ def _run_sparql_query_with_retry(query, headers, timeout_s, max_attempts, base_d
                 continue
             raise
     return None
+
+
+def _run_sparql_query_with_retry(query, headers, timeout_s, max_attempts, base_delay):
+    return _run_sparql_query_with_retry_to_endpoint(
+        WIKIDATA_ENDPOINT,
+        query=query,
+        headers=headers,
+        timeout_s=timeout_s,
+        max_attempts=max_attempts,
+        base_delay=base_delay,
+    )
 
 
 def _truthy_env(value):
@@ -2200,6 +2327,156 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
         
     except Exception as e:
         print_color(f"❌ Erreur: {e}", Colors.RED)
+        return {}
+
+
+def fetch_target_values(
+    target_property,
+    target_class=None,
+    target_prop_class=None,
+    entity_iris=None,
+    target_endpoint="wikidata",
+    target_endpoint_url=None,
+    target_prefixes=None,
+):
+    endpoint_key = normalize_target_endpoint_key(target_endpoint)
+    if endpoint_key == "wikidata":
+        return fetch_wikidata_values(
+            wikidata_property=target_property,
+            wkd_class=target_class,
+            wkd_prop_class=target_prop_class,
+            entity_iris=entity_iris,
+        )
+
+    endpoint_url = resolve_target_endpoint_url(endpoint_key, target_endpoint_url)
+    if not endpoint_url:
+        print_color("❌ Target endpoint URL is empty.", Colors.RED)
+        return {}
+
+    print_color(
+        f"\n🌐 Récupération des valeurs target ({target_property}) via {endpoint_key}...",
+        Colors.BLUE,
+    )
+
+    prop = normalize_target_property(target_property, endpoint_key)
+    class_norm = normalize_target_class(target_class, endpoint_key)
+    entity_iris_sorted = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
+    if not prop and not entity_iris_sorted:
+        print_color("❌ target_property is required when no entity IRIs are provided.", Colors.RED)
+        return {}
+
+    if not prop and entity_iris_sorted:
+        property_triple = "BIND(STR(?entity) AS ?value) ."
+    else:
+        property_triple = f"?entity {prop} ?value ."
+
+    class_filter = ""
+    if class_norm:
+        class_filter = f"""
+      ?entity rdf:type ?type .
+      ?type rdfs:subClassOf* {class_norm} .
+    """
+
+    query_template = """
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX schema: <http://schema.org/>
+    PREFIX dbo: <http://dbpedia.org/ontology/>
+    PREFIX dbp: <http://dbpedia.org/property/>
+    PREFIX yago: <http://yago-knowledge.org/resource/>
+    {custom_prefixes}
+    SELECT ?entity ?value WHERE {{
+      {values_filter}
+      {property_triple}
+      {class_filter}
+    }}
+    """
+    custom_prefixes = render_prefix_declarations(target_prefixes)
+
+    try:
+        max_attempts = max(1, int(os.environ.get("TARGET_QUERY_MAX_RETRIES", "3")))
+        base_delay = max(0.1, float(os.environ.get("TARGET_QUERY_RETRY_DELAY", "1.5")))
+        timeout_s = max(1, int(os.environ.get("TARGET_QUERY_TIMEOUT", "120")))
+        entity_batch_size = max(1, int(os.environ.get("TARGET_ENTITY_BATCH_SIZE", "500")))
+        headers = {
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "beam-align/1.0",
+        }
+        bindings = []
+
+        if entity_iris_sorted and len(entity_iris_sorted) > entity_batch_size:
+            batches = list(_chunk_list(entity_iris_sorted, entity_batch_size))
+            print(
+                f"   Batching entities: {len(entity_iris_sorted):,} IRIs in {len(batches)} batches (size={entity_batch_size})"
+            )
+            for idx, entity_batch in enumerate(batches, 1):
+                values = " ".join(f"<{uri}>" for uri in entity_batch)
+                values_filter = f"VALUES ?entity {{ {values} }}\n"
+                batch_query = query_template.format(
+                    custom_prefixes=custom_prefixes,
+                    values_filter=values_filter,
+                    property_triple=property_triple,
+                    class_filter=class_filter,
+                )
+                print(f"   [TARGET] batch {idx}/{len(batches)} size={len(entity_batch)}")
+                results = _run_sparql_query_with_retry_to_endpoint(
+                    endpoint_url,
+                    query=batch_query,
+                    headers=headers,
+                    timeout_s=timeout_s,
+                    max_attempts=max_attempts,
+                    base_delay=base_delay,
+                )
+                if results and isinstance(results, dict):
+                    batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                    if isinstance(batch_bindings, list):
+                        bindings.extend(batch_bindings)
+        else:
+            values_filter = ""
+            if entity_iris_sorted:
+                values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
+                values_filter = f"VALUES ?entity {{ {values} }}\n"
+            query = query_template.format(
+                custom_prefixes=custom_prefixes,
+                values_filter=values_filter,
+                property_triple=property_triple,
+                class_filter=class_filter,
+            )
+            results = _run_sparql_query_with_retry_to_endpoint(
+                endpoint_url,
+                query=query,
+                headers=headers,
+                timeout_s=timeout_s,
+                max_attempts=max_attempts,
+                base_delay=base_delay,
+            )
+            if results and isinstance(results, dict):
+                direct_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                if isinstance(direct_bindings, list):
+                    bindings.extend(direct_bindings)
+        if not bindings:
+            return {}
+
+        phone_mode = _looks_like_phone_mode(target_property)
+        value_map = defaultdict(list)
+        all_raw_values = set()
+        for result in bindings:
+            try:
+                value = result["value"]["value"]
+                entity_uri = result["entity"]["value"]
+            except Exception:
+                continue
+            all_raw_values.add(value)
+            value_normalized = normalize_value_for_matching(value, phone_mode=phone_mode)
+            value_normalized = normalize_country_code(value_normalized)
+            if value_normalized:
+                value_map[value_normalized].append((value, entity_uri))
+
+        print_color(f"✅ {len(all_raw_values)} valeurs brutes distinctes", Colors.GREEN)
+        print_color(f"✅ {len(value_map)} valeurs normalisées distinctes", Colors.GREEN)
+        return value_map
+    except Exception as e:
+        print_color(f"❌ Erreur target endpoint: {e}", Colors.RED)
         return {}
 
 def _exact_worker(args):

@@ -53,13 +53,19 @@
       user-select:none;
     }
     .help-tip:focus { outline:2px solid rgba(47,129,247,0.35); outline-offset:1px; }
-    input, select, button { width:100%; padding:10px 12px; margin-top:6px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
-    input, select {
+    input, select, textarea, button { width:100%; padding:10px 12px; margin-top:6px; border:1px solid var(--border); border-radius:8px; font-size:14px; }
+    input, select, textarea {
       background:#1f2630;
       color:#e6edf3;
     }
     input::placeholder {
       color:#9aa4b2;
+    }
+    textarea {
+      min-height:92px;
+      resize:vertical;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      line-height:1.4;
     }
     .checkrow { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:500; }
     .checkrow input[type="checkbox"] { width:auto; margin:0; padding:0; border:none; border-radius:0; }
@@ -244,7 +250,7 @@
     }
     .class-scope-grid {
       display:grid;
-      grid-template-columns:repeat(2, minmax(220px, 1fr));
+      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
       gap:12px;
       margin-top:8px;
     }
@@ -496,9 +502,34 @@
       </select>
     </div>
 
+    <div class="field-group" id="target-endpoint-group">
+      <label>
+        <span class="label-help">
+          Target endpoint
+          <span class="help-tip" tabindex="0" title="Select the SPARQL endpoint used on the target side (Wikidata, DBpedia, YAGO, or custom URL).">?</span>
+        </span>
+      </label>
+      <select id="target-endpoint-select" name="target_endpoint">
+        {% for ep in target_endpoints %}
+          <option value="{{ ep.key }}" data-default-url="{{ ep.default_url }}" {% if form.target_endpoint == ep.key %}selected{% endif %}>{{ ep.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field-group hidden" id="target-endpoint-url-group">
+      <label>
+        <span class="label-help">
+          Custom endpoint URL
+          <span id="required-target-endpoint-url" class="required-star" aria-label="required">*</span>
+          <span class="help-tip" tabindex="0" title="Used only when endpoint is set to Custom. Example: https://example.org/sparql">?</span>
+        </span>
+      </label>
+      <input id="target-endpoint-url-input" name="target_endpoint_url" value="{{ form.target_endpoint_url }}" placeholder="https://example.org/sparql" />
+    </div>
+
     <div class="class-scope-subsection">
       <p class="subsection-title">Class Scope</p>
-      <div class="small subsection-help">Select the WDC class and the Wikidata class filter used for matching.</div>
+      <div class="small subsection-help">Select the WDC class and the target class filter used for matching.</div>
       <div class="class-scope-grid">
         <div class="field-group">
           <label>
@@ -522,19 +553,20 @@
         <div class="field-group" id="wkd-class-group">
           <label>
             <span class="label-help">
-              Wikidata class (QID)
+              Target class filter
               <span id="required-wkd-class" class="required-star" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Restricts Wikidata entities to a class hierarchy. Useful with label matching or existing links (sameAs/url). Example for City: Q486972.">?</span>
+              <span class="help-tip" tabindex="0" title="Restricts target entities to a class hierarchy. For Wikidata you can use QIDs (example: Q486972). For DBpedia/YAGO use a class URI or prefixed term if supported.">?</span>
             </span>
           </label>
-          <input id="wkd-class-input" name="wkd_class" value="{{ form.wkd_class }}" placeholder="Q486972 (example)" />
+          <input id="wkd-class-input" name="target_class" value="{{ form.target_class }}" placeholder="Q486972 or class URI" />
+          <input type="hidden" name="wkd_class" value="{{ form.wkd_class }}" />
         </div>
       </div>
     </div>
 
     <div class="property-mapping-subsection">
       <p class="subsection-title">Property Mapping</p>
-      <div class="small subsection-help">Configure how WDC values are matched to Wikidata values.</div>
+      <div class="small subsection-help">Configure how WDC values are matched to target endpoint values.</div>
 
       <div class="property-mapping-grid">
         <div class="field-group" id="wdc-pattern-group">
@@ -556,13 +588,14 @@
         <div class="field-group" id="wikidata-property-group">
           <label id="wikidata-property-label">
             <span class="label-help">
-              Equivalent Wikidata property
+              Equivalent target property
               <span id="required-wikidata-property" class="required-star" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Property to query on the Wikidata side. Examples: rdfs:label, P1329, P2704. In sameAs/Wikidata URL mode this field is ignored.">?</span>
+              <span class="help-tip" tabindex="0" title="Property to query on the target side. In sameAs mode this field is ignored.">?</span>
             </span>
           </label>
-          <input id="wikidata-property-input" name="wikidata_property" value="{{ form.wikidata_property }}" placeholder="rdfs:label / P1329 / P2704" />
-          <div class="small">Use the exact Wikidata property to query. Examples: <code>rdfs:label</code>, <code>P1329</code>, <code>P2704</code>.</div>
+          <input id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" placeholder="rdfs:label / P1329 / dbo:birthDate / <URI>" />
+          <input type="hidden" name="wikidata_property" value="{{ form.wikidata_property }}" />
+          <div class="small">Use the exact property expected by the selected endpoint (prefix form or full URI).</div>
         </div>
       </div>
 
@@ -570,7 +603,7 @@
         <label id="ignore-chars-label">
           <span class="label-help">
             Normalization: characters to remove
-            <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and Wikidata values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
+            <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and target endpoint values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
           </span>
         </label>
         <div class="char-options" id="ignore-chars-options">
@@ -591,6 +624,20 @@
         </div>
         <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
         <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
+      </div>
+    </div>
+
+    <div class="property-mapping-subsection">
+      <p class="subsection-title">SPARQL Prefixes</p>
+      <div class="small subsection-help">Optional custom prefix declarations used in target endpoint SPARQL queries.</div>
+      <div class="field-group">
+        <label>
+          <span class="label-help">
+            Custom prefixes
+            <span class="help-tip" tabindex="0" title="One PREFIX declaration per line. Example: PREFIX bd: &lt;http://www.bigdata.com/rdf#&gt;">?</span>
+          </span>
+        </label>
+        <textarea id="target-prefixes-input" name="target_prefixes" placeholder="PREFIX bd: &lt;http://www.bigdata.com/rdf#&gt;">{{ form.target_prefixes }}</textarea>
       </div>
     </div>
 
@@ -625,7 +672,7 @@
           <label class="checkrow">
             <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
             Keep only 1-to-1 links (drop ambiguous links)
-            <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the Wikidata entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
+            <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the target entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
           </label>
           <label class="checkrow">
             <input id="dedup-wdc-exact-subgraph-checkbox" type="checkbox" name="dedup_wdc_exact_subgraph_by_link_value" {% if form.dedup_wdc_exact_subgraph_by_link_value %}checked{% endif %}>
@@ -748,7 +795,7 @@
               {% endfor %}
             {% endif %}
             {% if v.top_wd_props %}
-              <div class="small" style="margin-top:6px;"><b>Top Wikidata properties</b></div>
+              <div class="small" style="margin-top:6px;"><b>Top target properties</b></div>
               {% for row in v.top_wd_props %}
               <div class="qa-kv">
                 <div class="qa-left">{{ row.property }}</div>
@@ -1391,8 +1438,10 @@ function updateReadyChecklist() {
 
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
-  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
-  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const targetProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  const targetClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const targetEndpoint = normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata';
+  const targetEndpointUrl = normalizeFormText(document.getElementById('target-endpoint-url-input')?.value);
   const useLocalOnly = !!document.getElementById('use-local-only-checkbox')?.checked;
   const urlMode = isEffectiveWikidataUrlMode();
 
@@ -1407,17 +1456,24 @@ function updateReadyChecklist() {
     ok: !!pattern,
     detail: pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).',
   });
+  items.push({
+    label: 'Target endpoint set',
+    ok: !!targetEndpoint && (targetEndpoint !== 'custom' || !!targetEndpointUrl),
+    detail: targetEndpoint === 'custom'
+      ? (targetEndpointUrl || 'Custom endpoint URL is required.')
+      : targetEndpoint,
+  });
   if (urlMode) {
     items.push({
-      label: 'Wikidata class filter set',
-      ok: !!wkdClass,
-      detail: wkdClass ? wkdClass : 'Required in URL/sameAs mode.',
+      label: 'Target class filter set',
+      ok: !!targetClass,
+      detail: targetClass ? targetClass : 'Required in URL/sameAs mode.',
     });
   } else {
     items.push({
-      label: 'Equivalent Wikidata property set',
-      ok: !!wikidataProperty,
-      detail: wikidataProperty ? wikidataProperty : 'Required unless URL/sameAs mode.',
+      label: 'Equivalent target property set',
+      ok: !!targetProperty,
+      detail: targetProperty ? targetProperty : 'Required unless URL/sameAs mode.',
     });
   }
 
@@ -1658,6 +1714,14 @@ function isEffectiveWikidataUrlMode() {
   return normalizeFormText(document.getElementById('matching-mode-select')?.value).toLowerCase() === 'sameas';
 }
 
+function getSelectedTargetEndpoint() {
+  return normalizeFormText(document.getElementById('target-endpoint-select')?.value).toLowerCase() || 'wikidata';
+}
+
+function isCustomTargetEndpointSelected() {
+  return getSelectedTargetEndpoint() === 'custom';
+}
+
 function setRequiredState(inputId, starId, isRequired) {
   const input = document.getElementById(inputId);
   if (input) {
@@ -1676,10 +1740,12 @@ function updateRequiredIndicators() {
   setRequiredState('wdc-pattern-input', 'required-wdc-pattern', true);
   setRequiredState('wikidata-property-input', 'required-wikidata-property', !isWikidata);
   setRequiredState('wkd-class-input', 'required-wkd-class', isWikidata);
+  setRequiredState('target-endpoint-url-input', 'required-target-endpoint-url', isCustomTargetEndpointSelected());
 }
 
 function syncWikidataPropertyState() {
   const isWikidata = isEffectiveWikidataUrlMode();
+  const isCustomEndpoint = isCustomTargetEndpointSelected();
   const propInput = document.getElementById('wikidata-property-input');
   if (!propInput) return;
   if (isWikidata) {
@@ -1694,12 +1760,25 @@ function syncWikidataPropertyState() {
     if (!propInput.value && propInput.dataset.cachedValue) {
       propInput.value = propInput.dataset.cachedValue;
     }
-    propInput.placeholder = 'rdfs:label / P1329 / P2704';
+    propInput.placeholder = 'rdfs:label / P1329 / dbo:birthDate / <URI>';
   }
 
   const propLabel = document.getElementById('wikidata-property-label');
   if (propLabel) {
     propLabel.classList.toggle('field-disabled', !!isWikidata);
+  }
+
+  const endpointUrlGroup = document.getElementById('target-endpoint-url-group');
+  const endpointUrlInput = document.getElementById('target-endpoint-url-input');
+  setFieldGroupVisible('target-endpoint-url-group', isCustomEndpoint);
+  if (endpointUrlInput) {
+    endpointUrlInput.disabled = !isCustomEndpoint;
+    if (!isCustomEndpoint) {
+      endpointUrlInput.value = '';
+    }
+  }
+  if (endpointUrlGroup) {
+    endpointUrlGroup.classList.toggle('field-disabled', !isCustomEndpoint);
   }
 
   const ignoreCharsLabel = document.getElementById('ignore-chars-label');
@@ -1758,18 +1837,21 @@ function validateGenerateForm(opts = {}) {
   const requireWikidataInputs = opts.requireWikidataInputs !== false;
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
-  const wikidataProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
-  const wkdClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const targetProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  const targetClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
+  const targetEndpoint = getSelectedTargetEndpoint();
+  const targetEndpointUrl = normalizeFormText(document.getElementById('target-endpoint-url-input')?.value);
   const isWikidata = isEffectiveWikidataUrlMode();
 
   if (!className) return 'Class name is required.';
   if (!pattern) return 'Considered pattern for WDC properties is required.';
+  if (targetEndpoint === 'custom' && !targetEndpointUrl) return 'Custom endpoint URL is required.';
   if (!requireWikidataInputs) return '';
   if (isWikidata) {
-    if (!wkdClass) return 'Wikidata class (QID) is required when WDC values are Wikidata URLs.';
+    if (!targetClass) return 'Target class filter is required when using sameAs mode.';
     return '';
   }
-  if (!wikidataProperty) return 'Equivalent Wikidata property is required when WDC values are not Wikidata URLs.';
+  if (!targetProperty) return 'Equivalent target property is required when WDC values are not endpoint URLs.';
   return '';
 }
 
@@ -1788,7 +1870,7 @@ function renderPreflightReport(report) {
   const topUnmatched = Array.isArray(report.top_unmatched_wdc_values) ? report.top_unmatched_wdc_values : [];
   const closeExamples = Array.isArray(report.close_wikidata_examples) ? report.close_wikidata_examples : [];
   const topPredicates = Array.isArray(report.top_predicates) ? report.top_predicates : [];
-  const invalidWikidata = Array.isArray(report.invalid_wikidata_samples) ? report.invalid_wikidata_samples : [];
+  const invalidEndpointValues = Array.isArray(report.invalid_wikidata_samples) ? report.invalid_wikidata_samples : [];
   const risk = String(report.risk || 'high');
   box.style.display = '';
   box.className = risk === 'high' ? 'warn' : 'info';
@@ -1806,20 +1888,20 @@ function renderPreflightReport(report) {
     ? `<div class="small" style="margin-top:6px;"><b>Top WDC values (likely unmatched):</b> ${topUnmatched.map((row) => `${escapeHtml(String(row.value || ''))} (${escapeHtml(String(row.count || 0))})`).join(' | ')}</div>`
     : '';
   const closeExamplesHtml = closeExamples.length
-    ? `<div class="small" style="margin-top:6px;"><b>Closest Wikidata examples:</b> ${closeExamples.map((row) => `${escapeHtml(String(row.wdc_value || ''))} -> ${escapeHtml((Array.isArray(row.wikidata_candidates) ? row.wikidata_candidates.join(', ') : ''))}`).join(' | ')}</div>`
+    ? `<div class="small" style="margin-top:6px;"><b>Closest target endpoint examples:</b> ${closeExamples.map((row) => `${escapeHtml(String(row.wdc_value || ''))} -> ${escapeHtml((Array.isArray(row.wikidata_candidates) ? row.wikidata_candidates.join(', ') : ''))}`).join(' | ')}</div>`
     : '';
   const topPredicatesHtml = topPredicates.length
     ? `<div class="small" style="margin-top:6px;"><b>Most frequent predicates in sampled data:</b> ${topPredicates.map((row) => `${escapeHtml(String(row.predicate || ''))} (${escapeHtml(String(row.count || 0))})`).join(' | ')}</div>`
     : '';
-  const invalidWikidataHtml = invalidWikidata.length
-    ? `<div class="small" style="margin-top:6px;"><b>Non-Wikidata URL samples:</b> ${escapeHtml(invalidWikidata.join(' | '))}</div>`
+  const invalidWikidataHtml = invalidEndpointValues.length
+    ? `<div class="small" style="margin-top:6px;"><b>Non-target endpoint URL samples:</b> ${escapeHtml(invalidEndpointValues.join(' | '))}</div>`
     : '';
   box.innerHTML = `
     <div><b>Preflight</b> · ${escapeHtml(String(report.summary || ''))}</div>
     <div class="small">Risk: ${escapeHtml(risk)} | Confidence: ${escapeHtml(String(report.confidence || 'low'))}</div>
     <div class="small">Scanned lines: ${escapeHtml(String(report.scanned_lines ?? 0))} | Matched triples: ${escapeHtml(String(report.matched_triples ?? 0))} | Distinct values: ${escapeHtml(String(report.distinct_values ?? 0))}</div>
     <div class="small">Selected files: ${escapeHtml(String(report.selected_files_count ?? 0))}</div>
-    ${report.wdc_value_is_wikidata ? `<div class="small">Wikidata URL-like values: ${escapeHtml(String(report.wikidata_url_like ?? 0))}</div>` : ''}
+    ${report.wdc_value_is_wikidata ? `<div class="small">Target endpoint URL-like values: ${escapeHtml(String(report.wikidata_url_like ?? 0))}</div>` : ''}
     ${warningsHtml}
     ${samplesHtml}
     ${filesHtml}
@@ -1847,6 +1929,11 @@ async function runPreflightCheck() {
       class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
       parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
       wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
+      target_endpoint: normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata',
+      target_endpoint_url: normalizeFormText(document.getElementById('target-endpoint-url-input')?.value),
+      target_prefixes: normalizeFormText(document.getElementById('target-prefixes-input')?.value),
+      target_property: normalizeFormText(document.getElementById('wikidata-property-input')?.value),
+      target_class: normalizeFormText(document.getElementById('wkd-class-input')?.value),
       wikidata_property: normalizeFormText(document.getElementById('wikidata-property-input')?.value),
       wkd_class: normalizeFormText(document.getElementById('wkd-class-input')?.value),
       ignore_chars: effectiveWikidataMode ? '' : normalizeFormText(document.getElementById('ignore-chars-input')?.value),
@@ -2406,7 +2493,7 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
             `).join('')}
           ` : ''}
           ${topWd.length > 0 ? `
-            <div class="small" style="margin-top:6px;"><b>Top Wikidata properties</b></div>
+            <div class="small" style="margin-top:6px;"><b>Top target properties</b></div>
             ${topWd.map((row) => `
               <div class="qa-kv">
                 <div class="qa-left">${escapeHtml(row.property || '')}</div>
@@ -2909,6 +2996,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const partsSpecInput = document.getElementById('parts-spec-input');
   const patternInput = document.getElementById('wdc-pattern-input');
   const patternAddBtn = document.getElementById('wdc-pattern-add-btn');
+  const targetEndpointSelect = document.getElementById('target-endpoint-select');
+  const targetEndpointUrlInput = document.getElementById('target-endpoint-url-input');
   const wkdClassInput = document.getElementById('wkd-class-input');
   const wikidataPropertyInput = document.getElementById('wikidata-property-input');
   const ignoreCharsInput = document.getElementById('ignore-chars-input');
@@ -2936,7 +3025,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  [classNameSelect, partsSpecInput, patternInput, wkdClassInput, wikidataPropertyInput, useLocalOnlyCheckbox].forEach((el) => {
+  [
+    classNameSelect,
+    partsSpecInput,
+    patternInput,
+    targetEndpointSelect,
+    targetEndpointUrlInput,
+    wkdClassInput,
+    wikidataPropertyInput,
+    useLocalOnlyCheckbox,
+  ].forEach((el) => {
     if (!el) return;
     el.addEventListener('input', () => {
       syncWikidataPropertyState();

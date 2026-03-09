@@ -166,6 +166,33 @@ LEGACY_PRESET_ALIASES = {
     "property_movie": "code_movie",
 }
 
+TARGET_ENDPOINTS = {
+    "wikidata": {
+        "label": "Wikidata",
+        "default_url": "https://query.wikidata.org/sparql",
+        "supports_qid": True,
+    },
+    "dbpedia": {
+        "label": "DBpedia",
+        "default_url": "https://dbpedia.org/sparql",
+        "supports_qid": False,
+    },
+    "yago": {
+        "label": "YAGO",
+        "default_url": "https://yago-knowledge.org/sparql/query",
+        "supports_qid": False,
+    },
+    "custom": {
+        "label": "Custom endpoint",
+        "default_url": "",
+        "supports_qid": False,
+    },
+}
+TARGET_PREFIX_DECL_RE = re.compile(
+    r"^PREFIX\s+[A-Za-z][A-Za-z0-9_-]*\s*:\s*<[^>\s]+>\s*$",
+    re.IGNORECASE,
+)
+
 
 def _default_form():
     return {
@@ -173,6 +200,11 @@ def _default_form():
         "class_name": "",
         "parts_spec": "all",
         "wdc_predicate_pattern": "",
+        "target_endpoint": "wikidata",
+        "target_endpoint_url": "",
+        "target_prefixes": "",
+        "target_property": "",
+        "target_class": "",
         "wikidata_property": "",
         "wkd_class": "",
         "ignore_chars": "spaces;-;.",
@@ -185,6 +217,29 @@ def _default_form():
 
 def _clean_text(value: Optional[str]) -> str:
     return (value or "").strip()
+
+
+def _normalize_target_endpoint(value: Optional[str]) -> str:
+    key = _clean_text(value).lower()
+    if key in TARGET_ENDPOINTS:
+        return key
+    return "wikidata"
+
+
+def _sync_target_alias_fields(params: dict):
+    if not isinstance(params, dict):
+        return params
+    params["target_endpoint"] = _normalize_target_endpoint(params.get("target_endpoint"))
+    params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
+    params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
+    params["target_property"] = _clean_text(params.get("target_property") or params.get("wikidata_property"))
+    params["target_class"] = _clean_text(params.get("target_class") or params.get("wkd_class"))
+    # Backward-compatible aliases.
+    params["wikidata_property"] = params["target_property"]
+    params["wkd_class"] = params["target_class"]
+    if params["target_endpoint"] != "custom":
+        params["target_endpoint_url"] = ""
+    return params
 
 
 def _normalize_matching_mode(value: Optional[str], fallback_wdc_value_is_wikidata: bool = False) -> str:
@@ -205,6 +260,7 @@ def _is_wikidata_url_mode(params: dict) -> bool:
 
 def _validate_and_normalize_job_params(raw_params: dict):
     params = dict(raw_params or {})
+    _sync_target_alias_fields(params)
     params["matching_mode"] = _normalize_matching_mode(
         params.get("matching_mode"),
         fallback_wdc_value_is_wikidata=bool(params.get("wdc_value_is_wikidata")),
@@ -213,8 +269,13 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["class_name"] = _clean_text(params.get("class_name"))
     params["parts_spec"] = _clean_text(params.get("parts_spec")) or "all"
     params["wdc_predicate_pattern"] = _clean_text(params.get("wdc_predicate_pattern"))
-    params["wikidata_property"] = _clean_text(params.get("wikidata_property"))
-    params["wkd_class"] = _clean_text(params.get("wkd_class"))
+    params["target_endpoint"] = _normalize_target_endpoint(params.get("target_endpoint"))
+    params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
+    params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
+    params["target_property"] = _clean_text(params.get("target_property") or params.get("wikidata_property"))
+    params["target_class"] = _clean_text(params.get("target_class") or params.get("wkd_class"))
+    params["wikidata_property"] = params["target_property"]
+    params["wkd_class"] = params["target_class"]
     params["ignore_chars"] = _clean_text(params.get("ignore_chars"))
     params["force_align"] = bool(params.get("force_align"))
     params["use_local_only"] = bool(params.get("use_local_only"))
@@ -227,17 +288,33 @@ def _validate_and_normalize_job_params(raw_params: dict):
         return params, "Class name is required."
     if not params["wdc_predicate_pattern"]:
         return params, "Considered pattern for WDC properties is required."
+    if params["target_endpoint"] == "custom" and not params["target_endpoint_url"]:
+        return params, "Custom endpoint URL is required when endpoint is set to Custom."
+    if params["target_prefixes"]:
+        for line in params["target_prefixes"].splitlines():
+            prefix_line = _clean_text(line)
+            if not prefix_line:
+                continue
+            if not TARGET_PREFIX_DECL_RE.match(prefix_line):
+                return (
+                    params,
+                    "Custom prefixes must use one PREFIX declaration per line (e.g. PREFIX bd: <http://www.bigdata.com/rdf#>).",
+                )
 
     if _is_wikidata_url_mode(params):
+        params["target_property"] = ""
         params["wikidata_property"] = ""
         params["ignore_chars"] = ""
-        if not params["wkd_class"]:
-            return params, "Wikidata class (QID) is required when WDC values are Wikidata URLs."
+        if not params["target_class"]:
+            return params, "Target class filter is required when using sameAs mode."
     else:
         if not params["ignore_chars"]:
             params["ignore_chars"] = "spaces;-;."
-        if not params["wikidata_property"]:
-            return params, "Equivalent Wikidata property is required when WDC values are not Wikidata URLs."
+        if not params["target_property"]:
+            return params, "Equivalent target property is required when WDC values are not endpoint URLs."
+
+    params["wkd_class"] = params["target_class"]
+    params["wikidata_property"] = params["target_property"]
 
     return params, None
 
@@ -270,6 +347,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params = json.loads(r["params_json"])
         except Exception:
             continue
+        _sync_target_alias_fields(params)
         mode = _normalize_matching_mode(
             params.get("matching_mode"),
             fallback_wdc_value_is_wikidata=bool(params.get("wdc_value_is_wikidata")),
@@ -281,8 +359,11 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params.get("class_name", ""),
             params.get("parts_spec", ""),
             params.get("wdc_predicate_pattern", ""),
-            params.get("wikidata_property", ""),
-            params.get("wkd_class", ""),
+            params.get("target_endpoint", "wikidata"),
+            params.get("target_endpoint_url", ""),
+            params.get("target_prefixes", ""),
+            params.get("target_property", ""),
+            params.get("target_class", ""),
             params.get("ignore_chars", ""),
             params.get("force_one_to_one_links", ""),
             params.get("dedup_wdc_exact_subgraph_by_link_value", ""),
@@ -290,10 +371,13 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
         if key in seen:
             continue
         seen.add(key)
+        endpoint_key = params.get("target_endpoint", "wikidata")
+        endpoint_label = (TARGET_ENDPOINTS.get(endpoint_key) or {}).get("label", endpoint_key)
+        target_hint = params.get("target_property", "") or ("Target URL" if _is_wikidata_url_mode(params) else "")
         label = (
             f"{params.get('class_name','')} | {params.get('parts_spec','')} | "
             f"{params.get('wdc_predicate_pattern','')} -> "
-            f"{params.get('wikidata_property','') or ('Wikidata URL' if _is_wikidata_url_mode(params) else '')}"
+            f"{target_hint} ({endpoint_label})"
         )
         recent.append({"label": label, "params": params, "job_id": r["id"]})
     return recent
@@ -543,24 +627,31 @@ def _read_ent_links_samples(path: Path, limit: int = 5):
     return rows
 
 
-def _fetch_wikidata_preview_values(
-    wikidata_property: str,
-    wkd_class: str,
+def _fetch_target_preview_values(
+    target_property: str,
+    target_class: str,
+    target_endpoint: str,
+    target_endpoint_url: str,
+    target_prefixes: str,
     ignore_chars: str,
     limit: int = 1200,
 ):
-    prop = align_script.normalize_wikidata_property(wikidata_property)
-    if not prop:
-        return []
-    wkd_class_norm = align_script.normalize_wkd_class(wkd_class)
-    class_filter = ""
-    if wkd_class_norm:
-        class_filter = f"""
-      ?entity wdt:P31 ?type .
-      ?type wdt:P279* {wkd_class_norm} .
-    """
+    endpoint_key = _normalize_target_endpoint(target_endpoint)
     q_limit = max(100, min(int(limit), 5000))
-    query = f"""
+
+    # Keep optimized dedicated query for Wikidata preview, unchanged behavior.
+    if endpoint_key == "wikidata":
+        prop = align_script.normalize_wikidata_property(target_property)
+        if not prop:
+            return []
+        class_norm = align_script.normalize_wkd_class(target_class)
+        class_filter = ""
+        if class_norm:
+            class_filter = f"""
+      ?entity wdt:P31 ?type .
+      ?type wdt:P279* {class_norm} .
+    """
+        query = f"""
     PREFIX wd: <http://www.wikidata.org/entity/>
     PREFIX wdt: <http://www.wikidata.org/prop/direct/>
     SELECT DISTINCT ?value WHERE {{
@@ -569,39 +660,67 @@ def _fetch_wikidata_preview_values(
     }}
     LIMIT {q_limit}
     """
-    headers = {
-        "Accept": "application/sparql-results+json",
-        "User-Agent": "beam-preflight/1.0",
-    }
-    timeout_s = max(5, int(os.environ.get("PREFLIGHT_WIKIDATA_TIMEOUT", "25")))
-    try:
-        response = requests.post(
-            align_script.WIKIDATA_ENDPOINT,
-            data={"query": query, "format": "json"},
-            headers=headers,
-            timeout=timeout_s,
-        )
-        response.raise_for_status()
-        loader = getattr(align_script, "_load_sparql_json_payload", None)
-        if callable(loader):
-            payload = loader(response.text)
-        else:
-            payload = json.loads(response.text)
-    except Exception:
-        return []
+        headers = {
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "beam-preflight/1.0",
+        }
+        timeout_s = max(5, int(os.environ.get("PREFLIGHT_WIKIDATA_TIMEOUT", "25")))
+        try:
+            response = requests.post(
+                align_script.WIKIDATA_ENDPOINT,
+                data={"query": query, "format": "json"},
+                headers=headers,
+                timeout=timeout_s,
+            )
+            response.raise_for_status()
+            loader = getattr(align_script, "_load_sparql_json_payload", None)
+            if callable(loader):
+                payload = loader(response.text)
+            else:
+                payload = json.loads(response.text)
+        except Exception:
+            return []
 
+        rows = []
+        seen_norm = set()
+        bindings = (((payload or {}).get("results") or {}).get("bindings")) or []
+        for item in bindings:
+            value = str((((item or {}).get("value") or {}).get("value")) or "").strip()
+            if not value:
+                continue
+            normalized = _normalize_preflight_value(value, ignore_chars)
+            if not normalized or normalized in seen_norm:
+                continue
+            seen_norm.add(normalized)
+            rows.append({"value": value[:180], "normalized": normalized})
+            if len(rows) >= q_limit:
+                break
+        return rows
+
+    fetch_target = getattr(align_script, "fetch_target_values", None)
+    if not callable(fetch_target):
+        return []
+    target_map = fetch_target(
+        target_property=target_property,
+        target_class=target_class,
+        target_prop_class=None,
+        entity_iris=None,
+        target_endpoint=endpoint_key,
+        target_endpoint_url=_clean_text(target_endpoint_url),
+        target_prefixes=_clean_text(target_prefixes),
+    )
+    if not isinstance(target_map, dict):
+        return []
     rows = []
-    seen_norm = set()
-    bindings = (((payload or {}).get("results") or {}).get("bindings")) or []
-    for item in bindings:
-        value = str((((item or {}).get("value") or {}).get("value")) or "").strip()
-        if not value:
+    for norm, entries in target_map.items():
+        if not norm or not isinstance(entries, list) or not entries:
             continue
-        normalized = _normalize_preflight_value(value, ignore_chars)
-        if not normalized or normalized in seen_norm:
+        first = entries[0]
+        raw_value = str(first[0] if isinstance(first, (list, tuple)) and len(first) > 0 else "")
+        normalized = _normalize_preflight_value(raw_value, ignore_chars) if raw_value else str(norm)
+        if not normalized:
             continue
-        seen_norm.add(normalized)
-        rows.append({"value": value[:180], "normalized": normalized})
+        rows.append({"value": raw_value[:180], "normalized": normalized})
         if len(rows) >= q_limit:
             break
     return rows
@@ -614,6 +733,11 @@ def _build_preflight_report(
     ignore_chars: str,
     matching_mode: str,
     use_local_only: bool,
+    target_endpoint: str = "wikidata",
+    target_endpoint_url: str = "",
+    target_prefixes: str = "",
+    target_property: str = "",
+    target_class: str = "",
     wikidata_property: str = "",
     wkd_class: str = "",
     include_wikidata_preview: bool = True,
@@ -623,6 +747,11 @@ def _build_preflight_report(
     parts_spec = _clean_text(parts_spec) or "all"
     pattern = _clean_text(wdc_predicate_pattern)
     ignore_chars = _clean_text(ignore_chars)
+    endpoint_key = _normalize_target_endpoint(target_endpoint)
+    target_endpoint_url = _clean_text(target_endpoint_url)
+    target_prefixes = _clean_text(target_prefixes)
+    target_property = _clean_text(target_property or wikidata_property)
+    target_class = _clean_text(target_class or wkd_class)
     mode_norm = _normalize_matching_mode(matching_mode)
     wdc_value_is_wikidata = mode_norm == "sameas"
     report = {
@@ -631,6 +760,11 @@ def _build_preflight_report(
         "parts_spec": parts_spec,
         "pattern": pattern,
         "matching_mode": mode_norm,
+        "target_endpoint": endpoint_key,
+        "target_endpoint_url": target_endpoint_url,
+        "target_prefixes": target_prefixes,
+        "target_property": target_property,
+        "target_class": target_class,
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
         "scan_limit_lines": int(max(1000, scan_limit_lines)),
         "selected_files_count": 0,
@@ -720,7 +854,16 @@ def _build_preflight_report(
                             value_examples[normalized] = raw_value[:180]
                         distinct_norm.add(normalized)
                     if wdc_value_is_wikidata:
-                        if align_script.extract_wd_entity_iri(raw_value):
+                        extractor = getattr(align_script, "extract_target_entity_iri", None)
+                        if callable(extractor):
+                            endpoint_iri = extractor(
+                                raw_value,
+                                target_endpoint=endpoint_key,
+                                target_endpoint_url=target_endpoint_url,
+                            )
+                        else:
+                            endpoint_iri = align_script.extract_wd_entity_iri(raw_value)
+                        if endpoint_iri:
                             wikidata_like_values += 1
                         elif len(invalid_wikidata_samples) < 5:
                             invalid_wikidata_samples.append(raw_value[:160])
@@ -753,7 +896,7 @@ def _build_preflight_report(
         report["summary"] = "No triple matched the considered pattern for WDC properties in sampled local data."
     elif wdc_value_is_wikidata and wikidata_like_values == 0:
         report["risk"] = "high"
-        report["summary"] = "Pattern matched, but no Wikidata URL-like values were found."
+        report["summary"] = "Pattern matched, but no target endpoint URL-like values were found."
     elif len(distinct_norm) < 5:
         report["risk"] = "medium"
         report["summary"] = "Very few distinct values found; alignment risk is moderate."
@@ -771,15 +914,18 @@ def _build_preflight_report(
     if (
         include_wikidata_preview
         and not wdc_value_is_wikidata
-        and _clean_text(wikidata_property)
+        and target_property
         and report["top_unmatched_wdc_values"]
     ):
-        preview_rows = _fetch_wikidata_preview_values(
-            wikidata_property=_clean_text(wikidata_property),
-            wkd_class=_clean_text(wkd_class),
-            ignore_chars=ignore_chars,
-            limit=1200,
-        )
+        preview_rows = _fetch_target_preview_values(
+            target_property=target_property,
+            target_class=target_class,
+                target_endpoint=endpoint_key,
+                target_endpoint_url=target_endpoint_url,
+                target_prefixes=target_prefixes,
+                ignore_chars=ignore_chars,
+                limit=1200,
+            )
         report["wikidata_preview_count"] = len(preview_rows)
         if preview_rows:
             wd_norm_to_value = {}
@@ -807,7 +953,7 @@ def _build_preflight_report(
                     }
                 )
         else:
-            report["warnings"].append("Could not fetch Wikidata preview values for preflight diagnostics.")
+            report["warnings"].append("Could not fetch target endpoint preview values for preflight diagnostics.")
 
     report["ok"] = True
     return report
@@ -1068,7 +1214,7 @@ def _variant_stats(base: Path, variant: str):
     if wdc_props == 0:
         qa_warnings.append("No WDC property stats found.")
     if wd_props == 0:
-        qa_warnings.append("No Wikidata property stats found.")
+        qa_warnings.append("No target-side property stats found.")
     if links_count > 0 and not sample_links:
         qa_warnings.append("Could not read ent_links samples.")
     return {
@@ -1107,7 +1253,19 @@ def _build_config_groups(cfg: dict):
         return []
     ordered = [
         ("Input", ["class_name"]),
-        ("Matching", ["matching_mode", "wdc_predicate_pattern", "wikidata_property", "wkd_class", "ignore_chars"]),
+        (
+            "Matching",
+            [
+                "matching_mode",
+                "wdc_predicate_pattern",
+                "target_endpoint",
+                "target_endpoint_url",
+                "target_prefixes",
+                "target_property",
+                "target_class",
+                "ignore_chars",
+            ],
+        ),
         (
             "Build",
             [
@@ -1207,6 +1365,7 @@ def _build_summary_from_dir(base: Path):
 
     config = build_config if isinstance(build_config, dict) else None
     if config:
+        _sync_target_alias_fields(config)
         build["config"] = config
     else:
         build["config"] = {
@@ -1214,6 +1373,11 @@ def _build_summary_from_dir(base: Path):
             "build_name": build["build_name"],
             "result_path": build["path"],
             "config_source": "inferred",
+            "target_endpoint": "wikidata",
+            "target_endpoint_url": "",
+            "target_prefixes": "",
+            "target_property": "",
+            "target_class": "",
         }
 
     parts = build["config"].get("parts_manifest")
@@ -1227,6 +1391,7 @@ def _build_summary_from_dir(base: Path):
 
 
 _LINK_EXPLORER_VARIANTS = ("with_link_code", "without_link_code")
+_LINK_EXPLORER_FAST_SCAN_BYTES = 64 * 1024 * 1024  # 64 MB
 _LINK_EXPLORER_PROP_ALIASES = {
     "name": "label",
     "label": "label",
@@ -1595,14 +1760,24 @@ def _resolve_link_explorer_variant_dir(build_dir: Path, variant: Optional[str] =
 
 def _scan_ent_links_page(path: Path, offset: int = 0, limit: int = 30, query: str = ""):
     if not path.exists() or not path.is_file():
-        return {"rows": [], "total": 0}
+        return {"rows": [], "total": 0, "has_more": False}
     offset = max(0, int(offset))
     limit = max(1, min(int(limit), 200))
     q = _clean_text(query).lower()
 
+    # For large files without a filter, avoid a full scan to compute an exact total.
+    # We only collect one page (+1 row to detect next page) for fast first render.
+    try:
+        file_size = path.stat().st_size
+    except Exception:
+        file_size = 0
+    fast_mode = (not q) and file_size >= _LINK_EXPLORER_FAST_SCAN_BYTES
+
     rows = []
     total = 0
+    has_more = False
     logical_idx = -1
+    matched = 0
     with path.open("r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             parsed = _parse_ent_link_line(line)
@@ -1612,7 +1787,7 @@ def _scan_ent_links_page(path: Path, offset: int = 0, limit: int = 30, query: st
             wdc_iri, wd_iri = parsed
             if q and q not in wdc_iri.lower() and q not in wd_iri.lower():
                 continue
-            if total >= offset and len(rows) < limit:
+            if matched >= offset and len(rows) < limit:
                 rows.append(
                     {
                         "idx": logical_idx,
@@ -1620,8 +1795,19 @@ def _scan_ent_links_page(path: Path, offset: int = 0, limit: int = 30, query: st
                         "wikidata_uri": wd_iri,
                     }
                 )
-            total += 1
-    return {"rows": rows, "total": total}
+            matched += 1
+
+            if fast_mode and matched > (offset + limit):
+                # We already captured page rows; first extra match means next page exists.
+                if len(rows) >= limit:
+                    has_more = True
+                    break
+
+    if fast_mode:
+        return {"rows": rows, "total": None, "has_more": has_more}
+    total = matched
+    has_more = (offset + len(rows)) < total
+    return {"rows": rows, "total": total, "has_more": has_more}
 
 
 def _scan_ent_link_by_index(path: Path, idx: int):
@@ -1654,12 +1840,23 @@ def _scan_ent_link_by_index(path: Path, idx: int):
     return None
 
 
-def _scan_subject_triples(path: Path, subject_key: str, max_rows: int = 4000):
+def _scan_subject_triples(
+    path: Path,
+    subject_key: str,
+    max_rows: int = 4000,
+    max_scan_lines: int = 350000,
+):
     rows = []
     if not path.exists() or not path.is_file() or not subject_key:
         return rows
+    scanned = 0
+    seen_subject = False
     with path.open("r", encoding="utf-8", errors="ignore") as f:
         for line in f:
+            scanned += 1
+            if max_scan_lines > 0 and scanned > max_scan_lines and not seen_subject:
+                # Protect UI endpoints from scanning huge files indefinitely.
+                break
             parts = line.rstrip("\n").split("\t", 2)
             if len(parts) < 3:
                 continue
@@ -1668,8 +1865,13 @@ def _scan_subject_triples(path: Path, subject_key: str, max_rows: int = 4000):
             o = _clean_text(parts[2])
             if not s or not p:
                 continue
-            if _normalize_node_token(s) != subject_key:
+            same_subject = _normalize_node_token(s) == subject_key
+            if not same_subject:
+                if seen_subject:
+                    # Triples are usually grouped by subject; once we leave it, stop early.
+                    break
                 continue
+            seen_subject = True
             rows.append((p, o))
             if len(rows) >= max_rows:
                 break
@@ -2090,6 +2292,11 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "class_name": _clean_text(str(_pick("class_name", class_name))),
         "parts_spec": _clean_text(str(_pick("parts_spec", "all"))),
         "wdc_predicate_pattern": _clean_text(str(_pick("wdc_predicate_pattern", ""))),
+        "target_endpoint": _clean_text(str(_pick("target_endpoint", "wikidata"))),
+        "target_endpoint_url": _clean_text(str(_pick("target_endpoint_url", ""))),
+        "target_prefixes": _clean_text(str(_pick("target_prefixes", ""))),
+        "target_property": _clean_text(str(_pick("target_property", _pick("wikidata_property", "")))),
+        "target_class": _clean_text(str(_pick("target_class", _pick("wkd_class", "")))),
         "wikidata_property": _clean_text(str(_pick("wikidata_property", ""))),
         "wkd_class": _clean_text(str(_pick("wkd_class", ""))),
         "ignore_chars": _clean_text(str(_pick("ignore_chars", "spaces;-;."))),
@@ -2298,6 +2505,7 @@ def index(
             except Exception:
                 pass
 
+    _sync_target_alias_fields(form)
     form["matching_mode"] = _normalize_matching_mode(
         form.get("matching_mode"),
         fallback_wdc_value_is_wikidata=bool(form.get("wdc_value_is_wikidata")),
@@ -2338,6 +2546,10 @@ def index(
             "class_parts_info": class_parts_info,
             "form_error": _clean_text(form_error),
             "is_test_mode": is_test_mode,
+            "target_endpoints": [
+                {"key": k, "label": v.get("label", k), "default_url": v.get("default_url", "")}
+                for k, v in TARGET_ENDPOINTS.items()
+            ],
         },
     )
 
@@ -2390,11 +2602,10 @@ def build_links_page(
         query += f"form_error={quote_plus('Build not found.')}"
         return RedirectResponse(url=f"/?{query}", status_code=303)
 
-    build = _build_summary_from_dir(build_dir)
-    if not build:
-        query = "test_mode=1&" if is_test_mode else ""
-        query += f"form_error={quote_plus('Build not found.')}"
-        return RedirectResponse(url=f"/?{query}", status_code=303)
+    build = {
+        "class_name": class_name,
+        "build_name": build_name,
+    }
 
     variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
     if not variant_dir or not variant_name:
@@ -2406,8 +2617,6 @@ def build_links_page(
     page = _scan_ent_links_page(ent_links_path, offset=offset, limit=limit, query=q)
     rows = page["rows"]
     total = page["total"]
-    initial_idx = rows[0]["idx"] if rows else None
-    initial_detail = _build_link_detail_payload(variant_dir, initial_idx) if initial_idx is not None else None
 
     available_variants = []
     for name in _LINK_EXPLORER_VARIANTS:
@@ -2435,8 +2644,9 @@ def build_links_page(
             "initial_offset": max(0, int(offset)),
             "initial_limit": max(1, min(int(limit), 200)),
             "initial_total": total,
+            "initial_has_more": bool(page.get("has_more", False)),
             "initial_rows": rows,
-            "initial_detail": initial_detail,
+            "initial_detail": None,
         },
     )
 
@@ -2468,6 +2678,7 @@ def build_links_api(
         "offset": max(0, int(offset)),
         "limit": max(1, min(int(limit), 200)),
         "total": page["total"],
+        "has_more": bool(page.get("has_more", False)),
         "rows": page["rows"],
     }
 
@@ -2584,6 +2795,11 @@ def preflight_api(
     parts_spec: str = "all",
     matching_mode: str = "property",
     wdc_predicate_pattern: str = "",
+    target_endpoint: str = "wikidata",
+    target_endpoint_url: str = "",
+    target_prefixes: str = "",
+    target_property: str = "",
+    target_class: str = "",
     wikidata_property: str = "",
     wkd_class: str = "",
     ignore_chars: str = "",
@@ -2596,6 +2812,11 @@ def preflight_api(
         parts_spec=parts_spec,
         matching_mode=matching_mode,
         wdc_predicate_pattern=wdc_predicate_pattern,
+        target_endpoint=target_endpoint,
+        target_endpoint_url=target_endpoint_url,
+        target_prefixes=target_prefixes,
+        target_property=target_property,
+        target_class=target_class,
         wikidata_property=wikidata_property,
         wkd_class=wkd_class,
         ignore_chars=ignore_chars,
@@ -2732,6 +2953,11 @@ def create_job(
     class_name: str = Form(...),
     parts_spec: str = Form(""),
     wdc_predicate_pattern: str = Form(""),
+    target_endpoint: str = Form("wikidata"),
+    target_endpoint_url: str = Form(""),
+    target_prefixes: str = Form(""),
+    target_property: str = Form(""),
+    target_class: str = Form(""),
     wikidata_property: str = Form(""),
     wkd_class: str = Form(""),
     ignore_chars: str = Form(""),
@@ -2745,6 +2971,11 @@ def create_job(
         "class_name": _clean_text(class_name),
         "parts_spec": _clean_text(parts_spec),
         "wdc_predicate_pattern": _clean_text(wdc_predicate_pattern),
+        "target_endpoint": _clean_text(target_endpoint),
+        "target_endpoint_url": _clean_text(target_endpoint_url),
+        "target_prefixes": _clean_text(target_prefixes),
+        "target_property": _clean_text(target_property),
+        "target_class": _clean_text(target_class),
         "wikidata_property": _clean_text(wikidata_property),
         "wkd_class": _clean_text(wkd_class),
         "ignore_chars": _clean_text(ignore_chars),

@@ -124,15 +124,33 @@ def _align_params_from_job_params(params):
         data.get("matching_mode"),
         fallback_wdc_value_is_wikidata=bool(data.get("wdc_value_is_wikidata")),
     ) == "sameas"
-    return {
+    target_property = data.get("target_property")
+    if target_property in {None, ""}:
+        target_property = data.get("wikidata_property")
+    target_class = data.get("target_class")
+    if target_class in {None, ""}:
+        target_class = data.get("wkd_class")
+    target_endpoint = data.get("target_endpoint") or "wikidata"
+    target_endpoint_url = data.get("target_endpoint_url") or None
+    target_prefixes = data.get("target_prefixes") or None
+    out = {
         "class_name": data.get("class_name"),
         "parts_spec": data.get("parts_spec") or "all",
         "pattern": data.get("wdc_predicate_pattern"),
-        "wikidata_property": data.get("wikidata_property") or None,
-        "wkd_class": data.get("wkd_class") or None,
+        "wikidata_property": target_property or None,
+        "wkd_class": target_class or None,
         "ignore_chars": data.get("ignore_chars") or None,
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
     }
+    # Add endpoint-specific keys only when not using the historical default config.
+    if (target_endpoint or "wikidata") != "wikidata" or (target_endpoint_url or ""):
+        out["target_property"] = target_property or None
+        out["target_class"] = target_class or None
+        out["target_endpoint"] = target_endpoint or "wikidata"
+        out["target_endpoint_url"] = target_endpoint_url or None
+    if target_prefixes:
+        out["target_prefixes"] = target_prefixes
+    return out
 
 
 def _align_cache_dir_for_params(params):
@@ -717,8 +735,15 @@ def generate_benchmark(
         fallback_wdc_value_is_wikidata=bool(params.get("wdc_value_is_wikidata")),
     )
     pattern = params.get("wdc_predicate_pattern")
-    wikidata_property = params.get("wikidata_property") or None
-    wkd_class = params.get("wkd_class") or None
+    target_property = params.get("target_property")
+    if target_property in {None, ""}:
+        target_property = params.get("wikidata_property")
+    target_class = params.get("target_class")
+    if target_class in {None, ""}:
+        target_class = params.get("wkd_class")
+    target_endpoint = params.get("target_endpoint") or "wikidata"
+    target_endpoint_url = params.get("target_endpoint_url") or None
+    target_prefixes = params.get("target_prefixes") or None
     wkd_prop_class = params.get("wkd_prop_class") or None
     ignore_chars = params.get("ignore_chars") or None
     wdc_value_is_wikidata = matching_mode == "sameas"
@@ -738,10 +763,14 @@ def generate_benchmark(
         raise PipelineError("class_name is required")
     if not pattern:
         raise PipelineError("wdc_predicate_pattern is required")
-    if not wdc_value_is_wikidata and not wikidata_property:
-        raise PipelineError("wikidata_property is required")
-    if wdc_value_is_wikidata and not wkd_class:
-        raise PipelineError("wkd_class is required when wdc_value_is_wikidata is enabled")
+    if not wdc_value_is_wikidata and not target_property:
+        if (target_endpoint or "wikidata") == "wikidata":
+            raise PipelineError("wikidata_property is required")
+        raise PipelineError("target_property is required")
+    if wdc_value_is_wikidata and not target_class:
+        if (target_endpoint or "wikidata") == "wikidata":
+            raise PipelineError("wkd_class is required when wdc_value_is_wikidata is enabled")
+        raise PipelineError("target_class is required when sameAs mode is enabled")
 
     if ignore_chars:
         align.set_normalization(True)
@@ -815,8 +844,11 @@ def generate_benchmark(
             "class_name": class_name,
             "parts_spec": parts_spec,
             "wdc_predicate_pattern": pattern,
-            "wikidata_property": wikidata_property,
-            "wkd_class": wkd_class,
+            "target_property": target_property,
+            "target_class": target_class,
+            "target_endpoint": target_endpoint,
+            "target_endpoint_url": target_endpoint_url,
+            "target_prefixes": target_prefixes,
             "ignore_chars": ignore_chars,
         }
     )
@@ -899,31 +931,64 @@ def generate_benchmark(
             wd_entity_iris = set()
             for entries in wdc_map.values():
                 for value, _iri in entries:
-                    wd_iri = align.extract_wd_entity_iri(value)
+                    wd_iri = align.extract_target_entity_iri(
+                        value,
+                        target_endpoint=target_endpoint,
+                        target_endpoint_url=target_endpoint_url,
+                    )
                     if wd_iri:
                         wd_entity_iris.add(wd_iri)
             if not wd_entity_iris:
-                raise PipelineError("No Wikidata URLs extracted from WDC values")
-            wikidata_map = align.fetch_wikidata_values(
-                wikidata_property=None,
-                wkd_class=wkd_class,
-                wkd_prop_class=None,
-                entity_iris=sorted(wd_entity_iris),
-            )
+                if (target_endpoint or "wikidata") == "wikidata":
+                    raise PipelineError("No Wikidata URLs extracted from WDC values")
+                raise PipelineError("No target entity URLs extracted from WDC values")
+            if (target_endpoint or "wikidata") == "wikidata":
+                wikidata_map = align.fetch_wikidata_values(
+                    wikidata_property=None,
+                    wkd_class=target_class,
+                    wkd_prop_class=None,
+                    entity_iris=sorted(wd_entity_iris),
+                )
+            else:
+                wikidata_map = align.fetch_target_values(
+                    target_property=None,
+                    target_class=target_class,
+                    target_prop_class=None,
+                    entity_iris=sorted(wd_entity_iris),
+                    target_endpoint=target_endpoint,
+                    target_endpoint_url=target_endpoint_url,
+                    target_prefixes=target_prefixes,
+                )
         else:
-            wikidata_map = align.fetch_wikidata_values(
-                wikidata_property,
-                wkd_class,
-                wkd_prop_class,
-            )
+            if (target_endpoint or "wikidata") == "wikidata":
+                wikidata_map = align.fetch_wikidata_values(
+                    target_property,
+                    target_class,
+                    wkd_prop_class,
+                )
+            else:
+                wikidata_map = align.fetch_target_values(
+                    target_property,
+                    target_class,
+                    wkd_prop_class,
+                    target_endpoint=target_endpoint,
+                    target_endpoint_url=target_endpoint_url,
+                    target_prefixes=target_prefixes,
+                )
         if not wikidata_map:
             if wdc_value_is_wikidata:
+                if (target_endpoint or "wikidata") == "wikidata":
+                    raise PipelineError(
+                        "No Wikidata entities matched class filter "
+                        f"({target_class}) for extracted WDC Wikidata URLs "
+                        f"({len(wd_entity_iris):,} entities)"
+                    )
                 raise PipelineError(
-                    "No Wikidata entities matched class filter "
-                    f"({wkd_class}) for extracted WDC Wikidata URLs "
+                    "No target entities matched class filter "
+                    f"({target_class}) for extracted WDC target URLs "
                     f"({len(wd_entity_iris):,} entities)"
                 )
-            raise PipelineError("Failed to fetch Wikidata values")
+            raise PipelineError("Failed to fetch target endpoint values")
 
         _check_cancel()
         matches, wdc_values_matched = align.fuzzy_link(
@@ -947,8 +1012,8 @@ def generate_benchmark(
             class_name=class_name,
             parts_spec=parts_spec,
             pattern=pattern,
-            wikidata_property=wikidata_property,
-            wkd_class=wkd_class,
+            wikidata_property=target_property,
+            wkd_class=target_class,
             wkd_prop_class=wkd_prop_class,
             start_ts=start_ts,
         )
@@ -1028,8 +1093,14 @@ def generate_benchmark(
         "class_name": class_name,
         "parts_spec": parts_spec,
         "wdc_predicate_pattern": pattern,
-        "wikidata_property": wikidata_property,
-        "wkd_class": wkd_class,
+        "target_property": target_property,
+        "target_class": target_class,
+        "target_endpoint": target_endpoint,
+        "target_endpoint_url": target_endpoint_url,
+        "target_prefixes": target_prefixes,
+        # Backward-compatible aliases for existing tools/views.
+        "wikidata_property": target_property,
+        "wkd_class": target_class,
         "ignore_chars": ignore_chars,
         "force_align": force_align,
         "use_local_only": use_local_only,
@@ -1221,14 +1292,17 @@ def generate_benchmark(
     wdc_link_prop_patterns = set()
     if pattern:
         wdc_link_prop_patterns.add(str(pattern).lower())
-    if wikidata_property:
-        norm_prop = build.normalize_wd_prop_id(str(wikidata_property))
+    if (target_endpoint or "wikidata") == "wikidata" and target_property:
+        norm_prop = build.normalize_wd_prop_id(str(target_property))
         if norm_prop:
             wd_link_prop_uris = build.wikidata_prop_uris(norm_prop)
 
     replace_map = {}
     lowercase_wd = True
     add_wd_labels = True
+    endpoint_sparql_url = align.resolve_target_endpoint_url(target_endpoint, target_endpoint_url)
+    if (target_endpoint or "wikidata") != "wikidata":
+        add_wd_labels = False
     wd_batch_default = int(os.environ.get("BEAM_WD_BATCH_SIZE", "150"))
     wd_sleep_default = float(os.environ.get("BEAM_WD_SLEEP", "0.05"))
 
@@ -1248,7 +1322,7 @@ def generate_benchmark(
         no_wd_labels=False,
         wd_prop_min_count=0,
         merge_wd_by_link_values=False,
-        sparql_url="https://query.wikidata.org/sparql",
+        sparql_url=endpoint_sparql_url or "https://query.wikidata.org/sparql",
         lang="en",
         batch_size=int(params.get("wd_batch_size", wd_batch_default)),
         sleep=float(params.get("wd_sleep", wd_sleep_default)),
