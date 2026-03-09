@@ -148,8 +148,29 @@ def _parse_property_mapping_rules(value):
             raise PipelineError(
                 f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
             )
+        pair_ignore_chars = []
+        norm_text = str(norm or "").strip()
+        if norm_text.startswith("["):
+            try:
+                decoded = json.loads(norm_text)
+            except Exception:
+                decoded = None
+            if isinstance(decoded, list):
+                pair_ignore_chars = [str(v or "").strip() for v in decoded]
+        if pair_ignore_chars and len(pair_ignore_chars) != len(wdc_props):
+            raise PipelineError(
+                f"Invalid property mapping rule at line {line_no}: per-pair normalization count differs from pair count"
+            )
         pairs = list(zip(wdc_props, target_props))
-        rules.append({"line_no": line_no, "pairs": pairs, "raw": line, "ignore_chars": norm})
+        rules.append(
+            {
+                "line_no": line_no,
+                "pairs": pairs,
+                "raw": line,
+                "ignore_chars": norm,
+                "pair_ignore_chars": pair_ignore_chars,
+            }
+        )
     return rules
 
 
@@ -1049,8 +1070,12 @@ def generate_benchmark(
                 target_fetch_any = False
                 for rule in parsed_rules:
                     rule_ignore = str(rule.get("ignore_chars") or "").strip() or ignore_chars
-                    _set_align_normalization(rule_ignore)
-                    for wdc_prop, target_prop in rule["pairs"]:
+                    pair_ignores = list(rule.get("pair_ignore_chars") or [])
+                    for pair_idx, (wdc_prop, target_prop) in enumerate(rule["pairs"]):
+                        pair_ignore = ""
+                        if pair_idx < len(pair_ignores):
+                            pair_ignore = str(pair_ignores[pair_idx] or "").strip()
+                        _set_align_normalization(pair_ignore or rule_ignore)
                         try:
                             rule_wdc_map, rule_matched_count = align.extract_unique_iris_from_files(
                                 decompressed_files,

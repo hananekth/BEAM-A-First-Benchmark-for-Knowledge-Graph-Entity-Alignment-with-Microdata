@@ -215,6 +215,35 @@
       align-items:center;
       min-height:30px;
     }
+    .pattern-row-norm-config-btn {
+      width:auto;
+      min-width:auto;
+      margin-top:0;
+      padding:6px 10px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#1f2630;
+      color:var(--text);
+      font-size:12px;
+      cursor:pointer;
+      transition:background-color .12s ease, border-color .12s ease, color .12s ease, box-shadow .12s ease;
+    }
+    .pattern-row-norm-config-btn:hover {
+      background:#253247;
+      border-color:#3b82f6;
+      color:#f8fbff;
+    }
+    .pattern-row-norm-config-btn:focus-visible {
+      outline:none;
+      background:#253247;
+      border-color:#3b82f6;
+      box-shadow:0 0 0 2px rgba(59,130,246,0.25);
+      color:#f8fbff;
+    }
+    .pattern-row-norm-summary {
+      color:var(--muted);
+      font-size:12px;
+    }
     .mapping-separator {
       color:var(--muted);
       font-weight:700;
@@ -335,6 +364,58 @@
       font-size:14px;
       line-height:1;
       cursor:pointer;
+    }
+    .mapping-norm-modal {
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.55);
+      z-index:1200;
+      padding:18px;
+    }
+    .mapping-norm-modal.open { display:flex; }
+    .mapping-norm-modal-card {
+      width:min(920px, 95vw);
+      max-height:85vh;
+      overflow:auto;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      padding:14px;
+    }
+    .mapping-norm-modal-row {
+      display:grid;
+      grid-template-columns:1fr 1fr 2fr;
+      gap:8px;
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+    .mapping-norm-modal-cell {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .mapping-norm-modal-cell .mapping-norm-options {
+      flex-wrap:wrap;
+      min-height:auto;
+    }
+    .mapping-norm-modal-cell .mapping-norm-custom {
+      margin-left:0;
+      flex-wrap:wrap;
+    }
+    .mapping-norm-modal-head {
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .mapping-norm-modal-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:10px;
     }
     .pattern-row-remove {
       width:auto;
@@ -735,7 +816,7 @@
           <input type="hidden" id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" />
           <input type="hidden" name="wikidata_property" value="{{ form.wikidata_property }}" />
           <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
-          <div class="small">Each row maps one or more WDC properties to one or more target properties (left to right). Add a new row to create an alternative mapping rule (OR).</div>
+          <div class="small">Each row maps one WDC property to one target property. Add a new row to create an alternative mapping rule (OR).</div>
           <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
       </div>
@@ -816,6 +897,23 @@
       <button class="btn primary" type="submit">Generate benchmark</button>
     </div>
   </form>
+
+  <div id="mapping-norm-modal" class="mapping-norm-modal" aria-hidden="true">
+    <div class="mapping-norm-modal-card">
+      <h3 style="margin-bottom:8px;">Per-Property Normalization</h3>
+      <div class="small" style="margin-bottom:8px;">Configure normalization for each pair in this combination.</div>
+      <div class="mapping-norm-modal-head mapping-norm-modal-row">
+        <div>WDC property</div>
+        <div>Target property</div>
+        <div>Normalization</div>
+      </div>
+      <div id="mapping-norm-modal-body"></div>
+      <div class="mapping-norm-modal-actions">
+        <button id="mapping-norm-cancel-btn" class="btn secondary" type="button">Cancel</button>
+        <button id="mapping-norm-save-btn" class="btn primary" type="button">Save</button>
+      </div>
+    </div>
+  </div>
 
   <div class="jobs">
     <h2>History</h2>
@@ -1363,69 +1461,43 @@ function getPropertyMappingRulesInput() {
   return document.getElementById('property-mapping-rules-input');
 }
 
-function getRowNormalizationTokens(row) {
-  if (!row) return [];
-  const selected = [];
-  row.querySelectorAll('.mapping-norm-checkbox').forEach((cb) => {
-    if (!cb.checked) return;
-    const token = normalizeFormText(cb.dataset.token);
-    if (token) selected.push(token);
-  });
-  return selected;
-}
-
-function readRowNormalizationCustomTokens(row) {
-  if (!row) return [];
-  return Array.from(row.querySelectorAll('.mapping-norm-custom-item-input'))
-    .map((el) => normalizeFormText(el.value))
+function parsePropertyList(value) {
+  return String(value || '')
+    .split(',')
+    .map((v) => normalizeFormText(v))
     .filter((v) => v);
 }
 
-function _createRowNormalizationCustomItem(row, value = '') {
-  const item = document.createElement('div');
-  item.className = 'mapping-norm-custom-item';
-
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'mapping-norm-custom-item-input';
-  input.value = normalizeFormText(value);
-  input.placeholder = 'token';
-  input.addEventListener('input', onWdcPatternRowsChanged);
-  input.addEventListener('change', onWdcPatternRowsChanged);
-
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'mapping-norm-custom-remove-btn';
-  removeBtn.textContent = '×';
-  removeBtn.addEventListener('click', () => {
-    item.remove();
-    onWdcPatternRowsChanged();
-  });
-
-  item.appendChild(input);
-  item.appendChild(removeBtn);
-  return item;
+function getRowPairNorms(row) {
+  if (!row) return [];
+  const raw = String(row.dataset.pairNorms || '').trim();
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data.map((v) => normalizeFormText(v));
+  } catch (_) {
+    return [];
+  }
 }
 
-function setRowNormalizationCustomTokens(row, tokens) {
+function setRowPairNorms(row, norms) {
   if (!row) return;
-  const list = row.querySelector('.mapping-norm-custom-list');
-  if (!list) return;
-  list.innerHTML = '';
-  (tokens || []).forEach((token) => {
-    list.appendChild(_createRowNormalizationCustomItem(row, token));
-  });
+  const cleaned = (Array.isArray(norms) ? norms : [])
+    .map((v) => normalizeFormText(v));
+  row.dataset.pairNorms = JSON.stringify(cleaned);
 }
 
-function setRowNormalizationTokens(row, tokenSpec) {
+function updateRowNormSummary(row) {
   if (!row) return;
-  const parsed = parseIgnoreCharsSpec(tokenSpec);
-  const selected = new Set(parsed.known || []);
-  row.querySelectorAll('.mapping-norm-checkbox').forEach((cb) => {
-    const token = normalizeFormText(cb.dataset.token);
-    cb.checked = selected.has(token);
-  });
-  setRowNormalizationCustomTokens(row, parsed.custom || []);
+  const summary = row.querySelector('.pattern-row-norm-summary');
+  if (!summary) return;
+  const norms = getRowPairNorms(row).filter((v) => v);
+  if (!norms.length) {
+    summary.textContent = 'No per-property override';
+    return;
+  }
+  summary.textContent = `${norms.length} per-property normalization override(s)`;
 }
 
 function syncWdcPatternRemoveButtons() {
@@ -1464,15 +1536,22 @@ function syncWdcPatternHiddenFromRows() {
   for (let i = 0; i < leftInputs.length; i += 1) {
     const left = normalizeFormText(leftInputs[i]?.value);
     const right = normalizeFormText(rightInputs[i]?.value);
-    const normTokens = getRowNormalizationTokens(rows[i]);
-    const customNormTokens = readRowNormalizationCustomTokens(rows[i]);
-    const normAll = [...normTokens, ...customNormTokens];
-    const norm = normAll.join(';');
+    const leftItems = parsePropertyList(left);
+    const rightItems = parsePropertyList(right);
     if (left) leftTokens.push(left);
     if (right) firstRightTokens.push(right);
-    if (left && right) {
+    if (leftItems.length && rightItems.length && leftItems.length === rightItems.length) {
+      const pairNorms = getRowPairNorms(rows[i]);
+      let normPayload = "";
+      if (pairNorms.length > 0) {
+        const padded = [];
+        for (let j = 0; j < leftItems.length; j += 1) {
+          padded.push(normalizeFormText(pairNorms[j] || ""));
+        }
+        normPayload = JSON.stringify(padded);
+      }
       const row = `${left} => ${right}`;
-      rules.push(norm ? `${row} || ${norm}` : row);
+      rules.push(normPayload ? `${row} || ${normPayload}` : row);
     }
   }
   hidden.value = formatWdcPatternSpec(leftTokens);
@@ -1501,8 +1580,9 @@ function _createWdcPatternRow(value = '') {
       left: normalizeFormText(value.left),
       right: normalizeFormText(value.right),
       norm: normalizeFormText(value.norm),
+      pairNorms: Array.isArray(value.pairNorms) ? value.pairNorms : [],
     }
-    : { left: normalizeFormText(value), right: '', norm: '' };
+    : { left: normalizeFormText(value), right: '', norm: '', pairNorms: [] };
   const row = document.createElement('div');
   row.className = 'pattern-row';
   const main = document.createElement('div');
@@ -1549,81 +1629,32 @@ function _createWdcPatternRow(value = '') {
   normLabel.className = 'pattern-row-norm-label';
   normLabel.textContent = 'Normalization';
 
-  const normOptions = document.createElement('div');
-  normOptions.className = 'mapping-norm-options';
-  [
-    { token: 'spaces', label: 'spaces' },
-    { token: 'dot', label: '.' },
-    { token: 'semicolon', label: ';' },
-    { token: 'hyphen', label: '-' },
-    { token: 'comma', label: ',' },
-    { token: 'slash', label: '/' },
-    { token: 'underscore', label: '_' },
-  ].forEach((opt) => {
-    const label = document.createElement('label');
-    label.className = 'mapping-norm-option';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.className = 'mapping-norm-checkbox';
-    cb.dataset.token = opt.token;
-    cb.addEventListener('change', onWdcPatternRowsChanged);
-    const txt = document.createTextNode(opt.label);
-    label.appendChild(cb);
-    label.appendChild(txt);
-    normOptions.appendChild(label);
+  const configBtn = document.createElement('button');
+  configBtn.type = 'button';
+  configBtn.className = 'pattern-row-norm-config-btn';
+  configBtn.textContent = 'Per-property...';
+  configBtn.addEventListener('click', () => {
+    openRowNormModal(row);
   });
 
-  const customWrap = document.createElement('div');
-  customWrap.className = 'mapping-norm-custom';
-
-  const customAdd = document.createElement('div');
-  customAdd.className = 'mapping-norm-custom-add';
-  const customAddInput = document.createElement('input');
-  customAddInput.type = 'text';
-  customAddInput.className = 'mapping-norm-custom-add-input';
-  customAddInput.placeholder = 'Additional token to remove';
-  const customAddBtn = document.createElement('button');
-  customAddBtn.type = 'button';
-  customAddBtn.className = 'mapping-norm-custom-add-btn';
-  customAddBtn.textContent = '+';
-  const addCustomToken = () => {
-    const raw = normalizeFormText(customAddInput.value);
-    if (!raw) return;
-    const list = row.querySelector('.mapping-norm-custom-list');
-    if (!list) return;
-    const existing = new Set(readRowNormalizationCustomTokens(row).map((v) => v.toLowerCase()));
-    if (existing.has(raw.toLowerCase())) {
-      customAddInput.value = '';
-      return;
-    }
-    list.appendChild(_createRowNormalizationCustomItem(row, raw));
-    customAddInput.value = '';
-    onWdcPatternRowsChanged();
-  };
-  customAddBtn.addEventListener('click', addCustomToken);
-  customAddInput.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter') return;
-    event.preventDefault();
-    addCustomToken();
-  });
-  customAdd.appendChild(customAddInput);
-  customAdd.appendChild(customAddBtn);
-
-  const customList = document.createElement('div');
-  customList.className = 'mapping-norm-custom-list';
-  customWrap.appendChild(customAdd);
-  customWrap.appendChild(customList);
+  const summary = document.createElement('span');
+  summary.className = 'pattern-row-norm-summary';
+  summary.textContent = 'No per-property override';
 
   main.appendChild(leftInput);
   main.appendChild(sep);
   main.appendChild(rightInput);
   main.appendChild(removeBtn);
   normRow.appendChild(normLabel);
-  normRow.appendChild(normOptions);
-  normRow.appendChild(customWrap);
+  normRow.appendChild(configBtn);
+  normRow.appendChild(summary);
   row.appendChild(main);
   row.appendChild(normRow);
-  setRowNormalizationTokens(row, initial.norm);
+  const initialPairNorms = (Array.isArray(initial.pairNorms) && initial.pairNorms.length)
+    ? initial.pairNorms
+    : (initial.norm ? [initial.norm] : []);
+  setRowPairNorms(row, initialPairNorms);
+  updateRowNormSummary(row);
   return row;
 }
 
@@ -1664,11 +1695,22 @@ function syncWdcPatternRowsFromHidden() {
   rawRules.forEach((line) => {
     const splitNorm = line.split('||');
     const mappingText = normalizeFormText(splitNorm[0]);
-    const norm = normalizeFormText(splitNorm.slice(1).join('||'));
+    const rawNorm = normalizeFormText(splitNorm.slice(1).join('||'));
+    let norm = rawNorm;
+    let pairNorms = [];
+    if (rawNorm.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(rawNorm);
+        if (Array.isArray(parsed)) {
+          pairNorms = parsed.map((v) => normalizeFormText(v));
+          norm = normalizeFormText(pairNorms.find((v) => v) || '');
+        }
+      } catch (_) {}
+    }
     const parts = mappingText.split('=>');
     const left = normalizeFormText(parts[0]);
     const right = normalizeFormText(parts.slice(1).join('=>'));
-    if (left && right) rows.push({ left, right, norm });
+    if (left && right) rows.push({ left, right, norm, pairNorms });
   });
   if (!rows.length && tokens.length) {
     tokens.forEach((token) => rows.push({ left: token, right: fallbackTarget, norm: fallbackNorm }));
@@ -1683,6 +1725,159 @@ function syncWdcPatternRowsFromHidden() {
   }
   syncWdcPatternRemoveButtons();
   syncWdcPatternHiddenFromRows();
+}
+
+let activeNormRow = null;
+
+function createModalNormCustomItem(value = '') {
+  const item = document.createElement('div');
+  item.className = 'mapping-norm-custom-item';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'mapping-norm-custom-item-input';
+  input.value = normalizeFormText(value);
+  input.placeholder = 'token';
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'mapping-norm-custom-remove-btn';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => item.remove());
+  item.appendChild(input);
+  item.appendChild(removeBtn);
+  return item;
+}
+
+function readModalNormSpec(rowEl) {
+  if (!rowEl) return '';
+  const selected = [];
+  const seen = new Set();
+  rowEl.querySelectorAll('.mapping-norm-checkbox').forEach((cb) => {
+    if (!cb.checked) return;
+    const raw = normalizeFormText(cb.dataset.token);
+    const token = IGNORE_CHAR_TOKEN_TO_SPEC[raw] || raw;
+    if (!token || seen.has(token)) return;
+    seen.add(token);
+    selected.push(token);
+  });
+  rowEl.querySelectorAll('.mapping-norm-custom-item-input').forEach((input) => {
+    const raw = normalizeFormText(input.value);
+    if (!raw) return;
+    const mapped = IGNORE_CHAR_ALIAS_TO_TOKEN[raw.toLowerCase()] || raw;
+    const token = IGNORE_CHAR_TOKEN_TO_SPEC[mapped] || mapped;
+    if (!token || seen.has(token)) return;
+    seen.add(token);
+    selected.push(token);
+  });
+  return selected.join(';');
+}
+
+function openRowNormModal(row) {
+  const modal = document.getElementById('mapping-norm-modal');
+  const body = document.getElementById('mapping-norm-modal-body');
+  if (!modal || !body || !row) return;
+  const left = normalizeFormText(row.querySelector('.mapping-wdc-input')?.value);
+  const right = normalizeFormText(row.querySelector('.mapping-target-input')?.value);
+  const leftItems = parsePropertyList(left);
+  const rightItems = parsePropertyList(right);
+  if (!leftItems.length || leftItems.length !== rightItems.length) {
+    showFormError('Per-property normalization requires aligned combinations (x,y,z : p1,p2,p3).');
+    return;
+  }
+  const baseNorm = normalizeFormText(document.getElementById('ignore-chars-input')?.value);
+  const existing = getRowPairNorms(row);
+  body.innerHTML = '';
+  const tokenDefs = [
+    { token: 'spaces', label: 'spaces' },
+    { token: 'dot', label: '.' },
+    { token: 'semicolon', label: ';' },
+    { token: 'hyphen', label: '-' },
+    { token: 'comma', label: ',' },
+    { token: 'slash', label: '/' },
+    { token: 'underscore', label: '_' },
+  ];
+
+  const createCustomItem = (container, value = '') => {
+    container.appendChild(createModalNormCustomItem(value));
+  };
+
+  for (let i = 0; i < leftItems.length; i += 1) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'mapping-norm-modal-row';
+    rowEl.dataset.pairIndex = String(i);
+    const wdcCell = document.createElement('div');
+    wdcCell.textContent = leftItems[i];
+    const targetCell = document.createElement('div');
+    targetCell.textContent = rightItems[i];
+    const normCell = document.createElement('div');
+    normCell.className = 'mapping-norm-modal-cell';
+    const normOptions = document.createElement('div');
+    normOptions.className = 'mapping-norm-options';
+    const normWrap = document.createElement('div');
+    normWrap.className = 'mapping-norm-custom';
+    const normAdd = document.createElement('div');
+    normAdd.className = 'mapping-norm-custom-add';
+    const normAddInput = document.createElement('input');
+    normAddInput.type = 'text';
+    normAddInput.className = 'mapping-norm-custom-add-input';
+    normAddInput.placeholder = 'Additional token to remove';
+    const normAddBtn = document.createElement('button');
+    normAddBtn.type = 'button';
+    normAddBtn.className = 'mapping-norm-custom-add-btn';
+    normAddBtn.textContent = '+';
+    const normList = document.createElement('div');
+    normList.className = 'mapping-norm-custom-list';
+
+    const selectedSpec = normalizeFormText(existing[i] || baseNorm);
+    const parsed = parseIgnoreCharsSpec(selectedSpec);
+    const selectedKnown = new Set(parsed.known || []);
+    tokenDefs.forEach((opt) => {
+      const label = document.createElement('label');
+      label.className = 'mapping-norm-option';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'mapping-norm-checkbox';
+      cb.dataset.token = opt.token;
+      cb.checked = selectedKnown.has(opt.token);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(opt.label));
+      normOptions.appendChild(label);
+    });
+    (parsed.custom || []).forEach((token) => createCustomItem(normList, token));
+    const addCustomFromInput = () => {
+      const raw = normalizeFormText(normAddInput.value);
+      if (!raw) return;
+      const existingSet = new Set(
+        Array.from(normList.querySelectorAll('.mapping-norm-custom-item-input'))
+          .map((el) => normalizeFormText(el.value).toLowerCase())
+          .filter((v) => v)
+      );
+      if (existingSet.has(raw.toLowerCase())) {
+        normAddInput.value = '';
+        return;
+      }
+      createCustomItem(normList, raw);
+      normAddInput.value = '';
+    };
+    normAddBtn.addEventListener('click', addCustomFromInput);
+    normAddInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addCustomFromInput();
+    });
+    normAdd.appendChild(normAddInput);
+    normAdd.appendChild(normAddBtn);
+    normWrap.appendChild(normAdd);
+    normWrap.appendChild(normList);
+    normCell.appendChild(normOptions);
+    normCell.appendChild(normWrap);
+    rowEl.appendChild(wdcCell);
+    rowEl.appendChild(targetCell);
+    rowEl.appendChild(normCell);
+    body.appendChild(rowEl);
+  }
+  activeNormRow = row;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
 }
 
 function setFieldGroupVisible(groupId, visible) {
@@ -3362,6 +3557,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const ignoreCharsCustomAddBtn = document.getElementById('ignore-chars-custom-add-btn');
   const ignoreCharsCheckboxes = Array.from(document.querySelectorAll('.ignore-char-checkbox'));
   const useLocalOnlyCheckbox = document.getElementById('use-local-only-checkbox');
+  const mappingNormModal = document.getElementById('mapping-norm-modal');
+  const mappingNormBody = document.getElementById('mapping-norm-modal-body');
+  const mappingNormSaveBtn = document.getElementById('mapping-norm-save-btn');
+  const mappingNormCancelBtn = document.getElementById('mapping-norm-cancel-btn');
 
   syncIgnoreCharsUiFromHidden();
   syncIgnoreCharsHiddenFromUi();
@@ -3441,6 +3640,34 @@ document.addEventListener('DOMContentLoaded', () => {
     ignoreCharsInput.addEventListener('change', () => {
       syncIgnoreCharsUiFromHidden();
       updateMatchingGuidance();
+    });
+  }
+  const closeMappingNormModal = () => {
+    if (!mappingNormModal) return;
+    mappingNormModal.classList.remove('open');
+    mappingNormModal.setAttribute('aria-hidden', 'true');
+    activeNormRow = null;
+  };
+  if (mappingNormCancelBtn) {
+    mappingNormCancelBtn.addEventListener('click', closeMappingNormModal);
+  }
+  if (mappingNormModal) {
+    mappingNormModal.addEventListener('click', (event) => {
+      if (event.target === mappingNormModal) closeMappingNormModal();
+    });
+  }
+  if (mappingNormSaveBtn) {
+    mappingNormSaveBtn.addEventListener('click', () => {
+      if (!activeNormRow || !mappingNormBody) {
+        closeMappingNormModal();
+        return;
+      }
+      const norms = Array.from(mappingNormBody.querySelectorAll('.mapping-norm-modal-row'))
+        .map((rowEl) => readModalNormSpec(rowEl));
+      setRowPairNorms(activeNormRow, norms);
+      updateRowNormSummary(activeNormRow);
+      onWdcPatternRowsChanged();
+      closeMappingNormModal();
     });
   }
   if (formEl) {

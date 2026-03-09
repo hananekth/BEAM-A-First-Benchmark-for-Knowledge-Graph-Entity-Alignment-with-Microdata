@@ -1,0 +1,25 @@
+{
+  "started_at": "2026-03-09 12:23:02",
+  "running": false,
+  "runs": [
+    {
+      "label": "museum_single_custom_chars",
+      "started_at": "2026-03-09 12:23:02",
+      "ok": true,
+      "finished_at": "2026-03-09 12:30:50",
+      "out_dir": "data/Museum/beam_20260309_122342",
+      "links_tsv": "Download/Museum/align_cache/af692b274caf39bd/wdc_wikidata_links.tsv",
+      "build_done": true
+    },
+    {
+      "label": "museum_multi_custom_chars",
+      "started_at": "2026-03-09 12:30:50",
+      "ok": true,
+      "finished_at": "2026-03-09 12:59:51",
+      "out_dir": "data/Museum/beam_20260309_123237",
+      "links_tsv": "Download/Museum/align_cache/76db2a918f1ed769/wdc_wikidata_links.tsv",
+      "build_done": true
+    }
+  ],
+  "finished_at": "2026-03-09 12:59:51"
+}

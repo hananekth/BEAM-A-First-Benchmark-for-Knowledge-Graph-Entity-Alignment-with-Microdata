@@ -257,12 +257,26 @@ def _parse_property_mapping_rules_text(value: str):
             raise ValueError(
                 f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
             )
+        pair_ignore_chars = []
+        norm_text = _clean_text(norm)
+        if norm_text.startswith("["):
+            try:
+                decoded = json.loads(norm_text)
+            except Exception:
+                decoded = None
+            if isinstance(decoded, list):
+                pair_ignore_chars = [_clean_text(v) for v in decoded]
+        if pair_ignore_chars and len(pair_ignore_chars) != len(wdc_props):
+            raise ValueError(
+                f"Invalid property mapping rule at line {line_no}: per-pair normalization count differs from pair count"
+            )
         rows.append(
             {
                 "line_no": line_no,
                 "pairs": list(zip(wdc_props, target_props)),
                 "raw": line,
                 "ignore_chars": norm,
+                "pair_ignore_chars": pair_ignore_chars,
             }
         )
     return rows
