@@ -455,3 +455,131 @@ def test_generate_benchmark_wikidata_mode_fails_when_class_filter_has_no_hits(mo
             },
             workers=1,
         )
+
+
+def test_generate_benchmark_with_property_mapping_rules(monkeypatch):
+    class_name = "TestClassRules"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    extract_calls = []
+    fetch_calls = []
+
+    def extract_unique_iris_from_files(files, pattern, **kwargs):
+        extract_calls.append(pattern)
+        if pattern == "name":
+            return ({"alpha node": [("Alpha Node", "http://example.org/wdc/entity1")]}, 1)
+        if pattern == "iata":
+            return ({"abc": [("ABC", "http://example.org/wdc/entity1")]}, 1)
+        return ({}, 0)
+
+    monkeypatch.setattr(pipeline.align, "extract_unique_iris_from_files", extract_unique_iris_from_files)
+
+    def fetch_wikidata_values(wikidata_property, wkd_class, wkd_prop_class):
+        fetch_calls.append(wikidata_property)
+        if wikidata_property == "rdfs:label":
+            return {"alpha node": [("Alpha Node", "http://www.wikidata.org/entity/Q1001")]}
+        if wikidata_property == "P238":
+            return {"abc": [("ABC", "http://www.wikidata.org/entity/Q1001")]}
+        return {}
+
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", fetch_wikidata_values)
+
+    def fuzzy_link(wdc_map, wikidata_map, **kwargs):
+        if "alpha node" in wdc_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity1",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q1001",
+                        "wdc_value": "Alpha Node",
+                        "wiki_value": "Alpha Node",
+                        "method": "exact",
+                    }
+                ],
+                {"alpha node"},
+            )
+        if "abc" in wdc_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity1",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q1001",
+                        "wdc_value": "ABC",
+                        "wiki_value": "ABC",
+                        "method": "exact",
+                    }
+                ],
+                {"abc"},
+            )
+        return ([], set())
+
+    monkeypatch.setattr(pipeline.align, "fuzzy_link", fuzzy_link)
+
+    def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        with (out / "wdc_wikidata_links.tsv").open("w", encoding="utf-8") as f:
+            f.write("wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n")
+            for m in matches:
+                f.write(
+                    f"{m['wdc_iri']}\t{m['wikidata_uri']}\t{m['wdc_value']}\t{m['wiki_value']}\t{m['method']}\t1\n"
+                )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity1"],
+            ["http://www.wikidata.org/entity/Q1001"],
+            ["Alpha Node"],
+            ["Alpha Node"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1001\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t2\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t2\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    result = pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "property",
+            "wdc_predicate_pattern": "",
+            "property_mapping_rules": "name => rdfs:label\niata => P238",
+            "wikidata_property": "",
+            "wkd_class": "Q1248784",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    assert result["class_name"] == class_name
+    assert extract_calls == ["name", "iata"]
+    assert fetch_calls == ["rdfs:label", "P238"]
+
+    out_dir = Path(result["out_dir"])
+    cfg = json.loads((out_dir / "BUILD_CONFIG.json").read_text(encoding="utf-8"))
+    assert cfg["property_mapping_rules"] == "name => rdfs:label\niata => P238"

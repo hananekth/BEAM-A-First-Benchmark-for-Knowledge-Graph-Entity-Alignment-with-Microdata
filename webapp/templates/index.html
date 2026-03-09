@@ -24,7 +24,7 @@
     .row { display:flex; gap:16px; flex-wrap:wrap; }
     .col { flex:1; min-width:260px; }
     .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
-    label { display:block; margin-top:12px; font-weight:600; font-size:13px; color:var(--text); }
+    label { display:block; font-weight:600; font-size:13px; color:var(--text); }
     .label-help { display:inline-flex; align-items:center; gap:6px; }
     .required-star {
       display:inline-block;
@@ -185,8 +185,157 @@
       box-shadow:none;
     }
     .pattern-list { display:grid; gap:8px; margin-top:6px; }
-    .pattern-row { display:flex; gap:8px; align-items:center; }
+    .pattern-row {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:8px;
+      background:#0b0f17;
+    }
     .pattern-row input { margin-top:0; }
+    .pattern-row-main {
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .pattern-row-norm {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:nowrap;
+      width:100%;
+    }
+    .pattern-row-norm-label {
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      min-height:30px;
+    }
+    .mapping-separator {
+      color:var(--muted);
+      font-weight:700;
+      min-width:12px;
+      text-align:center;
+    }
+    .mapping-wdc-input,
+    .mapping-target-input {
+      flex:1 1 0;
+    }
+    .mapping-norm-options {
+      display:flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:nowrap;
+      min-height:30px;
+    }
+    .mapping-norm-option {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px 7px;
+      min-height:30px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#1f2630;
+      font-size:12px;
+    }
+    .mapping-norm-option input[type="checkbox"] {
+      width:auto;
+      margin:0;
+      padding:0;
+      border:none;
+      border-radius:0;
+    }
+    .mapping-norm-custom {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-left:6px;
+      flex-wrap:nowrap;
+      min-height:30px;
+    }
+    .mapping-norm-custom-add {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:4px 6px;
+      min-height:30px;
+      background:#1f2630;
+    }
+    .mapping-norm-custom-add-input {
+      width:180px;
+      min-width:120px;
+      margin-top:0;
+      border:none;
+      background:transparent;
+      padding:0;
+      font-size:12px;
+      line-height:1.2;
+      color:var(--text);
+    }
+    .mapping-norm-custom-add-input:focus {
+      outline:none;
+    }
+    .mapping-norm-custom-add-btn {
+      width:auto;
+      min-width:auto;
+      margin-top:0;
+      border:none;
+      background:transparent;
+      color:var(--muted);
+      padding:0 2px;
+      font-size:18px;
+      line-height:1;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+    }
+    .mapping-norm-custom-list {
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .mapping-norm-custom-item {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px 6px;
+      min-height:30px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#1f2630;
+    }
+    .mapping-norm-custom-item-input {
+      width:10ch;
+      margin-top:0;
+      border:none;
+      background:transparent;
+      padding:0;
+      font-size:12px;
+      color:var(--text);
+    }
+    .mapping-norm-custom-item-input:focus {
+      outline:none;
+    }
+    .mapping-norm-custom-remove-btn {
+      width:auto;
+      min-width:auto;
+      margin-top:0;
+      border:none;
+      background:transparent;
+      color:var(--muted);
+      padding:0 2px;
+      font-size:14px;
+      line-height:1;
+      cursor:pointer;
+    }
     .pattern-row-remove {
       width:auto;
       min-width:86px;
@@ -572,58 +721,23 @@
         <div class="field-group" id="wdc-pattern-group">
           <label>
             <span class="label-help">
-              Considered pattern for WDC properties
+              Property mapping rules
               <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Add one or more editable pattern fields. You can remove fields; only non-empty values are used.">?</span>
+              <span class="help-tip" tabindex="0" title="Each row is one OR rule: WDC property : target property.">?</span>
             </span>
           </label>
           <div id="wdc-pattern-list" class="pattern-list" aria-live="polite"></div>
           <div class="pattern-actions">
-            <button id="wdc-pattern-add-btn" class="pattern-add-btn" type="button">Add pattern</button>
+            <button id="wdc-pattern-add-btn" class="pattern-add-btn" type="button">Add mapping</button>
           </div>
           <input type="hidden" id="wdc-pattern-input" name="wdc_predicate_pattern" value="{{ form.wdc_predicate_pattern }}" required />
-          <div class="small">Each row is editable/removable. Example values: <code>name</code>, <code>sameAs</code>, <code>url</code>, <code>eidr</code>.</div>
-        </div>
-
-        <div class="field-group" id="wikidata-property-group">
-          <label id="wikidata-property-label">
-            <span class="label-help">
-              Equivalent target property
-              <span id="required-wikidata-property" class="required-star" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Property to query on the target side. In sameAs mode this field is ignored.">?</span>
-            </span>
-          </label>
-          <input id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" placeholder="rdfs:label / P1329 / dbo:birthDate / <URI>" />
+          <input type="hidden" id="property-mapping-rules-input" name="property_mapping_rules" value="{{ form.property_mapping_rules }}" />
+          <input type="hidden" id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" />
           <input type="hidden" name="wikidata_property" value="{{ form.wikidata_property }}" />
-          <div class="small">Use the exact property expected by the selected endpoint (prefix form or full URI).</div>
+          <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
+          <div class="small">Each row maps one or more WDC properties to one or more target properties (left to right). Add a new row to create an alternative mapping rule (OR).</div>
+          <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
-      </div>
-
-      <div class="field-group" id="ignore-chars-group">
-        <label id="ignore-chars-label">
-          <span class="label-help">
-            Normalization: characters to remove
-            <span class="help-tip" tabindex="0" title="Selected characters are removed on both WDC and target endpoint values before comparison. Example: 1.2.3.4.5.6 and 123-456 become 123456 when dot and hyphen are removed.">?</span>
-          </span>
-        </label>
-        <div class="char-options" id="ignore-chars-options">
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="spaces">spaces</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="dot">.</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="semicolon">;</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="hyphen">-</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="comma">,</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="slash">/</label>
-          <label class="char-option"><input class="ignore-char-checkbox" type="checkbox" data-token="underscore">_</label>
-        </div>
-        <div id="ignore-chars-custom-panel" class="ignore-chars-custom-panel">
-          <div class="char-option ignore-chars-custom-add-row">
-            <input id="ignore-chars-custom-input" type="text" class="ignore-chars-custom-add-input" value="" placeholder="Additional token to remove" />
-            <button id="ignore-chars-custom-add-btn" class="ignore-chars-custom-add-btn" type="button" aria-label="Add additional token">+</button>
-          </div>
-          <div id="ignore-chars-custom-list" class="ignore-chars-custom-list" aria-live="polite"></div>
-        </div>
-        <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
-        <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
       </div>
     </div>
 
@@ -1226,7 +1340,7 @@ function parseWdcPatternSpec(value) {
 }
 
 function formatWdcPatternSpec(tokens) {
-  return (tokens || []).map((t) => normalizeFormText(t)).filter(Boolean).join('; ');
+  return (tokens || []).map((t) => normalizeFormText(t)).filter(Boolean).join(', ');
 }
 
 function getWdcPatternHiddenInput() {
@@ -1238,7 +1352,80 @@ function getWdcPatternList() {
 }
 
 function getWdcPatternRowInputs() {
-  return Array.from(document.querySelectorAll('.wdc-pattern-item-input'));
+  return Array.from(document.querySelectorAll('.mapping-wdc-input'));
+}
+
+function getTargetPropertyRowInputs() {
+  return Array.from(document.querySelectorAll('.mapping-target-input'));
+}
+
+function getPropertyMappingRulesInput() {
+  return document.getElementById('property-mapping-rules-input');
+}
+
+function getRowNormalizationTokens(row) {
+  if (!row) return [];
+  const selected = [];
+  row.querySelectorAll('.mapping-norm-checkbox').forEach((cb) => {
+    if (!cb.checked) return;
+    const token = normalizeFormText(cb.dataset.token);
+    if (token) selected.push(token);
+  });
+  return selected;
+}
+
+function readRowNormalizationCustomTokens(row) {
+  if (!row) return [];
+  return Array.from(row.querySelectorAll('.mapping-norm-custom-item-input'))
+    .map((el) => normalizeFormText(el.value))
+    .filter((v) => v);
+}
+
+function _createRowNormalizationCustomItem(row, value = '') {
+  const item = document.createElement('div');
+  item.className = 'mapping-norm-custom-item';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'mapping-norm-custom-item-input';
+  input.value = normalizeFormText(value);
+  input.placeholder = 'token';
+  input.addEventListener('input', onWdcPatternRowsChanged);
+  input.addEventListener('change', onWdcPatternRowsChanged);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'mapping-norm-custom-remove-btn';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
+    item.remove();
+    onWdcPatternRowsChanged();
+  });
+
+  item.appendChild(input);
+  item.appendChild(removeBtn);
+  return item;
+}
+
+function setRowNormalizationCustomTokens(row, tokens) {
+  if (!row) return;
+  const list = row.querySelector('.mapping-norm-custom-list');
+  if (!list) return;
+  list.innerHTML = '';
+  (tokens || []).forEach((token) => {
+    list.appendChild(_createRowNormalizationCustomItem(row, token));
+  });
+}
+
+function setRowNormalizationTokens(row, tokenSpec) {
+  if (!row) return;
+  const parsed = parseIgnoreCharsSpec(tokenSpec);
+  const selected = new Set(parsed.known || []);
+  row.querySelectorAll('.mapping-norm-checkbox').forEach((cb) => {
+    const token = normalizeFormText(cb.dataset.token);
+    cb.checked = selected.has(token);
+  });
+  setRowNormalizationCustomTokens(row, parsed.custom || []);
 }
 
 function syncWdcPatternRemoveButtons() {
@@ -1265,10 +1452,35 @@ function readWdcPatternRows() {
 
 function syncWdcPatternHiddenFromRows() {
   const hidden = getWdcPatternHiddenInput();
-  if (!hidden) return [];
-  const tokens = readWdcPatternRows();
-  hidden.value = formatWdcPatternSpec(tokens);
-  return tokens;
+  const rulesHidden = getPropertyMappingRulesInput();
+  const legacyTargetProperty = document.getElementById('wikidata-property-input');
+  if (!hidden || !rulesHidden) return [];
+  const leftInputs = getWdcPatternRowInputs();
+  const rightInputs = getTargetPropertyRowInputs();
+  const rows = Array.from(document.querySelectorAll('.pattern-row'));
+  const leftTokens = [];
+  const rules = [];
+  const firstRightTokens = [];
+  for (let i = 0; i < leftInputs.length; i += 1) {
+    const left = normalizeFormText(leftInputs[i]?.value);
+    const right = normalizeFormText(rightInputs[i]?.value);
+    const normTokens = getRowNormalizationTokens(rows[i]);
+    const customNormTokens = readRowNormalizationCustomTokens(rows[i]);
+    const normAll = [...normTokens, ...customNormTokens];
+    const norm = normAll.join(';');
+    if (left) leftTokens.push(left);
+    if (right) firstRightTokens.push(right);
+    if (left && right) {
+      const row = `${left} => ${right}`;
+      rules.push(norm ? `${row} || ${norm}` : row);
+    }
+  }
+  hidden.value = formatWdcPatternSpec(leftTokens);
+  rulesHidden.value = rules.join('\n');
+  if (legacyTargetProperty) {
+    legacyTargetProperty.value = firstRightTokens.length ? firstRightTokens[0] : '';
+  }
+  return leftTokens;
 }
 
 function onWdcPatternRowsChanged() {
@@ -1284,16 +1496,25 @@ function onWdcPatternRowsChanged() {
 }
 
 function _createWdcPatternRow(value = '') {
+  const initial = value && typeof value === 'object'
+    ? {
+      left: normalizeFormText(value.left),
+      right: normalizeFormText(value.right),
+      norm: normalizeFormText(value.norm),
+    }
+    : { left: normalizeFormText(value), right: '', norm: '' };
   const row = document.createElement('div');
   row.className = 'pattern-row';
+  const main = document.createElement('div');
+  main.className = 'pattern-row-main';
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'wdc-pattern-item-input';
-  input.placeholder = 'name / sameAs / url / eidr / telephone';
-  input.value = normalizeFormText(value);
-  input.addEventListener('input', onWdcPatternRowsChanged);
-  input.addEventListener('change', onWdcPatternRowsChanged);
+  const leftInput = document.createElement('input');
+  leftInput.type = 'text';
+  leftInput.className = 'mapping-wdc-input';
+  leftInput.placeholder = 'name, surname, date of birth';
+  leftInput.value = initial.left;
+  leftInput.addEventListener('input', onWdcPatternRowsChanged);
+  leftInput.addEventListener('change', onWdcPatternRowsChanged);
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
@@ -1309,8 +1530,100 @@ function _createWdcPatternRow(value = '') {
     onWdcPatternRowsChanged();
   });
 
-  row.appendChild(input);
-  row.appendChild(removeBtn);
+  const sep = document.createElement('span');
+  sep.className = 'mapping-separator';
+  sep.textContent = ':';
+
+  const rightInput = document.createElement('input');
+  rightInput.type = 'text';
+  rightInput.className = 'mapping-target-input';
+  rightInput.placeholder = 'p123,p124,p135';
+  rightInput.value = initial.right;
+  rightInput.addEventListener('input', onWdcPatternRowsChanged);
+  rightInput.addEventListener('change', onWdcPatternRowsChanged);
+
+  const normRow = document.createElement('div');
+  normRow.className = 'pattern-row-norm';
+
+  const normLabel = document.createElement('span');
+  normLabel.className = 'pattern-row-norm-label';
+  normLabel.textContent = 'Normalization';
+
+  const normOptions = document.createElement('div');
+  normOptions.className = 'mapping-norm-options';
+  [
+    { token: 'spaces', label: 'spaces' },
+    { token: 'dot', label: '.' },
+    { token: 'semicolon', label: ';' },
+    { token: 'hyphen', label: '-' },
+    { token: 'comma', label: ',' },
+    { token: 'slash', label: '/' },
+    { token: 'underscore', label: '_' },
+  ].forEach((opt) => {
+    const label = document.createElement('label');
+    label.className = 'mapping-norm-option';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'mapping-norm-checkbox';
+    cb.dataset.token = opt.token;
+    cb.addEventListener('change', onWdcPatternRowsChanged);
+    const txt = document.createTextNode(opt.label);
+    label.appendChild(cb);
+    label.appendChild(txt);
+    normOptions.appendChild(label);
+  });
+
+  const customWrap = document.createElement('div');
+  customWrap.className = 'mapping-norm-custom';
+
+  const customAdd = document.createElement('div');
+  customAdd.className = 'mapping-norm-custom-add';
+  const customAddInput = document.createElement('input');
+  customAddInput.type = 'text';
+  customAddInput.className = 'mapping-norm-custom-add-input';
+  customAddInput.placeholder = 'Additional token to remove';
+  const customAddBtn = document.createElement('button');
+  customAddBtn.type = 'button';
+  customAddBtn.className = 'mapping-norm-custom-add-btn';
+  customAddBtn.textContent = '+';
+  const addCustomToken = () => {
+    const raw = normalizeFormText(customAddInput.value);
+    if (!raw) return;
+    const list = row.querySelector('.mapping-norm-custom-list');
+    if (!list) return;
+    const existing = new Set(readRowNormalizationCustomTokens(row).map((v) => v.toLowerCase()));
+    if (existing.has(raw.toLowerCase())) {
+      customAddInput.value = '';
+      return;
+    }
+    list.appendChild(_createRowNormalizationCustomItem(row, raw));
+    customAddInput.value = '';
+    onWdcPatternRowsChanged();
+  };
+  customAddBtn.addEventListener('click', addCustomToken);
+  customAddInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    addCustomToken();
+  });
+  customAdd.appendChild(customAddInput);
+  customAdd.appendChild(customAddBtn);
+
+  const customList = document.createElement('div');
+  customList.className = 'mapping-norm-custom-list';
+  customWrap.appendChild(customAdd);
+  customWrap.appendChild(customList);
+
+  main.appendChild(leftInput);
+  main.appendChild(sep);
+  main.appendChild(rightInput);
+  main.appendChild(removeBtn);
+  normRow.appendChild(normLabel);
+  normRow.appendChild(normOptions);
+  normRow.appendChild(customWrap);
+  row.appendChild(main);
+  row.appendChild(normRow);
+  setRowNormalizationTokens(row, initial.norm);
   return row;
 }
 
@@ -1329,7 +1642,7 @@ function addWdcPatternRow(value = '', focus = false) {
   const row = _createWdcPatternRow(value);
   list.appendChild(row);
   if (focus) {
-    const input = row.querySelector('.wdc-pattern-item-input');
+    const input = row.querySelector('.mapping-wdc-input');
     if (input) input.focus();
   }
   onWdcPatternRowsChanged();
@@ -1338,14 +1651,34 @@ function addWdcPatternRow(value = '', focus = false) {
 function syncWdcPatternRowsFromHidden() {
   const list = getWdcPatternList();
   const hidden = getWdcPatternHiddenInput();
-  if (!list || !hidden) return;
+  const rulesHidden = getPropertyMappingRulesInput();
+  const fallbackTarget = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
+  if (!list || !hidden || !rulesHidden) return;
   const tokens = parseWdcPatternSpec(hidden.value);
+  const rows = [];
+  const fallbackNorm = normalizeFormText(document.getElementById('ignore-chars-input')?.value);
+  const rawRules = String(rulesHidden.value || '')
+    .split('\n')
+    .map((line) => normalizeFormText(line))
+    .filter((line) => line && line.includes('=>'));
+  rawRules.forEach((line) => {
+    const splitNorm = line.split('||');
+    const mappingText = normalizeFormText(splitNorm[0]);
+    const norm = normalizeFormText(splitNorm.slice(1).join('||'));
+    const parts = mappingText.split('=>');
+    const left = normalizeFormText(parts[0]);
+    const right = normalizeFormText(parts.slice(1).join('=>'));
+    if (left && right) rows.push({ left, right, norm });
+  });
+  if (!rows.length && tokens.length) {
+    tokens.forEach((token) => rows.push({ left: token, right: fallbackTarget, norm: fallbackNorm }));
+  }
   list.innerHTML = '';
-  if (!tokens.length) {
-    list.appendChild(_createWdcPatternRow(''));
+  if (!rows.length) {
+    list.appendChild(_createWdcPatternRow({ left: '', right: fallbackTarget, norm: fallbackNorm }));
   } else {
-    tokens.forEach((token) => {
-      list.appendChild(_createWdcPatternRow(token));
+    rows.forEach((row) => {
+      list.appendChild(_createWdcPatternRow(row));
     });
   }
   syncWdcPatternRemoveButtons();
@@ -1438,6 +1771,7 @@ function updateReadyChecklist() {
 
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const propertyMappingRules = normalizeFormText(document.getElementById('property-mapping-rules-input')?.value);
   const targetProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
   const targetClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
   const targetEndpoint = normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata';
@@ -1453,8 +1787,10 @@ function updateReadyChecklist() {
   });
   items.push({
     label: 'Considered pattern set',
-    ok: !!pattern,
-    detail: pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).',
+    ok: !!pattern || !!propertyMappingRules,
+    detail: propertyMappingRules
+      ? 'Using property mapping rules.'
+      : (pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).'),
   });
   items.push({
     label: 'Target endpoint set',
@@ -1472,8 +1808,10 @@ function updateReadyChecklist() {
   } else {
     items.push({
       label: 'Equivalent target property set',
-      ok: !!targetProperty,
-      detail: targetProperty ? targetProperty : 'Required unless URL/sameAs mode.',
+      ok: !!targetProperty || !!propertyMappingRules,
+      detail: propertyMappingRules
+        ? 'Derived from property mapping rules.'
+        : (targetProperty ? targetProperty : 'Required unless URL/sameAs mode.'),
     });
   }
 
@@ -1736,9 +2074,10 @@ function setRequiredState(inputId, starId, isRequired) {
 
 function updateRequiredIndicators() {
   const isWikidata = isEffectiveWikidataUrlMode();
+  const hasRules = !!normalizeFormText(document.getElementById('property-mapping-rules-input')?.value);
   setRequiredState('class-name-select', 'required-class-name', true);
   setRequiredState('wdc-pattern-input', 'required-wdc-pattern', true);
-  setRequiredState('wikidata-property-input', 'required-wikidata-property', !isWikidata);
+  setRequiredState('wikidata-property-input', 'required-wikidata-property', !isWikidata && !hasRules);
   setRequiredState('wkd-class-input', 'required-wkd-class', isWikidata);
   setRequiredState('target-endpoint-url-input', 'required-target-endpoint-url', isCustomTargetEndpointSelected());
 }
@@ -1837,6 +2176,7 @@ function validateGenerateForm(opts = {}) {
   const requireWikidataInputs = opts.requireWikidataInputs !== false;
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const propertyMappingRules = normalizeFormText(document.getElementById('property-mapping-rules-input')?.value);
   const targetProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
   const targetClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
   const targetEndpoint = getSelectedTargetEndpoint();
@@ -1844,14 +2184,29 @@ function validateGenerateForm(opts = {}) {
   const isWikidata = isEffectiveWikidataUrlMode();
 
   if (!className) return 'Class name is required.';
-  if (!pattern) return 'Considered pattern for WDC properties is required.';
+  if (!pattern && !propertyMappingRules) return 'Considered pattern for WDC properties is required.';
   if (targetEndpoint === 'custom' && !targetEndpointUrl) return 'Custom endpoint URL is required.';
+  if (propertyMappingRules) {
+    const lines = propertyMappingRules.split('\n').map((line) => normalizeFormText(line)).filter((line) => line);
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const splitNorm = line.split('||');
+      const mappingText = normalizeFormText(splitNorm[0]);
+      if (!mappingText.includes('=>')) return `Invalid property mapping rule at line ${i + 1}: expected "wdc_prop => target_prop".`;
+      const parts = mappingText.split('=>');
+      if (parts.length < 2) return `Invalid property mapping rule at line ${i + 1}.`;
+      const left = parts[0].split(',').map((v) => normalizeFormText(v)).filter((v) => v);
+      const right = parts.slice(1).join('=>').split(',').map((v) => normalizeFormText(v)).filter((v) => v);
+      if (!left.length || !right.length) return `Invalid property mapping rule at line ${i + 1}: both sides are required.`;
+      if (left.length !== right.length) return `Invalid property mapping rule at line ${i + 1}: left/right counts differ.`;
+    }
+  }
   if (!requireWikidataInputs) return '';
   if (isWikidata) {
     if (!targetClass) return 'Target class filter is required when using sameAs mode.';
     return '';
   }
-  if (!targetProperty) return 'Equivalent target property is required when WDC values are not endpoint URLs.';
+  if (!targetProperty && !propertyMappingRules) return 'Equivalent target property is required when WDC values are not endpoint URLs.';
   return '';
 }
 
@@ -1929,6 +2284,7 @@ async function runPreflightCheck() {
       class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
       parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
       wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
+      property_mapping_rules: normalizeFormText(document.getElementById('property-mapping-rules-input')?.value),
       target_endpoint: normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata',
       target_endpoint_url: normalizeFormText(document.getElementById('target-endpoint-url-input')?.value),
       target_prefixes: normalizeFormText(document.getElementById('target-prefixes-input')?.value),
@@ -2996,6 +3352,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const partsSpecInput = document.getElementById('parts-spec-input');
   const patternInput = document.getElementById('wdc-pattern-input');
   const patternAddBtn = document.getElementById('wdc-pattern-add-btn');
+  const propertyMappingRulesInput = document.getElementById('property-mapping-rules-input');
   const targetEndpointSelect = document.getElementById('target-endpoint-select');
   const targetEndpointUrlInput = document.getElementById('target-endpoint-url-input');
   const wkdClassInput = document.getElementById('wkd-class-input');
@@ -3029,6 +3386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     classNameSelect,
     partsSpecInput,
     patternInput,
+    propertyMappingRulesInput,
     targetEndpointSelect,
     targetEndpointUrlInput,
     wkdClassInput,

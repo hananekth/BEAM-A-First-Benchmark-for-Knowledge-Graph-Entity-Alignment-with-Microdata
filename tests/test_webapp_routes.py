@@ -518,6 +518,50 @@ def test_create_job_url_mode_requires_wikidata_class(monkeypatch, test_wdc_class
     assert web_main.db.list_jobs(limit=10) == []
 
 
+def test_create_job_accepts_property_mapping_rules_without_legacy_fields(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "matching_mode": "property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "",
+        "property_mapping_rules": "name => rdfs:label\niata => P238",
+        "wikidata_property": "",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["property_mapping_rules"] == "name => rdfs:label\niata => P238"
+    assert params["wikidata_property"] == ""
+
+
+def test_create_job_rejects_invalid_property_mapping_rules(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "matching_mode": "property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "",
+        "property_mapping_rules": "name,iata => rdfs:label",
+        "wikidata_property": "",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    location = resp.headers.get("location", "")
+    assert "form_error=" in location
+    assert web_main.db.list_jobs(limit=10) == []
+
+
 def test_preflight_api_reports_matches(monkeypatch, test_wdc_classes):
     client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     class_dir = Path("Download") / "TestClass"

@@ -203,6 +203,7 @@ def _default_form():
         "target_endpoint": "wikidata",
         "target_endpoint_url": "",
         "target_prefixes": "",
+        "property_mapping_rules": "",
         "target_property": "",
         "target_class": "",
         "wikidata_property": "",
@@ -226,12 +227,54 @@ def _normalize_target_endpoint(value: Optional[str]) -> str:
     return "wikidata"
 
 
+def _parse_property_mapping_rules_text(value: str):
+    text = _clean_text(value)
+    if not text:
+        return []
+    rows = []
+    for line_no, raw_line in enumerate(text.splitlines(), 1):
+        line = _clean_text(raw_line)
+        if not line:
+            continue
+        norm = ""
+        mapping_text = line
+        if "||" in line:
+            mapping_text, norm = line.split("||", 1)
+            mapping_text = _clean_text(mapping_text)
+            norm = _clean_text(norm)
+        if "=>" not in mapping_text:
+            raise ValueError(
+                f"Invalid property mapping rule at line {line_no}: expected 'wdc_prop[,wdc_prop] => target_prop[,target_prop]'"
+            )
+        left_raw, right_raw = mapping_text.split("=>", 1)
+        wdc_props = [_clean_text(tok) for tok in left_raw.split(",") if _clean_text(tok)]
+        target_props = [_clean_text(tok) for tok in right_raw.split(",") if _clean_text(tok)]
+        if not wdc_props or not target_props:
+            raise ValueError(
+                f"Invalid property mapping rule at line {line_no}: both sides must contain at least one property"
+            )
+        if len(wdc_props) != len(target_props):
+            raise ValueError(
+                f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
+            )
+        rows.append(
+            {
+                "line_no": line_no,
+                "pairs": list(zip(wdc_props, target_props)),
+                "raw": line,
+                "ignore_chars": norm,
+            }
+        )
+    return rows
+
+
 def _sync_target_alias_fields(params: dict):
     if not isinstance(params, dict):
         return params
     params["target_endpoint"] = _normalize_target_endpoint(params.get("target_endpoint"))
     params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
     params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
+    params["property_mapping_rules"] = _clean_text(params.get("property_mapping_rules"))
     params["target_property"] = _clean_text(params.get("target_property") or params.get("wikidata_property"))
     params["target_class"] = _clean_text(params.get("target_class") or params.get("wkd_class"))
     # Backward-compatible aliases.
@@ -272,6 +315,7 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["target_endpoint"] = _normalize_target_endpoint(params.get("target_endpoint"))
     params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
     params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
+    params["property_mapping_rules"] = _clean_text(params.get("property_mapping_rules"))
     params["target_property"] = _clean_text(params.get("target_property") or params.get("wikidata_property"))
     params["target_class"] = _clean_text(params.get("target_class") or params.get("wkd_class"))
     params["wikidata_property"] = params["target_property"]
@@ -286,8 +330,6 @@ def _validate_and_normalize_job_params(raw_params: dict):
 
     if not params["class_name"]:
         return params, "Class name is required."
-    if not params["wdc_predicate_pattern"]:
-        return params, "Considered pattern for WDC properties is required."
     if params["target_endpoint"] == "custom" and not params["target_endpoint_url"]:
         return params, "Custom endpoint URL is required when endpoint is set to Custom."
     if params["target_prefixes"]:
@@ -301,16 +343,26 @@ def _validate_and_normalize_job_params(raw_params: dict):
                     "Custom prefixes must use one PREFIX declaration per line (e.g. PREFIX bd: <http://www.bigdata.com/rdf#>).",
                 )
 
+    parsed_rules = []
+    if params["property_mapping_rules"]:
+        try:
+            parsed_rules = _parse_property_mapping_rules_text(params["property_mapping_rules"])
+        except ValueError as exc:
+            return params, str(exc)
+
     if _is_wikidata_url_mode(params):
         params["target_property"] = ""
         params["wikidata_property"] = ""
         params["ignore_chars"] = ""
+        params["property_mapping_rules"] = ""
         if not params["target_class"]:
             return params, "Target class filter is required when using sameAs mode."
     else:
+        if not params["wdc_predicate_pattern"] and not parsed_rules:
+            return params, "Considered pattern for WDC properties is required."
         if not params["ignore_chars"]:
             params["ignore_chars"] = "spaces;-;."
-        if not params["target_property"]:
+        if not params["target_property"] and not parsed_rules:
             return params, "Equivalent target property is required when WDC values are not endpoint URLs."
 
     params["wkd_class"] = params["target_class"]
@@ -362,6 +414,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params.get("target_endpoint", "wikidata"),
             params.get("target_endpoint_url", ""),
             params.get("target_prefixes", ""),
+            params.get("property_mapping_rules", ""),
             params.get("target_property", ""),
             params.get("target_class", ""),
             params.get("ignore_chars", ""),
@@ -736,6 +789,7 @@ def _build_preflight_report(
     target_endpoint: str = "wikidata",
     target_endpoint_url: str = "",
     target_prefixes: str = "",
+    property_mapping_rules: str = "",
     target_property: str = "",
     target_class: str = "",
     wikidata_property: str = "",
@@ -750,10 +804,29 @@ def _build_preflight_report(
     endpoint_key = _normalize_target_endpoint(target_endpoint)
     target_endpoint_url = _clean_text(target_endpoint_url)
     target_prefixes = _clean_text(target_prefixes)
+    property_mapping_rules = _clean_text(property_mapping_rules)
     target_property = _clean_text(target_property or wikidata_property)
     target_class = _clean_text(target_class or wkd_class)
     mode_norm = _normalize_matching_mode(matching_mode)
     wdc_value_is_wikidata = mode_norm == "sameas"
+    parsed_rules = []
+    if mode_norm != "sameas" and property_mapping_rules:
+        try:
+            parsed_rules = _parse_property_mapping_rules_text(property_mapping_rules)
+        except ValueError as exc:
+            report = {
+                "ok": False,
+                "summary": str(exc),
+                "risk": "high",
+                "confidence": "low",
+            }
+            return report
+    if mode_norm != "sameas" and parsed_rules:
+        first_pair = parsed_rules[0]["pairs"][0]
+        if not pattern:
+            pattern = _clean_text(first_pair[0])
+        if not target_property:
+            target_property = _clean_text(first_pair[1])
     report = {
         "ok": False,
         "class_name": class_name,
@@ -763,6 +836,7 @@ def _build_preflight_report(
         "target_endpoint": endpoint_key,
         "target_endpoint_url": target_endpoint_url,
         "target_prefixes": target_prefixes,
+        "property_mapping_rules": property_mapping_rules,
         "target_property": target_property,
         "target_class": target_class,
         "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
@@ -1261,6 +1335,7 @@ def _build_config_groups(cfg: dict):
                 "target_endpoint",
                 "target_endpoint_url",
                 "target_prefixes",
+                "property_mapping_rules",
                 "target_property",
                 "target_class",
                 "ignore_chars",
@@ -1376,6 +1451,7 @@ def _build_summary_from_dir(base: Path):
             "target_endpoint": "wikidata",
             "target_endpoint_url": "",
             "target_prefixes": "",
+            "property_mapping_rules": "",
             "target_property": "",
             "target_class": "",
         }
@@ -2295,6 +2371,7 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "target_endpoint": _clean_text(str(_pick("target_endpoint", "wikidata"))),
         "target_endpoint_url": _clean_text(str(_pick("target_endpoint_url", ""))),
         "target_prefixes": _clean_text(str(_pick("target_prefixes", ""))),
+        "property_mapping_rules": _clean_text(str(_pick("property_mapping_rules", ""))),
         "target_property": _clean_text(str(_pick("target_property", _pick("wikidata_property", "")))),
         "target_class": _clean_text(str(_pick("target_class", _pick("wkd_class", "")))),
         "wikidata_property": _clean_text(str(_pick("wikidata_property", ""))),
@@ -2798,6 +2875,7 @@ def preflight_api(
     target_endpoint: str = "wikidata",
     target_endpoint_url: str = "",
     target_prefixes: str = "",
+    property_mapping_rules: str = "",
     target_property: str = "",
     target_class: str = "",
     wikidata_property: str = "",
@@ -2815,6 +2893,7 @@ def preflight_api(
         target_endpoint=target_endpoint,
         target_endpoint_url=target_endpoint_url,
         target_prefixes=target_prefixes,
+        property_mapping_rules=property_mapping_rules,
         target_property=target_property,
         target_class=target_class,
         wikidata_property=wikidata_property,
@@ -2956,6 +3035,7 @@ def create_job(
     target_endpoint: str = Form("wikidata"),
     target_endpoint_url: str = Form(""),
     target_prefixes: str = Form(""),
+    property_mapping_rules: str = Form(""),
     target_property: str = Form(""),
     target_class: str = Form(""),
     wikidata_property: str = Form(""),
@@ -2974,6 +3054,7 @@ def create_job(
         "target_endpoint": _clean_text(target_endpoint),
         "target_endpoint_url": _clean_text(target_endpoint_url),
         "target_prefixes": _clean_text(target_prefixes),
+        "property_mapping_rules": _clean_text(property_mapping_rules),
         "target_property": _clean_text(target_property),
         "target_class": _clean_text(target_class),
         "wikidata_property": _clean_text(wikidata_property),

@@ -118,6 +118,59 @@ def _is_wikidata_url_mode(params):
     ) == "sameas"
 
 
+def _parse_property_mapping_rules(value):
+    text = str(value or "").strip()
+    if not text:
+        return []
+    rules = []
+    for line_no, raw_line in enumerate(text.splitlines(), 1):
+        line = str(raw_line or "").strip()
+        if not line:
+            continue
+        norm = ""
+        mapping_text = line
+        if "||" in line:
+            mapping_text, norm = line.split("||", 1)
+            mapping_text = str(mapping_text or "").strip()
+            norm = str(norm or "").strip()
+        if "=>" not in mapping_text:
+            raise PipelineError(
+                f"Invalid property mapping rule at line {line_no}: expected 'wdc_prop[,wdc_prop] => target_prop[,target_prop]'"
+            )
+        left_raw, right_raw = mapping_text.split("=>", 1)
+        wdc_props = [tok.strip() for tok in left_raw.split(",") if tok.strip()]
+        target_props = [tok.strip() for tok in right_raw.split(",") if tok.strip()]
+        if not wdc_props or not target_props:
+            raise PipelineError(
+                f"Invalid property mapping rule at line {line_no}: both sides must contain at least one property"
+            )
+        if len(wdc_props) != len(target_props):
+            raise PipelineError(
+                f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
+            )
+        pairs = list(zip(wdc_props, target_props))
+        rules.append({"line_no": line_no, "pairs": pairs, "raw": line, "ignore_chars": norm})
+    return rules
+
+
+def _merge_value_maps(dst_map, src_map):
+    if not isinstance(src_map, dict):
+        return
+    for norm, entries in src_map.items():
+        if norm not in dst_map:
+            dst_map[norm] = []
+        dst_map[norm].extend(list(entries or []))
+
+
+def _set_align_normalization(ignore_spec):
+    spec = str(ignore_spec or "").strip()
+    if spec:
+        align.set_normalization(True)
+        align.set_extra_strip_chars(align.parse_strip_list(spec))
+    else:
+        align.set_normalization(False)
+
+
 def _align_params_from_job_params(params):
     data = params if isinstance(params, dict) else {}
     wdc_value_is_wikidata = _normalize_matching_mode(
@@ -133,6 +186,7 @@ def _align_params_from_job_params(params):
     target_endpoint = data.get("target_endpoint") or "wikidata"
     target_endpoint_url = data.get("target_endpoint_url") or None
     target_prefixes = data.get("target_prefixes") or None
+    property_mapping_rules = data.get("property_mapping_rules") or None
     out = {
         "class_name": data.get("class_name"),
         "parts_spec": data.get("parts_spec") or "all",
@@ -150,6 +204,8 @@ def _align_params_from_job_params(params):
         out["target_endpoint_url"] = target_endpoint_url or None
     if target_prefixes:
         out["target_prefixes"] = target_prefixes
+    if property_mapping_rules:
+        out["property_mapping_rules"] = property_mapping_rules
     return out
 
 
@@ -744,6 +800,7 @@ def generate_benchmark(
     target_endpoint = params.get("target_endpoint") or "wikidata"
     target_endpoint_url = params.get("target_endpoint_url") or None
     target_prefixes = params.get("target_prefixes") or None
+    property_mapping_rules = params.get("property_mapping_rules") or ""
     wkd_prop_class = params.get("wkd_prop_class") or None
     ignore_chars = params.get("ignore_chars") or None
     wdc_value_is_wikidata = matching_mode == "sameas"
@@ -761,9 +818,11 @@ def generate_benchmark(
 
     if not class_name:
         raise PipelineError("class_name is required")
-    if not pattern:
+    parsed_rules = _parse_property_mapping_rules(property_mapping_rules) if not wdc_value_is_wikidata else []
+    has_rules = len(parsed_rules) > 0
+    if not wdc_value_is_wikidata and not has_rules and not pattern:
         raise PipelineError("wdc_predicate_pattern is required")
-    if not wdc_value_is_wikidata and not target_property:
+    if not wdc_value_is_wikidata and not has_rules and not target_property:
         if (target_endpoint or "wikidata") == "wikidata":
             raise PipelineError("wikidata_property is required")
         raise PipelineError("target_property is required")
@@ -772,11 +831,7 @@ def generate_benchmark(
             raise PipelineError("wkd_class is required when wdc_value_is_wikidata is enabled")
         raise PipelineError("target_class is required when sameAs mode is enabled")
 
-    if ignore_chars:
-        align.set_normalization(True)
-        align.set_extra_strip_chars(align.parse_strip_list(ignore_chars))
-    else:
-        align.set_normalization(False)
+    _set_align_normalization(ignore_chars)
 
     def _check_cancel():
         if should_cancel and should_cancel():
@@ -849,6 +904,7 @@ def generate_benchmark(
             "target_endpoint": target_endpoint,
             "target_endpoint_url": target_endpoint_url,
             "target_prefixes": target_prefixes,
+            "property_mapping_rules": property_mapping_rules,
             "ignore_chars": ignore_chars,
         }
     )
@@ -895,39 +951,39 @@ def generate_benchmark(
             set_phase("align")
         _check_cancel()
 
-        try:
-            wdc_map, matched_count = align.extract_unique_iris_from_files(
-                decompressed_files,
-                pattern,
-                collect_top_props=False,
-                parallel=True,
-                workers=workers,
-                lock_path=lock_path,
-                progress_every=100,
-                wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                type_filter_iris=type_filter_iris,
-            )
-        except Exception as e:
-            if not _is_too_many_open_files(e):
-                raise
-            # Automatic degraded retry for low-FD environments.
-            print("[WARN] Too many open files detected during align extraction; retrying in low-FD mode (parallel disabled).")
-            wdc_map, matched_count = align.extract_unique_iris_from_files(
-                decompressed_files,
-                pattern,
-                collect_top_props=False,
-                parallel=False,
-                workers=1,
-                lock_path=lock_path,
-                progress_every=100,
-                wdc_value_is_wd_iri=wdc_value_is_wikidata,
-                type_filter_iris=type_filter_iris,
-            )
-        if matched_count == 0:
-            raise PipelineError("No WDC values matched the predicate pattern")
-
-        _check_cancel()
         if wdc_value_is_wikidata:
+            try:
+                wdc_map, matched_count = align.extract_unique_iris_from_files(
+                    decompressed_files,
+                    pattern,
+                    collect_top_props=False,
+                    parallel=True,
+                    workers=workers,
+                    lock_path=lock_path,
+                    progress_every=100,
+                    wdc_value_is_wd_iri=True,
+                    type_filter_iris=type_filter_iris,
+                )
+            except Exception as e:
+                if not _is_too_many_open_files(e):
+                    raise
+                # Automatic degraded retry for low-FD environments.
+                print("[WARN] Too many open files detected during align extraction; retrying in low-FD mode (parallel disabled).")
+                wdc_map, matched_count = align.extract_unique_iris_from_files(
+                    decompressed_files,
+                    pattern,
+                    collect_top_props=False,
+                    parallel=False,
+                    workers=1,
+                    lock_path=lock_path,
+                    progress_every=100,
+                    wdc_value_is_wd_iri=True,
+                    type_filter_iris=type_filter_iris,
+                )
+            if matched_count == 0:
+                raise PipelineError("No WDC values matched the predicate pattern")
+
+            _check_cancel()
             wd_entity_iris = set()
             for entries in wdc_map.values():
                 for value, _iri in entries:
@@ -959,24 +1015,7 @@ def generate_benchmark(
                     target_endpoint_url=target_endpoint_url,
                     target_prefixes=target_prefixes,
                 )
-        else:
-            if (target_endpoint or "wikidata") == "wikidata":
-                wikidata_map = align.fetch_wikidata_values(
-                    target_property,
-                    target_class,
-                    wkd_prop_class,
-                )
-            else:
-                wikidata_map = align.fetch_target_values(
-                    target_property,
-                    target_class,
-                    wkd_prop_class,
-                    target_endpoint=target_endpoint,
-                    target_endpoint_url=target_endpoint_url,
-                    target_prefixes=target_prefixes,
-                )
-        if not wikidata_map:
-            if wdc_value_is_wikidata:
+            if not wikidata_map:
                 if (target_endpoint or "wikidata") == "wikidata":
                     raise PipelineError(
                         "No Wikidata entities matched class filter "
@@ -988,17 +1027,167 @@ def generate_benchmark(
                     f"({target_class}) for extracted WDC target URLs "
                     f"({len(wd_entity_iris):,} entities)"
                 )
-            raise PipelineError("Failed to fetch target endpoint values")
 
-        _check_cancel()
-        matches, wdc_values_matched = align.fuzzy_link(
-            wdc_map,
-            wikidata_map,
-            parallel=True,
-            workers=workers,
-            lock_path=lock_path,
-            min_length=match_min_length,
-        )
+            _check_cancel()
+            matches, wdc_values_matched = align.fuzzy_link(
+                wdc_map,
+                wikidata_map,
+                parallel=True,
+                workers=workers,
+                lock_path=lock_path,
+                min_length=match_min_length,
+            )
+        else:
+            if has_rules:
+                print(f"[INFO] Property mapping rules enabled: {len(parsed_rules)} rule line(s).")
+                merged_wdc_map = {}
+                merged_wikidata_map = {}
+                matches = []
+                wdc_values_matched = set()
+                seen_pairs = set()
+                matched_total = 0
+                target_fetch_any = False
+                for rule in parsed_rules:
+                    rule_ignore = str(rule.get("ignore_chars") or "").strip() or ignore_chars
+                    _set_align_normalization(rule_ignore)
+                    for wdc_prop, target_prop in rule["pairs"]:
+                        try:
+                            rule_wdc_map, rule_matched_count = align.extract_unique_iris_from_files(
+                                decompressed_files,
+                                wdc_prop,
+                                collect_top_props=False,
+                                parallel=True,
+                                workers=workers,
+                                lock_path=lock_path,
+                                progress_every=100,
+                                wdc_value_is_wd_iri=False,
+                                type_filter_iris=type_filter_iris,
+                            )
+                        except Exception as e:
+                            if not _is_too_many_open_files(e):
+                                raise
+                            print("[WARN] Too many open files detected during align extraction; retrying in low-FD mode (parallel disabled).")
+                            rule_wdc_map, rule_matched_count = align.extract_unique_iris_from_files(
+                                decompressed_files,
+                                wdc_prop,
+                                collect_top_props=False,
+                                parallel=False,
+                                workers=1,
+                                lock_path=lock_path,
+                                progress_every=100,
+                                wdc_value_is_wd_iri=False,
+                                type_filter_iris=type_filter_iris,
+                            )
+                        matched_total += int(rule_matched_count or 0)
+                        if not rule_wdc_map:
+                            continue
+                        if (target_endpoint or "wikidata") == "wikidata":
+                            rule_wikidata_map = align.fetch_wikidata_values(
+                                target_prop,
+                                target_class,
+                                wkd_prop_class,
+                            )
+                        else:
+                            rule_wikidata_map = align.fetch_target_values(
+                                target_prop,
+                                target_class,
+                                wkd_prop_class,
+                                target_endpoint=target_endpoint,
+                                target_endpoint_url=target_endpoint_url,
+                                target_prefixes=target_prefixes,
+                            )
+                        if rule_wikidata_map:
+                            target_fetch_any = True
+                        if not rule_wikidata_map:
+                            continue
+                        _merge_value_maps(merged_wdc_map, rule_wdc_map)
+                        _merge_value_maps(merged_wikidata_map, rule_wikidata_map)
+                        _check_cancel()
+                        pair_matches, pair_wdc_values = align.fuzzy_link(
+                            rule_wdc_map,
+                            rule_wikidata_map,
+                            parallel=True,
+                            workers=workers,
+                            lock_path=lock_path,
+                            min_length=match_min_length,
+                        )
+                        wdc_values_matched.update(pair_wdc_values or set())
+                        for item in pair_matches or []:
+                            pair = (item.get("wdc_iri"), item.get("wikidata_uri"))
+                            if pair in seen_pairs:
+                                continue
+                            seen_pairs.add(pair)
+                            tagged = dict(item)
+                            prev_method = str(tagged.get("method") or "exact")
+                            tagged["method"] = f"{prev_method}|{wdc_prop}->{target_prop}"
+                            matches.append(tagged)
+
+                _set_align_normalization(ignore_chars)
+                if matched_total <= 0:
+                    raise PipelineError("No WDC values matched the property mapping rules")
+                if not target_fetch_any:
+                    raise PipelineError("Failed to fetch target endpoint values for property mapping rules")
+
+                wdc_map = merged_wdc_map
+                wikidata_map = merged_wikidata_map
+            else:
+                try:
+                    wdc_map, matched_count = align.extract_unique_iris_from_files(
+                        decompressed_files,
+                        pattern,
+                        collect_top_props=False,
+                        parallel=True,
+                        workers=workers,
+                        lock_path=lock_path,
+                        progress_every=100,
+                        wdc_value_is_wd_iri=False,
+                        type_filter_iris=type_filter_iris,
+                    )
+                except Exception as e:
+                    if not _is_too_many_open_files(e):
+                        raise
+                    # Automatic degraded retry for low-FD environments.
+                    print("[WARN] Too many open files detected during align extraction; retrying in low-FD mode (parallel disabled).")
+                    wdc_map, matched_count = align.extract_unique_iris_from_files(
+                        decompressed_files,
+                        pattern,
+                        collect_top_props=False,
+                        parallel=False,
+                        workers=1,
+                        lock_path=lock_path,
+                        progress_every=100,
+                        wdc_value_is_wd_iri=False,
+                        type_filter_iris=type_filter_iris,
+                    )
+                if matched_count == 0:
+                    raise PipelineError("No WDC values matched the predicate pattern")
+                _check_cancel()
+                if (target_endpoint or "wikidata") == "wikidata":
+                    wikidata_map = align.fetch_wikidata_values(
+                        target_property,
+                        target_class,
+                        wkd_prop_class,
+                    )
+                else:
+                    wikidata_map = align.fetch_target_values(
+                        target_property,
+                        target_class,
+                        wkd_prop_class,
+                        target_endpoint=target_endpoint,
+                        target_endpoint_url=target_endpoint_url,
+                        target_prefixes=target_prefixes,
+                    )
+                if not wikidata_map:
+                    raise PipelineError("Failed to fetch target endpoint values")
+                _check_cancel()
+                matches, wdc_values_matched = align.fuzzy_link(
+                    wdc_map,
+                    wikidata_map,
+                    parallel=True,
+                    workers=workers,
+                    lock_path=lock_path,
+                    min_length=match_min_length,
+                )
         align_pairs = len(matches)
 
         _check_cancel()
@@ -1093,6 +1282,7 @@ def generate_benchmark(
         "class_name": class_name,
         "parts_spec": parts_spec,
         "wdc_predicate_pattern": pattern,
+        "property_mapping_rules": property_mapping_rules,
         "target_property": target_property,
         "target_class": target_class,
         "target_endpoint": target_endpoint,
@@ -1290,9 +1480,18 @@ def generate_benchmark(
     wd_exclude_props = set()
     wd_link_prop_uris = set()
     wdc_link_prop_patterns = set()
-    if pattern:
+    if has_rules:
+        for rule in parsed_rules:
+            for wdc_prop, target_prop in rule["pairs"]:
+                if wdc_prop:
+                    wdc_link_prop_patterns.add(str(wdc_prop).lower())
+                if (target_endpoint or "wikidata") == "wikidata" and target_prop:
+                    norm_prop = build.normalize_wd_prop_id(str(target_prop))
+                    if norm_prop:
+                        wd_link_prop_uris.update(build.wikidata_prop_uris(norm_prop))
+    elif pattern:
         wdc_link_prop_patterns.add(str(pattern).lower())
-    if (target_endpoint or "wikidata") == "wikidata" and target_property:
+    if (not has_rules) and (target_endpoint or "wikidata") == "wikidata" and target_property:
         norm_prop = build.normalize_wd_prop_id(str(target_property))
         if norm_prop:
             wd_link_prop_uris = build.wikidata_prop_uris(norm_prop)
