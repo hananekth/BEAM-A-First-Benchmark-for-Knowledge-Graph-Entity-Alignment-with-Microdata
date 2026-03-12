@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import statistics
+import traceback
 from collections import deque
 from pathlib import Path
 from contextlib import redirect_stdout, redirect_stderr
@@ -1087,6 +1088,17 @@ def _run_job(job_id, workers):
         )
         db.update_subjob_by_type(job_id, "build", status="done", ended_at=time.time())
     except PipelineError as e:
+        try:
+            db.insert_event(
+                job_id,
+                "error",
+                f"PipelineError: {e}",
+                phase=db.get_job(job_id)["phase"] if db.get_job(job_id) else None,
+                kind="error",
+                step="pipeline",
+            )
+        except Exception:
+            pass
         if "Cancelled" in str(e):
             align_cancel = db.get_cancel_requested_subjob(job_id, "align")
             build_cancel = db.get_cancel_requested_subjob(job_id, "build")
@@ -1122,6 +1134,18 @@ def _run_job(job_id, workers):
         db.update_subjob_by_type(job_id, "align", status="error", ended_at=time.time())
         db.update_subjob_by_type(job_id, "build", status="error", ended_at=time.time())
     except Exception as e:
+        try:
+            err_tb = traceback.format_exc()
+            db.insert_event(
+                job_id,
+                "error",
+                f"Unexpected error: {e}\n{err_tb}",
+                phase=db.get_job(job_id)["phase"] if db.get_job(job_id) else None,
+                kind="error",
+                step="pipeline",
+            )
+        except Exception:
+            pass
         _clear_resume_flags()
         db.update_job(
             job_id,

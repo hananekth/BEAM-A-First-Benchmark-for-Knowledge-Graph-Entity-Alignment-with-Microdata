@@ -1,0 +1,159 @@
+{
+  "queued_at": "2026-03-10 15:07:00",
+  "jobs": [
+    {
+      "job_id": 81,
+      "label": "movie_wikidata_eidr_all_o2o",
+      "params": {
+        "class_name": "Movie",
+        "parts_spec": "all",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "eidr",
+        "target_endpoint": "wikidata",
+        "target_property": "P2704",
+        "wikidata_property": "P2704",
+        "target_class": "Q11424",
+        "wkd_class": "Q11424",
+        "ignore_chars": "spaces;dot;hyphen;urn:eidr:",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 82,
+      "label": "movie_yago_eidr_all_o2o",
+      "params": {
+        "class_name": "Movie",
+        "parts_spec": "all",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "eidr",
+        "target_endpoint": "yago",
+        "target_property": "schema:identifier",
+        "target_class": "schema:Movie",
+        "wkd_class": "schema:Movie",
+        "ignore_chars": "spaces;dot;hyphen;urn:eidr:",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 83,
+      "label": "movie_dbpedia_dbp_eidr_all_o2o",
+      "params": {
+        "class_name": "Movie",
+        "parts_spec": "all",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "eidr",
+        "target_endpoint": "dbpedia",
+        "target_property": "dbp:eidr",
+        "target_class": "dbo:Film",
+        "wkd_class": "dbo:Film",
+        "ignore_chars": "spaces;dot;hyphen;urn:eidr:",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 84,
+      "label": "movie_dbpedia_dbo_eidr_all_o2o",
+      "params": {
+        "class_name": "Movie",
+        "parts_spec": "all",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "eidr",
+        "target_endpoint": "dbpedia",
+        "target_property": "dbo:eidr",
+        "target_class": "dbo:Film",
+        "wkd_class": "dbo:Film",
+        "ignore_chars": "spaces;dot;hyphen;urn:eidr:",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 85,
+      "label": "book_wikidata_isbn_0_6_o2o",
+      "params": {
+        "class_name": "Book",
+        "parts_spec": "0,6",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "isbn",
+        "target_endpoint": "wikidata",
+        "target_property": "P212",
+        "wikidata_property": "P212",
+        "target_class": "Q571",
+        "wkd_class": "Q571",
+        "ignore_chars": "spaces;dot;hyphen;isbn:isbn-13:isbn-10",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 86,
+      "label": "book_yago_isbn_0_6_o2o",
+      "params": {
+        "class_name": "Book",
+        "parts_spec": "0,6",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "isbn",
+        "target_endpoint": "yago",
+        "target_property": "schema:isbn",
+        "target_class": "schema:Book",
+        "wkd_class": "schema:Book",
+        "ignore_chars": "spaces;dot;hyphen;isbn:isbn-13:isbn-10",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 87,
+      "label": "book_dbpedia_dbp_isbn_0_6_o2o",
+      "params": {
+        "class_name": "Book",
+        "parts_spec": "0,6",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "isbn",
+        "target_endpoint": "dbpedia",
+        "target_property": "dbp:isbn",
+        "target_class": "dbo:Book",
+        "wkd_class": "dbo:Book",
+        "ignore_chars": "spaces;dot;hyphen;isbn:isbn-13:isbn-10",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    },
+    {
+      "job_id": 88,
+      "label": "book_dbpedia_dbo_isbn_0_6_o2o",
+      "params": {
+        "class_name": "Book",
+        "parts_spec": "0,6",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "isbn",
+        "target_endpoint": "dbpedia",
+        "target_property": "dbo:isbn",
+        "target_class": "dbo:Book",
+        "wkd_class": "dbo:Book",
+        "ignore_chars": "spaces;dot;hyphen;isbn:isbn-13:isbn-10",
+        "use_local_only": true,
+        "force_align": false,
+        "force_one_to_one_links": true,
+        "dedup_wdc_exact_subgraph_by_link_value": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "started_at": "2026-03-11 15:28:01",
+  "running": false,
+  "queued": [
+    {
+      "job_id": 146,
+      "class_name": "Book",
+      "target_endpoint": "wikidata",
+      "wdc_predicate_pattern": "isbn",
+      "property_mapping_rules": "isbn=>P212|P957",
+      "target_property": "P212|P957",
+      "target_class": "Q571",
+      "ignore_chars": "spaces;dot;hyphen;isbn;:",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 147,
+      "class_name": "Book",
+      "target_endpoint": "yago",
+      "wdc_predicate_pattern": "isbn",
+      "property_mapping_rules": "isbn=>schema:isbn|schema:identifier",
+      "target_property": "schema:isbn|schema:identifier",
+      "target_class": "schema:Book",
+      "ignore_chars": "spaces;dot;hyphen;isbn;:",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 148,
+      "class_name": "Book",
+      "target_endpoint": "dbpedia",
+      "wdc_predicate_pattern": "isbn",
+      "property_mapping_rules": "isbn=>dbp:isbn|dbo:isbn",
+      "target_property": "dbp:isbn|dbo:isbn",
+      "target_class": "dbo:Book",
+      "ignore_chars": "spaces;dot;hyphen;isbn;:",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 149,
+      "class_name": "Museum",
+      "target_endpoint": "wikidata",
+      "wdc_predicate_pattern": "telephone",
+      "property_mapping_rules": "telephone=>P1329",
+      "target_property": "P1329",
+      "target_class": "Q33506",
+      "ignore_chars": "spaces;dot;hyphen;slash;:;tel;telephone;phone;+;(;);,",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 150,
+      "class_name": "Museum",
+      "target_endpoint": "yago",
+      "wdc_predicate_pattern": "telephone",
+      "property_mapping_rules": "telephone=>schema:telephone|schema:contactPoint",
+      "target_property": "schema:telephone|schema:contactPoint",
+      "target_class": "schema:Museum",
+      "ignore_chars": "spaces;dot;hyphen;slash;:;tel;telephone;phone;+;(;);,",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 151,
+      "class_name": "Museum",
+      "target_endpoint": "yago",
+      "wdc_predicate_pattern": "telephone",
+      "property_mapping_rules": "telephone=>schema:telephone|schema:contactPoint",
+      "target_property": "schema:telephone|schema:contactPoint",
+      "target_class": "",
+      "ignore_chars": "spaces;dot;hyphen;slash;:;tel;telephone;phone;+;(;);,",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 152,
+      "class_name": "Museum",
+      "target_endpoint": "dbpedia",
+      "wdc_predicate_pattern": "telephone",
+      "property_mapping_rules": "telephone=>dbp:phoneNum|dbp:phone|dbp:telephone",
+      "target_property": "dbp:phoneNum|dbp:phone|dbp:telephone",
+      "target_class": "dbo:Museum",
+      "ignore_chars": "spaces;dot;hyphen;slash;:;tel;telephone;phone;+;(;);,",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 153,
+      "class_name": "Museum",
+      "target_endpoint": "dbpedia",
+      "wdc_predicate_pattern": "telephone",
+      "property_mapping_rules": "telephone=>dbp:phoneNum|dbp:phone|dbp:telephone",
+      "target_property": "dbp:phoneNum|dbp:phone|dbp:telephone",
+      "target_class": "",
+      "ignore_chars": "spaces;dot;hyphen;slash;:;tel;telephone;phone;+;(;);,",
+      "force_align": true,
+      "force_one_to_one_links": true
+    }
+  ],
+  "finished_at": "2026-03-11 15:28:01"
+}

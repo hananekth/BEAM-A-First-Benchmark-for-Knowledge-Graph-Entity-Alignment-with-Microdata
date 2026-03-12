@@ -2029,8 +2029,23 @@ def _run_sparql_query_with_retry_to_endpoint(endpoint_url, query, headers, timeo
                 headers=headers,
                 timeout=timeout_s,
             )
-            response.raise_for_status()
-            return _load_sparql_json_payload(response.text)
+            try:
+                response.raise_for_status()
+                return _load_sparql_json_payload(response.text)
+            except requests.HTTPError as post_err:
+                status = getattr(response, "status_code", None)
+                # Some endpoints (e.g., DBpedia) may reject POST for specific routes.
+                # Fallback to GET before considering this attempt failed.
+                if status == 405:
+                    get_resp = requests.get(
+                        endpoint,
+                        params={"query": query, "format": "json"},
+                        headers=headers,
+                        timeout=timeout_s,
+                    )
+                    get_resp.raise_for_status()
+                    return _load_sparql_json_payload(get_resp.text)
+                raise post_err
         except Exception as e:
             if (_is_rate_limited_error(e) or _is_retryable_query_error(e)) and attempt < max_attempts:
                 delay_s = (base_delay * (2 ** (attempt - 1))) + random.uniform(0, 0.5)
@@ -2477,7 +2492,7 @@ def fetch_target_values(
         return value_map
     except Exception as e:
         print_color(f"❌ Erreur target endpoint: {e}", Colors.RED)
-        return {}
+        return None
 
 def _exact_worker(args):
     wdc_items, wikidata_map, min_length = args

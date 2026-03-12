@@ -1,0 +1,74 @@
+{
+  "started_at": "2026-03-09 13:45:13",
+  "running": false,
+  "steps": [
+    {
+      "name": "pytest_full",
+      "started_at": "2026-03-09 13:45:13",
+      "ok": true,
+      "finished_at": "2026-03-09 13:45:31",
+      "returncode": 0,
+      "log": "/home/billal/BEAM-App/.run/reliability_pytest.log"
+    },
+    {
+      "name": "wait_bg_real_builds_status.json",
+      "started_at": "2026-03-09 13:45:31",
+      "ok": true,
+      "finished_at": "2026-03-09 13:45:31",
+      "final_state": "done",
+      "waited_seconds": 0
+    },
+    {
+      "name": "wait_bg_airport_p4_status.json",
+      "started_at": "2026-03-09 13:45:31",
+      "ok": true,
+      "finished_at": "2026-03-09 13:48:01",
+      "final_state": "done",
+      "waited_seconds": 150
+    },
+    {
+      "name": "validate_outputs",
+      "started_at": "2026-03-09 13:48:01",
+      "ok": true,
+      "finished_at": "2026-03-09 13:48:01",
+      "errors": [],
+      "summary": {
+        "runs": [
+          {
+            "status_file": "/home/billal/BEAM-App/.run/bg_real_builds_status.json",
+            "label": "museum_single_custom_chars",
+            "ok": true,
+            "out_dir": "data/Museum/beam_20260309_122342",
+            "build_done": true,
+            "with_link_lines": 639
+          },
+          {
+            "status_file": "/home/billal/BEAM-App/.run/bg_real_builds_status.json",
+            "label": "museum_multi_custom_chars",
+            "ok": true,
+            "out_dir": "data/Museum/beam_20260309_123237",
+            "build_done": true,
+            "with_link_lines": 50666
+          },
+          {
+            "status_file": "/home/billal/BEAM-App/.run/bg_airport_p4_status.json",
+            "label": "airport_p4_single_iata_custom_chars",
+            "ok": true,
+            "out_dir": "data/Airport/beam_20260309_131957",
+            "build_done": true,
+            "with_link_lines": 81973
+          },
+          {
+            "status_file": "/home/billal/BEAM-App/.run/bg_airport_p4_status.json",
+            "label": "airport_p4_multi_iata_name_custom_chars",
+            "ok": true,
+            "out_dir": "data/Airport/beam_20260309_133416",
+            "build_done": true,
+            "with_link_lines": 82470
+          }
+        ]
+      }
+    }
+  ],
+  "finished_at": "2026-03-09 13:48:01"
+}

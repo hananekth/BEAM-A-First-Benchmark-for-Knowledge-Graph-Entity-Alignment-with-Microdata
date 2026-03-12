@@ -1,0 +1,123 @@
+{
+  "started_at": "2026-03-11 00:22:32",
+  "running": false,
+  "queued_jobs": [
+    {
+      "job_id": 134,
+      "class_name": "Airport",
+      "endpoint": "wikidata",
+      "target_property": "P238",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 135,
+      "class_name": "Airport",
+      "endpoint": "yago",
+      "target_property": "schema:alternateName",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 136,
+      "class_name": "Airport",
+      "endpoint": "dbpedia",
+      "target_property": "dbo:iataLocationIdentifier",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 137,
+      "class_name": "Book",
+      "endpoint": "wikidata",
+      "target_property": "P212",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 138,
+      "class_name": "Book",
+      "endpoint": "yago",
+      "target_property": "schema:isbn",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 139,
+      "class_name": "Book",
+      "endpoint": "dbpedia",
+      "target_property": "dbp:isbn",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 140,
+      "class_name": "Museum",
+      "endpoint": "wikidata",
+      "target_property": "P1329",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 141,
+      "class_name": "Museum",
+      "endpoint": "yago",
+      "target_property": "schema:telephone",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    },
+    {
+      "job_id": 142,
+      "class_name": "Museum",
+      "endpoint": "dbpedia",
+      "target_property": "dbp:phone",
+      "parts_spec": "all",
+      "force_align": true,
+      "force_one_to_one_links": true
+    }
+  ],
+  "phone_stats": {
+    "status": "done",
+    "json_report": "/home/billal/BEAM-App/reports/museum_phone_stats.json",
+    "tsv_report": "/home/billal/BEAM-App/reports/museum_phone_counts.tsv",
+    "summary": {
+      "wdc": {
+        "total_values": 63886,
+        "unique_values": 6934,
+        "repeated_keys": 1951,
+        "repeated_occurrences": 58903,
+        "max_repetition": 14142
+      },
+      "wikidata": {
+        "total_values": 23908,
+        "unique_values": 12315,
+        "repeated_keys": 5081,
+        "repeated_occurrences": 16674,
+        "max_repetition": 25
+      },
+      "yago": {
+        "total_values": 0,
+        "unique_values": 0,
+        "repeated_keys": 0,
+        "repeated_occurrences": 0,
+        "max_repetition": 0
+      },
+      "dbpedia": {
+        "total_values": 0,
+        "unique_values": 0,
+        "repeated_keys": 0,
+        "repeated_occurrences": 0,
+        "max_repetition": 0
+      }
+    }
+  },
+  "finished_at": "2026-03-11 00:23:33"
+}

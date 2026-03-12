@@ -1,0 +1,86 @@
+{
+  "ts": "2026-03-10 15:18:48",
+  "rows": [
+    {
+      "job_id": 81,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 53.5,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 82,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 53.5,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 83,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 53.5,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 84,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 53.6,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 89,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 3.5,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 90,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 54.3,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 91,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 54.4,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 92,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 54.0,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    },
+    {
+      "job_id": 93,
+      "status": "cancelled",
+      "phase": "align",
+      "pct": 43.6,
+      "links": null,
+      "result_path": null,
+      "err": "Cancelled by user"
+    }
+  ]
+}

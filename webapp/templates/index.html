@@ -569,6 +569,22 @@
     .job-controls { display:flex; align-items:center; gap:8px; }
     .head-actions { display:flex; align-items:center; gap:6px; }
     .head-actions form { margin:0; }
+    .build-select-wrap {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+      border:1px solid var(--border);
+      border-radius:6px;
+      background:#0b0f17;
+    }
+    .build-select-wrap input[type="checkbox"] {
+      width:auto;
+      margin:0;
+      padding:0;
+      cursor:pointer;
+    }
     .btn-icon {
       width:auto;
       margin-top:0;
@@ -583,6 +599,12 @@
       cursor:pointer;
     }
     .btn-icon.danger { color:#fca5a5; border-color:#7f1d1d; background:#2a0f10; }
+    a.btn-icon { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
+    .build-title-link {
+      color:var(--text);
+      text-decoration:none;
+    }
+    .build-title-link:hover { text-decoration:underline; }
     .job-body.collapsed { display:none; }
     .pill { display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted); }
     .pill.ok { color:#9ae6b4; border-color:#14532d; background:#0f2a1b; }
@@ -804,7 +826,7 @@
             <span class="label-help">
               Property mapping rules
               <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
-              <span class="help-tip" tabindex="0" title="Each row is one OR rule: WDC property : target property.">?</span>
+              <span class="help-tip" tabindex="0" title="Each row is one OR rule: WDC property : target property. You can add target alternatives with | (example: P212|P957).">?</span>
             </span>
           </label>
           <div id="wdc-pattern-list" class="pattern-list" aria-live="polite"></div>
@@ -816,7 +838,7 @@
           <input type="hidden" id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" />
           <input type="hidden" name="wikidata_property" value="{{ form.wikidata_property }}" />
           <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
-          <div class="small">Each row maps one WDC property to one target property. Add a new row to create an alternative mapping rule (OR).</div>
+          <div class="small">Each row maps one WDC property to one target property (target alternatives allowed with <code>|</code>, e.g. <code>P212|P957</code>). Add a new row to create an alternative mapping rule (OR).</div>
           <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
       </div>
@@ -924,6 +946,10 @@
         <option value="links_desc">Sort: entity links (high to low)</option>
         <option value="links_asc">Sort: entity links (low to high)</option>
       </select>
+      <form method="post" action="/builds/download_selected" id="download-selected-builds-form">
+        <input type="hidden" name="selected_builds" id="selected-builds-input" value="[]" />
+        <button class="btn secondary" id="history-download-selected-btn" type="button" disabled>Download selected (0)</button>
+      </form>
       <form method="post" action="/builds/purge_low_links" class="js-async-form" id="purge-low-links-form">
         <input type="hidden" name="max_links" value="10" />
         <button class="btn danger" type="submit">Purge builds &lt; 10 links</button>
@@ -936,8 +962,11 @@
       <div class="build selectable-card" id="build-card-{{ loop.index0 }}" data-build-id="{{ loop.index0 }}" data-build-key="{{ b.class_name }}::{{ b.build_name }}" data-class-name="{{ b.class_name }}" data-build-name="{{ b.build_name }}" data-build-detail-url="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}" data-build-done-at="{{ b.done_at or '' }}" data-links-count="{{ (v.links_count if v and v.links_count is not none else 0) }}">
         <div class="build-head">
           <div class="header-left">
-            <button type="button" class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}" title="Open details" aria-label="Open details">&#8599;</button>
-            <div><b>{{ b.class_name }}</b> <span class="small">· Completed: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}</span></div>
+            <label class="build-select-wrap" title="Select build" data-no-card-toggle>
+              <input type="checkbox" class="build-select-checkbox" data-no-card-toggle />
+            </label>
+            <a class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}" href="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}" title="Open details" aria-label="Open details">&#8599;</a>
+            <div><a class="build-title-link" href="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}"><b>{{ b.class_name }}</b></a> <span class="small">· Completed: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}</span></div>
           </div>
           <div class="head-actions">
             <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
@@ -1224,6 +1253,7 @@ const laneStateByJob = {};
 const terminalHandledByJob = {};
 const lastStatusByJob = {};
 const phaseByJob = {};
+const lastProgressLogByJob = {};
 const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
 const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
 const PENDING_TOAST_KEY = 'beam.pendingToast';
@@ -2832,14 +2862,6 @@ function bindBuildMinimize() {
   document.querySelectorAll('.js-toggle-build').forEach((btn) => {
     const buildId = btn.dataset.buildId;
     setBuildCollapsed(buildId, true);
-    if (btn.dataset.bound === '1') return;
-    btn.dataset.bound = '1';
-    btn.addEventListener('click', (event) => {
-      event.stopPropagation();
-      const card = document.getElementById('build-card-' + buildId);
-      if (!card) return;
-      openBuildDetailFromCard(card);
-    });
   });
   document.querySelectorAll('.build[data-build-id]').forEach((card) => {
     const buildId = card.dataset.buildId;
@@ -2938,6 +2960,7 @@ function applyHistorySearchFilter() {
     searchEmpty.style.display = (terms.length > 0 && cards.length > 0 && visibleCount === 0) ? '' : 'none';
   }
   refreshBuildEmptyState();
+  updateSelectedBuildsUi();
 }
 
 function bindHistorySearch() {
@@ -2955,6 +2978,48 @@ function bindHistorySearch() {
     });
   }
   applyHistorySearchFilter();
+}
+
+function getSelectedBuildRefs() {
+  return Array.from(document.querySelectorAll('.build[data-build-key]')).flatMap((card) => {
+    const cb = card.querySelector('.build-select-checkbox');
+    if (!cb || !cb.checked) return [];
+    const className = normalizeFormText(card.dataset.className);
+    const buildName = normalizeFormText(card.dataset.buildName);
+    if (!className || !buildName) return [];
+    return [{ class_name: className, build_name: buildName }];
+  });
+}
+
+function updateSelectedBuildsUi() {
+  const refs = getSelectedBuildRefs();
+  const btn = document.getElementById('history-download-selected-btn');
+  const hidden = document.getElementById('selected-builds-input');
+  if (hidden) hidden.value = JSON.stringify(refs);
+  if (!btn) return;
+  btn.disabled = refs.length === 0;
+  btn.textContent = `Download selected (${refs.length})`;
+}
+
+function bindHistoryBulkDownload() {
+  const btn = document.getElementById('history-download-selected-btn');
+  const form = document.getElementById('download-selected-builds-form');
+  if (!btn || !form || btn.dataset.bound === '1') return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    const refs = getSelectedBuildRefs();
+    if (!refs.length) return;
+    const hidden = document.getElementById('selected-builds-input');
+    if (hidden) hidden.value = JSON.stringify(refs);
+    form.submit();
+  });
+  document.addEventListener('change', (event) => {
+    const t = event && event.target;
+    if (!(t instanceof Element)) return;
+    if (!t.matches('.build-select-checkbox')) return;
+    updateSelectedBuildsUi();
+  });
+  updateSelectedBuildsUi();
 }
 
 function refreshJobsEmptyState() {
@@ -3099,8 +3164,11 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
     <div class="build selectable-card" id="${cardId}" data-build-id="${buildId}" data-build-key="${escapeHtml(buildKey)}" data-class-name="${escapeHtml(className)}" data-build-name="${escapeHtml(buildName)}" data-build-detail-url="${detailAction}" data-build-done-at="${doneAt}" data-links-count="${linksCount}">
       <div class="build-head">
         <div class="header-left">
-          <button type="button" class="btn-icon js-toggle-build" data-build-id="${buildId}" title="Open details" aria-label="Open details">&#8599;</button>
-          <div><b>${escapeHtml(className)}</b> <span class="small">· Completed: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span></div>
+          <label class="build-select-wrap" title="Select build" data-no-card-toggle>
+            <input type="checkbox" class="build-select-checkbox" data-no-card-toggle />
+          </label>
+          <a class="btn-icon js-toggle-build" data-build-id="${buildId}" href="${detailAction}" title="Open details" aria-label="Open details">&#8599;</a>
+          <div><a class="build-title-link" href="${detailAction}"><b>${escapeHtml(className)}</b></a> <span class="small">· Completed: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span></div>
         </div>
         <div class="head-actions">
           <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
@@ -3146,6 +3214,7 @@ function reconcileBuildList(builds) {
     setupAsyncForms();
     bindBuildMinimize();
     applyHistorySearchFilter();
+    updateSelectedBuildsUi();
   }
   return inserted;
 }
@@ -3281,6 +3350,18 @@ function applyProgressPayload(jobId, payload, opts = {}) {
     const etaText = extractEtaText(payload.progress_text) || '—';
     updateLaneMeta(jobId, phase, { etaText });
   }
+  // Fallback logging path: when detailed job_events are sparse, still mirror
+  // progress_text into the visible log boxes so users can follow live runs.
+  const progressMsgRaw = String(payload.progress_text || '').replace(/\u001b\[[0-9;]*m/g, '').replace(/\r/g, '').trim();
+  if (progressMsgRaw) {
+    const lane = (phase === 'align') ? 'align' : 'build';
+    const progressKey = `${lane}|${progressMsgRaw}`;
+    if (lastProgressLogByJob[jobId] !== progressKey) {
+      const box = document.getElementById(lane === 'align' ? ('log-align-' + jobId) : ('log-build-' + jobId));
+      appendLogLine(box, `[${new Date().toLocaleTimeString()}] ${progressMsgRaw}`);
+      lastProgressLogByJob[jobId] = progressKey;
+    }
+  }
   if (terminal) {
     updateLaneMeta(jobId, 'align', { etaText: '—' });
     updateLaneMeta(jobId, 'build', { etaText: '—' });
@@ -3398,7 +3479,7 @@ async function pollDashboardOnce() {
   if (dashboardPollBusy || dashboardReloadQueued) return;
   dashboardPollBusy = true;
   try {
-    const res = await fetch(`/api/dashboard?job_limit=80&build_limit=40&test_mode=${DASHBOARD_TEST_MODE}`, {
+    const res = await fetch(`/api/dashboard?job_limit=80&build_limit=200&test_mode=${DASHBOARD_TEST_MODE}`, {
       method: 'GET',
       cache: 'no-store',
       credentials: 'same-origin',
@@ -3717,6 +3798,7 @@ document.addEventListener('DOMContentLoaded', () => {
   showPendingToastFromStorage();
   pruneCardsForCurrentMode();
   bindHistorySearch();
+  bindHistoryBulkDownload();
   bindBuildMinimize();
   bindJobMinimize();
   applyHistorySearchFilter();

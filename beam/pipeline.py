@@ -70,6 +70,43 @@ def _timestamp_tag():
     return time.strftime("%Y%m%d_%H%M%S")
 
 
+def _looks_like_ent_links_header(line):
+    text = str(line or "").strip().lower()
+    if not text:
+        return False
+    parts = text.split("\t")
+    if len(parts) < 2:
+        return False
+    left = parts[0].strip()
+    right = parts[1].strip()
+    return (
+        (left in {"wdc", "wdc_iri", "wdc_entity"} and right in {"wikidata", "wikidata_uri", "target", "target_uri"})
+        or (left == "subject" and right == "object")
+    )
+
+
+def _count_ent_links_rows(path):
+    fp = Path(path)
+    if not fp.exists() or not fp.is_file():
+        return 0
+    count = 0
+    with fp.open("r", encoding="utf-8", errors="ignore") as f:
+        header_checked = False
+        for raw in f:
+            line = raw.rstrip("\n")
+            if not line:
+                continue
+            if not header_checked:
+                header_checked = True
+                if _looks_like_ent_links_header(line):
+                    continue
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            count += 1
+    return count
+
+
 def _config_hash(align_params):
     payload = json.dumps(align_params, sort_keys=True, ensure_ascii=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
@@ -172,6 +209,14 @@ def _parse_property_mapping_rules(value):
             }
         )
     return rules
+
+
+def _split_target_property_alternatives(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return []
+    parts = [p.strip() for p in raw.split("|") if p.strip()]
+    return parts or [raw]
 
 
 def _merge_value_maps(dst_map, src_map):
@@ -1068,6 +1113,7 @@ def generate_benchmark(
                 seen_pairs = set()
                 matched_total = 0
                 target_fetch_any = False
+                target_fetch_error = False
                 for rule in parsed_rules:
                     rule_ignore = str(rule.get("ignore_chars") or "").strip() or ignore_chars
                     pair_ignores = list(rule.get("pair_ignore_chars") or [])
@@ -1106,51 +1152,55 @@ def generate_benchmark(
                         matched_total += int(rule_matched_count or 0)
                         if not rule_wdc_map:
                             continue
-                        if (target_endpoint or "wikidata") == "wikidata":
-                            rule_wikidata_map = align.fetch_wikidata_values(
-                                target_prop,
-                                target_class,
-                                wkd_prop_class,
-                            )
-                        else:
-                            rule_wikidata_map = align.fetch_target_values(
-                                target_prop,
-                                target_class,
-                                wkd_prop_class,
-                                target_endpoint=target_endpoint,
-                                target_endpoint_url=target_endpoint_url,
-                                target_prefixes=target_prefixes,
-                            )
-                        if rule_wikidata_map:
-                            target_fetch_any = True
-                        if not rule_wikidata_map:
-                            continue
-                        _merge_value_maps(merged_wdc_map, rule_wdc_map)
-                        _merge_value_maps(merged_wikidata_map, rule_wikidata_map)
-                        _check_cancel()
-                        pair_matches, pair_wdc_values = align.fuzzy_link(
-                            rule_wdc_map,
-                            rule_wikidata_map,
-                            parallel=True,
-                            workers=workers,
-                            lock_path=lock_path,
-                            min_length=match_min_length,
-                        )
-                        wdc_values_matched.update(pair_wdc_values or set())
-                        for item in pair_matches or []:
-                            pair = (item.get("wdc_iri"), item.get("wikidata_uri"))
-                            if pair in seen_pairs:
+                        for target_prop_alt in _split_target_property_alternatives(target_prop):
+                            if (target_endpoint or "wikidata") == "wikidata":
+                                rule_wikidata_map = align.fetch_wikidata_values(
+                                    target_prop_alt,
+                                    target_class,
+                                    wkd_prop_class,
+                                )
+                            else:
+                                rule_wikidata_map = align.fetch_target_values(
+                                    target_prop_alt,
+                                    target_class,
+                                    wkd_prop_class,
+                                    target_endpoint=target_endpoint,
+                                    target_endpoint_url=target_endpoint_url,
+                                    target_prefixes=target_prefixes,
+                                )
+                            if rule_wikidata_map is None:
+                                target_fetch_error = True
                                 continue
-                            seen_pairs.add(pair)
-                            tagged = dict(item)
-                            prev_method = str(tagged.get("method") or "exact")
-                            tagged["method"] = f"{prev_method}|{wdc_prop}->{target_prop}"
-                            matches.append(tagged)
+                            if rule_wikidata_map:
+                                target_fetch_any = True
+                            if not rule_wikidata_map:
+                                continue
+                            _merge_value_maps(merged_wdc_map, rule_wdc_map)
+                            _merge_value_maps(merged_wikidata_map, rule_wikidata_map)
+                            _check_cancel()
+                            pair_matches, pair_wdc_values = align.fuzzy_link(
+                                rule_wdc_map,
+                                rule_wikidata_map,
+                                parallel=True,
+                                workers=workers,
+                                lock_path=lock_path,
+                                min_length=match_min_length,
+                            )
+                            wdc_values_matched.update(pair_wdc_values or set())
+                            for item in pair_matches or []:
+                                pair = (item.get("wdc_iri"), item.get("wikidata_uri"))
+                                if pair in seen_pairs:
+                                    continue
+                                seen_pairs.add(pair)
+                                tagged = dict(item)
+                                prev_method = str(tagged.get("method") or "exact")
+                                tagged["method"] = f"{prev_method}|{wdc_prop}->{target_prop_alt}"
+                                matches.append(tagged)
 
                 _set_align_normalization(ignore_chars)
                 if matched_total <= 0:
                     raise PipelineError("No WDC values matched the property mapping rules")
-                if not target_fetch_any:
+                if target_fetch_error and not target_fetch_any:
                     raise PipelineError("Failed to fetch target endpoint values for property mapping rules")
 
                 wdc_map = merged_wdc_map
@@ -1187,32 +1237,59 @@ def generate_benchmark(
                 if matched_count == 0:
                     raise PipelineError("No WDC values matched the predicate pattern")
                 _check_cancel()
-                if (target_endpoint or "wikidata") == "wikidata":
-                    wikidata_map = align.fetch_wikidata_values(
-                        target_property,
-                        target_class,
-                        wkd_prop_class,
+                target_prop_alts = _split_target_property_alternatives(target_property)
+                if not target_prop_alts:
+                    raise PipelineError("target_property is required")
+                wikidata_map = {}
+                matches = []
+                wdc_values_matched = set()
+                seen_pairs = set()
+                fetched_any = False
+                fetch_error = False
+                for target_prop_alt in target_prop_alts:
+                    if (target_endpoint or "wikidata") == "wikidata":
+                        alt_map = align.fetch_wikidata_values(
+                            target_prop_alt,
+                            target_class,
+                            wkd_prop_class,
+                        )
+                    else:
+                        alt_map = align.fetch_target_values(
+                            target_prop_alt,
+                            target_class,
+                            wkd_prop_class,
+                            target_endpoint=target_endpoint,
+                            target_endpoint_url=target_endpoint_url,
+                            target_prefixes=target_prefixes,
+                        )
+                    if alt_map is None:
+                        fetch_error = True
+                        continue
+                    if not alt_map:
+                        continue
+                    fetched_any = True
+                    _merge_value_maps(wikidata_map, alt_map)
+                    _check_cancel()
+                    pair_matches, pair_wdc_values = align.fuzzy_link(
+                        wdc_map,
+                        alt_map,
+                        parallel=True,
+                        workers=workers,
+                        lock_path=lock_path,
+                        min_length=match_min_length,
                     )
-                else:
-                    wikidata_map = align.fetch_target_values(
-                        target_property,
-                        target_class,
-                        wkd_prop_class,
-                        target_endpoint=target_endpoint,
-                        target_endpoint_url=target_endpoint_url,
-                        target_prefixes=target_prefixes,
-                    )
-                if not wikidata_map:
+                    wdc_values_matched.update(pair_wdc_values or set())
+                    for item in pair_matches or []:
+                        pair = (item.get("wdc_iri"), item.get("wikidata_uri"))
+                        if pair in seen_pairs:
+                            continue
+                        seen_pairs.add(pair)
+                        tagged = dict(item)
+                        prev_method = str(tagged.get("method") or "exact")
+                        tagged["method"] = f"{prev_method}|{target_prop_alt}"
+                        matches.append(tagged)
+                if fetch_error and not fetched_any:
                     raise PipelineError("Failed to fetch target endpoint values")
-                _check_cancel()
-                matches, wdc_values_matched = align.fuzzy_link(
-                    wdc_map,
-                    wikidata_map,
-                    parallel=True,
-                    workers=workers,
-                    lock_path=lock_path,
-                    min_length=match_min_length,
-                )
         align_pairs = len(matches)
 
         _check_cancel()
@@ -1517,9 +1594,10 @@ def generate_benchmark(
     elif pattern:
         wdc_link_prop_patterns.add(str(pattern).lower())
     if (not has_rules) and (target_endpoint or "wikidata") == "wikidata" and target_property:
-        norm_prop = build.normalize_wd_prop_id(str(target_property))
-        if norm_prop:
-            wd_link_prop_uris = build.wikidata_prop_uris(norm_prop)
+        for target_prop_alt in _split_target_property_alternatives(target_property):
+            norm_prop = build.normalize_wd_prop_id(str(target_prop_alt))
+            if norm_prop:
+                wd_link_prop_uris.update(build.wikidata_prop_uris(norm_prop))
 
     replace_map = {}
     lowercase_wd = True
@@ -1598,6 +1676,72 @@ def generate_benchmark(
         add_wd_labels,
         wd_raw_cache_path=shared_wd_raw_cache,
     )
+
+    with_ent_links = Path(out_with) / "ent_links"
+    without_ent_links = Path(out_without) / "ent_links"
+    with_links_count = _count_ent_links_rows(with_ent_links)
+    without_links_count = _count_ent_links_rows(without_ent_links)
+    links_before_one_to_one = (
+        int(one_to_one_report.get("links_before"))
+        if isinstance(one_to_one_report, dict) and one_to_one_report.get("links_before") is not None
+        else int(links_after_dedup)
+    )
+    links_after_one_to_one = (
+        int(one_to_one_report.get("links_after"))
+        if isinstance(one_to_one_report, dict) and one_to_one_report.get("links_after") is not None
+        else int(final_links_count)
+    )
+    build_stats = {
+        "class_name": class_name,
+        "build_name": out_dir.name,
+        "target_endpoint": target_endpoint,
+        "target_endpoint_url": target_endpoint_url,
+        "force_one_to_one_links": bool(force_one_to_one_links),
+        "links_before_filters": int(raw_links_before_filters),
+        "links_after_dedup": int(links_after_dedup),
+        "links_before_one_to_one": links_before_one_to_one,
+        "links_after_one_to_one": links_after_one_to_one,
+        "links_count_with_link_code": int(with_links_count),
+        "links_count_without_link_code": int(without_links_count),
+        "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    try:
+        (Path(out_dir) / "BUILD_STATS.json").write_text(
+            json.dumps(build_stats, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+    variant_stats_with = {
+        "variant": "with_link_code",
+        "links_count": int(with_links_count),
+        "build_name": out_dir.name,
+        "class_name": class_name,
+        "target_endpoint": target_endpoint,
+        "generated_at": build_stats["generated_at"],
+    }
+    variant_stats_without = {
+        "variant": "without_link_code",
+        "links_count": int(without_links_count),
+        "build_name": out_dir.name,
+        "class_name": class_name,
+        "target_endpoint": target_endpoint,
+        "generated_at": build_stats["generated_at"],
+    }
+    try:
+        (Path(out_with) / "BUILD_STATS.json").write_text(
+            json.dumps(variant_stats_with, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+    try:
+        (Path(out_without) / "BUILD_STATS.json").write_text(
+            json.dumps(variant_stats_without, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
 
     # mark build done
     (Path(out_dir) / "BUILD_DONE").write_text(time.strftime("%Y-%m-%d %H:%M:%S"), encoding="utf-8")

@@ -52,6 +52,45 @@
       padding:10px 12px;
       background:#0b0f171a;
     }
+    .combo-box {
+      margin-top:12px;
+      border:1px solid #3b82f6;
+      border-radius:8px;
+      padding:10px 12px;
+      background:#0e1a2b;
+    }
+    .combo-row {
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+      font-size:12px;
+      padding:6px 0;
+      border-top:1px dashed #2b3f59;
+    }
+    .combo-row:first-of-type { border-top:none; }
+    .combo-tag {
+      flex:0 0 auto;
+      border:1px solid #4f709b;
+      border-radius:999px;
+      padding:2px 7px;
+      color:#dbeafe;
+      background:#19314f;
+      font-size:11px;
+      line-height:1.3;
+    }
+    .combo-pairs {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+    .combo-pair {
+      border:1px solid #39516f;
+      border-radius:8px;
+      background:#122238;
+      color:#d7e8ff;
+      padding:3px 7px;
+    }
     .qa-kv, .cfg-row, .part-row { display:grid; grid-template-columns:1fr auto; gap:10px; font-size:12px; padding:2px 0; }
     .cfg-row { grid-template-columns:240px 1fr; }
     .cfg-key { color:#93c5fd; }
@@ -143,6 +182,23 @@
         </div>
         {% endfor %}
       </div>
+
+      {% if build.linking_combinations %}
+      <div class="combo-box">
+        <div><b>Property combinations used for linking</b></div>
+        <div class="small">Each row is an OR rule used during matching.</div>
+        {% for combo in build.linking_combinations %}
+        <div class="combo-row">
+          <span class="combo-tag">{{ combo.label }}</span>
+          <div class="combo-pairs">
+            {% for pair in combo.pairs %}
+            <span class="combo-pair">{{ pair.wdc }} &rarr; {{ pair.target }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
 
       {% if build.parts_manifest %}
       <div class="parts-box">

@@ -7,11 +7,14 @@ import zipfile
 import asyncio
 import difflib
 import re
-from collections import Counter
+from collections import Counter, OrderedDict
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 from functools import lru_cache
+from threading import Lock
 from typing import Optional
 from urllib.parse import urljoin, quote_plus
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -227,6 +230,24 @@ def _normalize_target_endpoint(value: Optional[str]) -> str:
     return "wikidata"
 
 
+def _safe_filename_token(value: str, fallback: str = "value") -> str:
+    text = _clean_text(value).lower()
+    text = re.sub(r"[^a-z0-9._-]+", "_", text)
+    text = re.sub(r"_+", "_", text).strip("._-")
+    return text or fallback
+
+
+def _endpoint_filename_token(config: dict) -> str:
+    endpoint = _normalize_target_endpoint(_clean_text(str((config or {}).get("target_endpoint", "wikidata"))))
+    if endpoint != "custom":
+        return _safe_filename_token(endpoint, fallback="wikidata")
+    custom_url = _clean_text(str((config or {}).get("target_endpoint_url", "")))
+    host = _clean_text(urlparse(custom_url).netloc).lower()
+    if host:
+        return _safe_filename_token(f"custom_{host}", fallback="custom")
+    return "custom"
+
+
 def _parse_property_mapping_rules_text(value: str):
     text = _clean_text(value)
     if not text:
@@ -280,6 +301,74 @@ def _parse_property_mapping_rules_text(value: str):
             }
         )
     return rows
+
+
+def _split_target_property_alternatives(value: str):
+    raw = _clean_text(value)
+    if not raw:
+        return []
+    parts = [_clean_text(tok) for tok in raw.split("|") if _clean_text(tok)]
+    return parts or [raw]
+
+
+def _load_build_config(build_dir: Path):
+    cfg_path = build_dir / "BUILD_CONFIG.json"
+    if not cfg_path.exists() or not cfg_path.is_file():
+        return {}
+    try:
+        raw = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    _sync_target_alias_fields(raw)
+    return raw
+
+
+def _extract_linking_combinations(config: dict):
+    if not isinstance(config, dict):
+        return []
+    mode = _normalize_matching_mode(
+        _clean_text(str(config.get("matching_mode", ""))),
+        fallback_wdc_value_is_wikidata=_is_wikidata_url_mode(config),
+    )
+    if mode == "sameas":
+        return []
+
+    combos = []
+    rules_text = _clean_text(str(config.get("property_mapping_rules", "")))
+    if rules_text:
+        try:
+            parsed = _parse_property_mapping_rules_text(rules_text)
+        except Exception:
+            parsed = []
+        for i, row in enumerate(parsed, 1):
+            pairs = [{"wdc": _clean_text(l), "target": _clean_text(r)} for l, r in (row.get("pairs") or [])]
+            pairs = [p for p in pairs if p["wdc"] and p["target"]]
+            if not pairs:
+                continue
+            combos.append(
+                {
+                    "id": i,
+                    "label": f"OR #{i}",
+                    "pairs": pairs,
+                    "raw": _clean_text(row.get("raw", "")),
+                }
+            )
+        return combos
+
+    left = _clean_text(str(config.get("wdc_predicate_pattern", "")))
+    right = _clean_text(str(config.get("target_property", config.get("wikidata_property", ""))))
+    if left and right:
+        combos.append(
+            {
+                "id": 1,
+                "label": "Rule",
+                "pairs": [{"wdc": left, "target": right}],
+                "raw": f"{left} => {right}",
+            }
+        )
+    return combos
 
 
 def _sync_target_alias_fields(params: dict):
@@ -841,6 +930,9 @@ def _build_preflight_report(
             pattern = _clean_text(first_pair[0])
         if not target_property:
             target_property = _clean_text(first_pair[1])
+            if "|" in target_property:
+                alts = _split_target_property_alternatives(target_property)
+                target_property = alts[0] if alts else target_property
     report = {
         "ok": False,
         "class_name": class_name,
@@ -1326,13 +1418,23 @@ def _scan_builds(limit=30):
     root = Path("data")
     if not root.exists():
         return builds
-    markers = list(root.glob("*/beam_*/BUILD_DONE"))
-    markers.sort(key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True)
-    for marker in markers[:limit]:
-        base = marker.parent
+    candidates = []
+    for class_dir in root.iterdir():
+        if not class_dir.is_dir():
+            continue
+        for base in class_dir.iterdir():
+            if not _is_build_dir_candidate(base):
+                continue
+            candidates.append(base)
+    for base in candidates:
         summary = _build_summary_from_dir(base)
         if summary:
             builds.append(summary)
+    builds.sort(key=lambda b: float(b.get("sort_ts") or 0.0), reverse=True)
+    if limit and int(limit) > 0:
+        builds = builds[: int(limit)]
+    for b in builds:
+        b.pop("sort_ts", None)
     return builds
 
 
@@ -1404,23 +1506,42 @@ def _resolve_build_dir(class_name: str, build_name: str):
         base.relative_to(data_root)
     except ValueError:
         return None
-    if not base.exists() or not base.is_dir():
-        return None
-    if not (base / "BUILD_DONE").exists():
+    if not _is_build_dir_candidate(base):
         return None
     return base
 
 
-def _build_summary_from_dir(base: Path):
+def _is_build_dir_candidate(base: Path) -> bool:
     if not base or not base.exists() or not base.is_dir():
+        return False
+    if not base.name.lower().startswith("beam"):
+        return False
+    marker = base / "BUILD_DONE"
+    cfg = base / "BUILD_CONFIG.json"
+    with_variant = base / "with_link_code"
+    without_variant = base / "without_link_code"
+    return (
+        marker.exists()
+        or cfg.exists()
+        or with_variant.exists()
+        or without_variant.exists()
+    )
+
+
+def _build_summary_from_dir(base: Path):
+    if not _is_build_dir_candidate(base):
         return None
     marker = base / "BUILD_DONE"
-    if not marker.exists() or not marker.is_file():
-        return None
-    try:
-        st = marker.stat()
-    except Exception:
-        return None
+    done_at = ""
+    sort_ts = 0.0
+    if marker.exists() and marker.is_file():
+        try:
+            st = marker.stat()
+            done_at = _fmt_ts(st.st_mtime)
+            sort_ts = float(st.st_mtime)
+        except Exception:
+            done_at = ""
+            sort_ts = 0.0
 
     build_config = None
     cfg_path = base / "BUILD_CONFIG.json"
@@ -1432,6 +1553,19 @@ def _build_summary_from_dir(base: Path):
 
     with_link = _variant_stats(base, "with_link_code")
     without_link = _variant_stats(base, "without_link_code")
+    if not marker.exists() and not build_config and not with_link and not without_link:
+        return None
+
+    if sort_ts <= 0:
+        for p in (cfg_path, base / "with_link_code", base / "without_link_code", base):
+            try:
+                if p.exists():
+                    sort_ts = max(sort_ts, float(p.stat().st_mtime))
+            except Exception:
+                pass
+    if not done_at and sort_ts > 0:
+        done_at = _fmt_ts(sort_ts)
+
     variants_same = False
     if with_link and without_link:
         variants_same = (
@@ -1445,11 +1579,12 @@ def _build_summary_from_dir(base: Path):
         "class_name": base.parent.name,
         "build_name": base.name,
         "path": str(base),
-        "done_at": _fmt_ts(st.st_mtime),
+        "done_at": done_at,
         "with_link": with_link,
         "without_link": without_link,
         "variants_same": variants_same,
         "build_config": build_config,
+        "sort_ts": sort_ts,
     }
 
     config = build_config if isinstance(build_config, dict) else None
@@ -1477,11 +1612,17 @@ def _build_summary_from_dir(base: Path):
     build["parts_count"] = build["config"].get("parts_count", len(parts))
     build["parts_total_size_human"] = build["config"].get("parts_total_size_human")
     build["config_groups"] = _build_config_groups(build["config"])
+    build["linking_combinations"] = _extract_linking_combinations(build["config"])
     return build
 
 
 _LINK_EXPLORER_VARIANTS = ("with_link_code", "without_link_code")
 _LINK_EXPLORER_FAST_SCAN_BYTES = 64 * 1024 * 1024  # 64 MB
+_LINK_DETAIL_CACHE_MAX = 256
+_LINK_DETAIL_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="link-detail")
+_LINK_DETAIL_CACHE = OrderedDict()
+_LINK_DETAIL_FUTURES = {}
+_LINK_DETAIL_LOCK = Lock()
 _LINK_EXPLORER_PROP_ALIASES = {
     "name": "label",
     "label": "label",
@@ -1495,6 +1636,14 @@ _LINK_EXPLORER_PROP_ALIASES = {
     "phone": "phone",
     "contactpoint": "phone",
     "p1329": "phone",
+    "iatacode": "iata",
+    "iataairportcode": "iata",
+    "p238": "iata",
+    "icaocode": "icao",
+    "icaoairportcode": "icao",
+    "p239": "icao",
+    "faaairportcode": "faa",
+    "p240": "faa",
     "sameas": "sameas",
     "url": "url",
     "website": "url",
@@ -1505,6 +1654,75 @@ _LINK_EXPLORER_PROP_ALIASES = {
     "eidr": "identifier",
     "p2704": "identifier",
 }
+
+
+def _link_detail_cache_key(build_dir: Path, variant_name: str, idx: int) -> str:
+    try:
+        build_key = str(build_dir.resolve())
+    except Exception:
+        build_key = str(build_dir)
+    return f"{build_key}|{_clean_text(variant_name)}|{int(idx)}"
+
+
+def _link_detail_cache_get(key: str):
+    with _LINK_DETAIL_LOCK:
+        payload = _LINK_DETAIL_CACHE.get(key)
+        if payload is not None:
+            _LINK_DETAIL_CACHE.move_to_end(key)
+        return payload
+
+
+def _link_detail_cache_set(key: str, payload: dict):
+    if payload is None:
+        return
+    with _LINK_DETAIL_LOCK:
+        _LINK_DETAIL_CACHE[key] = payload
+        _LINK_DETAIL_CACHE.move_to_end(key)
+        while len(_LINK_DETAIL_CACHE) > _LINK_DETAIL_CACHE_MAX:
+            _LINK_DETAIL_CACHE.popitem(last=False)
+
+
+def _start_link_detail_build(
+    build_dir: Path,
+    variant_dir: Path,
+    variant_name: str,
+    idx: int,
+):
+    key = _link_detail_cache_key(build_dir, variant_name, idx)
+    cached = _link_detail_cache_get(key)
+    if cached is not None:
+        return key, "ready", cached, None
+
+    with _LINK_DETAIL_LOCK:
+        fut = _LINK_DETAIL_FUTURES.get(key)
+        if fut is None or fut.cancelled():
+            fut = _LINK_DETAIL_EXECUTOR.submit(_build_link_detail_payload, variant_dir, idx)
+            _LINK_DETAIL_FUTURES[key] = fut
+    return key, "pending", None, fut
+
+
+def _read_link_detail_future(
+    key: str,
+    fut,
+    wait_ms: int = 0,
+):
+    timeout_s = max(0.0, float(wait_ms) / 1000.0)
+    if timeout_s <= 0 and not fut.done():
+        return None, "pending"
+    try:
+        payload = fut.result(timeout=timeout_s if timeout_s > 0 else None)
+    except FuturesTimeoutError:
+        return None, "pending"
+    except Exception:
+        with _LINK_DETAIL_LOCK:
+            _LINK_DETAIL_FUTURES.pop(key, None)
+        raise
+
+    with _LINK_DETAIL_LOCK:
+        _LINK_DETAIL_FUTURES.pop(key, None)
+    if payload is not None:
+        _link_detail_cache_set(key, payload)
+    return payload, "ready"
 
 
 def _normalize_node_token(value: str) -> str:
@@ -1934,18 +2152,17 @@ def _scan_subject_triples(
     path: Path,
     subject_key: str,
     max_rows: int = 4000,
-    max_scan_lines: int = 350000,
+    max_scan_lines: int = 0,
 ):
     rows = []
     if not path.exists() or not path.is_file() or not subject_key:
         return rows
     scanned = 0
-    seen_subject = False
     with path.open("r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             scanned += 1
-            if max_scan_lines > 0 and scanned > max_scan_lines and not seen_subject:
-                # Protect UI endpoints from scanning huge files indefinitely.
+            if max_scan_lines > 0 and scanned > max_scan_lines:
+                # Optional safeguard when a caller explicitly requests bounded scans.
                 break
             parts = line.rstrip("\n").split("\t", 2)
             if len(parts) < 3:
@@ -1957,11 +2174,7 @@ def _scan_subject_triples(
                 continue
             same_subject = _normalize_node_token(s) == subject_key
             if not same_subject:
-                if seen_subject:
-                    # Triples are usually grouped by subject; once we leave it, stop early.
-                    break
                 continue
-            seen_subject = True
             rows.append((p, o))
             if len(rows) >= max_rows:
                 break
@@ -2131,7 +2344,46 @@ def _similarity_for_properties(left_item: dict, right_item: dict):
     return score, name_score, value_score
 
 
-def _compute_property_matches(left_items, right_items, max_matches: int = 14, threshold: float = 0.55):
+def _pattern_token_set(value: str):
+    raw = _clean_text(value)
+    if not raw:
+        return set()
+    base = {
+        raw.lower(),
+        _short_predicate(raw).lower(),
+        _predicate_token(raw),
+        _predicate_alias_key(raw),
+    }
+    out = set()
+    for t in base:
+        t = _clean_text(t).lower()
+        if not t:
+            continue
+        out.add(t)
+        out.add(re.sub(r"[^a-z0-9]+", "", t))
+    return {t for t in out if t}
+
+
+def _property_matches_pattern(prop_value: str, pattern_value: str) -> bool:
+    prop_tokens = _pattern_token_set(prop_value)
+    if not prop_tokens:
+        return False
+    for pat in _split_target_property_alternatives(pattern_value):
+        pat_tokens = _pattern_token_set(pat)
+        if not pat_tokens:
+            continue
+        if prop_tokens & pat_tokens:
+            return True
+    return False
+
+
+def _compute_property_matches(
+    left_items,
+    right_items,
+    max_matches: int = 14,
+    threshold: float = 0.55,
+    configured_pairs: Optional[list] = None,
+):
     def _candidate_row(left_item: dict, right_item: dict, cand: dict, reason: str):
         return {
             "wdc_property": left_item.get("property", ""),
@@ -2152,9 +2404,62 @@ def _compute_property_matches(left_items, right_items, max_matches: int = 14, th
             else "",
         }
 
+    configured_pairs = configured_pairs or []
+    used_left = set()
+    used_right = set()
+    rows = []
+
+    for pair in configured_pairs:
+        left_pat = _clean_text((pair or {}).get("wdc", ""))
+        right_pat = _clean_text((pair or {}).get("target", ""))
+        if not left_pat or not right_pat:
+            continue
+        best = None
+        for l_idx, left_item in enumerate(left_items or []):
+            if l_idx in used_left:
+                continue
+            if not _property_matches_pattern(left_item.get("property", ""), left_pat):
+                continue
+            for r_idx, right_item in enumerate(right_items or []):
+                if r_idx in used_right:
+                    continue
+                if not _property_matches_pattern(right_item.get("property", ""), right_pat):
+                    continue
+                if bool(left_item.get("relation")) != bool(right_item.get("relation")):
+                    continue
+                score, name_score, value_score = _similarity_for_properties(left_item, right_item)
+                boosted_score = max(score, 0.9 if value_score > 0 else 0.78)
+                cand = {
+                    "l_idx": l_idx,
+                    "r_idx": r_idx,
+                    "score": boosted_score,
+                    "name_score": name_score,
+                    "value_score": value_score,
+                }
+                if best is None or cand["score"] > best["score"]:
+                    best = cand
+        if not best:
+            continue
+        used_left.add(best["l_idx"])
+        used_right.add(best["r_idx"])
+        rows.append(
+            _candidate_row(
+                (left_items or [])[best["l_idx"]],
+                (right_items or [])[best["r_idx"]],
+                best,
+                reason="configured_rule",
+            )
+        )
+        if len(rows) >= max_matches:
+            return rows[:max_matches]
+
     candidates = []
     for l_idx, left_item in enumerate(left_items or []):
+        if l_idx in used_left:
+            continue
         for r_idx, right_item in enumerate(right_items or []):
+            if r_idx in used_right:
+                continue
             # Keep attribute vs relation comparisons separate to avoid noisy cross-type matches.
             if bool(left_item.get("relation")) != bool(right_item.get("relation")):
                 continue
@@ -2170,9 +2475,6 @@ def _compute_property_matches(left_items, right_items, max_matches: int = 14, th
             )
     candidates.sort(key=lambda row: row["score"], reverse=True)
 
-    used_left = set()
-    used_right = set()
-    rows = []
     for cand in candidates:
         if cand["score"] < threshold:
             continue
@@ -2248,7 +2550,21 @@ def _build_link_detail_payload(variant_dir: Path, idx: int):
     wd_node = _build_node_payload(variant_dir, "wd", link_row["wikidata_uri"])
     left_items = (wdc_node.get("attr_items") or []) + (wdc_node.get("rel_items") or [])
     right_items = (wd_node.get("attr_items") or []) + (wd_node.get("rel_items") or [])
-    matches = _compute_property_matches(left_items, right_items)
+    build_dir = variant_dir.parent
+    build_config = _load_build_config(build_dir)
+    linking_combinations = _extract_linking_combinations(build_config)
+    configured_pairs = []
+    seen_pairs = set()
+    for combo in linking_combinations:
+        for pair in (combo.get("pairs") or []):
+            left_pat = _clean_text(pair.get("wdc", ""))
+            right_pat = _clean_text(pair.get("target", ""))
+            sig = f"{left_pat}=>{right_pat}".lower()
+            if not left_pat or not right_pat or sig in seen_pairs:
+                continue
+            seen_pairs.add(sig)
+            configured_pairs.append({"wdc": left_pat, "target": right_pat})
+    matches = _compute_property_matches(left_items, right_items, configured_pairs=configured_pairs)
     return {
         "idx": link_row["idx"],
         "wdc_iri": link_row["wdc_iri"],
@@ -2430,7 +2746,7 @@ def _looks_like_skipped_build_reason(text: Optional[str]) -> bool:
     return ("build skipped" in msg) or ("no alignments found" in msg)
 
 
-def _build_dashboard_state(job_limit: int = 50, build_limit: int = 40, test_mode: Optional[bool] = None):
+def _build_dashboard_state(job_limit: int = 50, build_limit: int = 200, test_mode: Optional[bool] = None):
     all_jobs = [dict(j) for j in db.list_jobs(limit=job_limit)]
     jobs_by_id = {j["id"]: j for j in all_jobs}
     # Always include truly active jobs even if they are outside the recency window.
@@ -2611,7 +2927,7 @@ def index(
         class_parts_info = _build_class_parts_info(form["class_name"])
 
     recent_presets = _get_recent_presets(test_mode=is_test_mode)
-    dashboard = _build_dashboard_state(job_limit=50, build_limit=40, test_mode=is_test_mode)
+    dashboard = _build_dashboard_state(job_limit=50, build_limit=200, test_mode=is_test_mode)
     jobs = dashboard["jobs_for_panel"]
     builds = dashboard["builds"]
     jobs_outputs = {j["id"]: dashboard["jobs_outputs"][j["id"]] for j in jobs}
@@ -2697,6 +3013,8 @@ def build_links_page(
         "class_name": class_name,
         "build_name": build_name,
     }
+    build_config = _load_build_config(build_dir)
+    build["linking_combinations"] = _extract_linking_combinations(build_config)
 
     variant_dir, variant_name = _resolve_link_explorer_variant_dir(build_dir, variant=variant)
     if not variant_dir or not variant_name:
@@ -2738,6 +3056,7 @@ def build_links_page(
             "initial_has_more": bool(page.get("has_more", False)),
             "initial_rows": rows,
             "initial_detail": None,
+            "linking_combinations": build.get("linking_combinations", []),
         },
     )
 
@@ -2780,6 +3099,7 @@ def build_link_detail_api(
     build_name: str,
     idx: int,
     variant: Optional[str] = None,
+    wait_ms: int = 0,
 ):
     build_dir = _resolve_build_dir(class_name, build_name)
     if not build_dir:
@@ -2788,7 +3108,21 @@ def build_link_detail_api(
     if not variant_dir or not variant_name:
         raise HTTPException(status_code=404, detail="No link files available for this build.")
 
-    payload = _build_link_detail_payload(variant_dir, idx)
+    wait_ms = max(0, min(int(wait_ms), 5000))
+    key, status, payload, fut = _start_link_detail_build(build_dir, variant_dir, variant_name, idx)
+    if status != "ready":
+        payload, status = _read_link_detail_future(key, fut, wait_ms=wait_ms)
+
+    if status != "ready":
+        return {
+            "ok": True,
+            "class_name": class_name,
+            "build_name": build_name,
+            "variant": variant_name,
+            "idx": int(idx),
+            "pending": True,
+            "cache_key": key,
+        }
     if not payload:
         raise HTTPException(status_code=404, detail="Link not found at this index.")
     return {
@@ -2796,6 +3130,8 @@ def build_link_detail_api(
         "class_name": class_name,
         "build_name": build_name,
         "variant": variant_name,
+        "pending": False,
+        "cache_key": key,
         "detail": payload,
     }
 
@@ -2829,7 +3165,7 @@ def build_link_node_api(
 
 
 @app.get("/api/dashboard")
-def dashboard_api(job_limit: int = 80, build_limit: int = 40, test_mode: Optional[bool] = None):
+def dashboard_api(job_limit: int = 80, build_limit: int = 200, test_mode: Optional[bool] = None):
     job_limit = max(1, min(int(job_limit), 200))
     build_limit = max(1, min(int(build_limit), 200))
     dashboard = _build_dashboard_state(job_limit=job_limit, build_limit=build_limit, test_mode=test_mode)
@@ -3102,13 +3438,92 @@ def download_build(class_name: str, build_name: str):
     if not build_dir:
         return RedirectResponse(url="/", status_code=303)
     data_root = Path("data").resolve()
+    build_config = _load_build_config(build_dir)
+    endpoint_token = _endpoint_filename_token(build_config)
+    class_token = _safe_filename_token(class_name, fallback="class")
+    build_token = _safe_filename_token(build_name, fallback="build")
     fd, zip_path = tempfile.mkstemp(prefix=f"beam_{class_name}_{build_name}_", suffix=".zip")
     os.close(fd)
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for fp in build_dir.rglob("*"):
             if fp.is_file():
                 zf.write(fp, arcname=str(fp.resolve().relative_to(data_root)))
-    filename = f"{class_name}_{build_name}.zip"
+    filename = f"{class_token}_{build_token}_{endpoint_token}.zip"
+    return FileResponse(
+        zip_path,
+        media_type="application/zip",
+        filename=filename,
+        background=BackgroundTask(_safe_unlink, zip_path),
+    )
+
+
+@app.get("/builds/download_selected")
+@app.get("/builds/download_selected/")
+def download_selected_builds_get():
+    return RedirectResponse(url="/?form_error=Select+one+or+more+builds+before+downloading.", status_code=303)
+
+
+@app.post("/builds/download_selected")
+@app.post("/builds/download_selected/")
+def download_selected_builds(selected_builds: str = Form("[]")):
+    try:
+        parsed = json.loads(_clean_text(selected_builds) or "[]")
+    except Exception:
+        parsed = []
+    refs = []
+    if isinstance(parsed, list):
+        refs = parsed
+
+    unique_keys = set()
+    selected_dirs = []
+    for item in refs[:300]:
+        class_name = ""
+        build_name = ""
+        if isinstance(item, dict):
+            class_name = _clean_text(str(item.get("class_name", "")))
+            build_name = _clean_text(str(item.get("build_name", "")))
+        elif isinstance(item, str):
+            if "::" in item:
+                left, right = item.split("::", 1)
+                class_name = _clean_text(left)
+                build_name = _clean_text(right)
+        if not class_name or not build_name:
+            continue
+        key = f"{class_name}::{build_name}"
+        if key in unique_keys:
+            continue
+        unique_keys.add(key)
+        build_dir = _resolve_build_dir(class_name, build_name)
+        if not build_dir:
+            continue
+        build_config = _load_build_config(build_dir)
+        endpoint_token = _endpoint_filename_token(build_config)
+        class_token = _safe_filename_token(class_name, fallback="class")
+        build_token = _safe_filename_token(build_name, fallback="build")
+        folder_prefix = f"{class_token}_{build_token}_{endpoint_token}"
+        selected_dirs.append((class_name, build_name, build_dir, folder_prefix))
+
+    if not selected_dirs:
+        return RedirectResponse(url="/?form_error=No+valid+build+selected+for+download.", status_code=303)
+
+    data_root = Path("data").resolve()
+    fd, zip_path = tempfile.mkstemp(prefix="beam_selected_builds_", suffix=".zip")
+    os.close(fd)
+
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for _, _, build_dir, folder_prefix in selected_dirs:
+            for fp in build_dir.rglob("*"):
+                if not fp.is_file():
+                    continue
+                try:
+                    rel = fp.resolve().relative_to(build_dir.resolve())
+                    arcname = str(Path(folder_prefix) / rel)
+                except Exception:
+                    arcname = str(Path(folder_prefix) / fp.name)
+                zf.write(fp, arcname=arcname)
+
+    ts = time.strftime("%Y%m%d_%H%M%S")
+    filename = f"selected_builds_{len(selected_dirs)}_{ts}.zip"
     return FileResponse(
         zip_path,
         media_type="application/zip",

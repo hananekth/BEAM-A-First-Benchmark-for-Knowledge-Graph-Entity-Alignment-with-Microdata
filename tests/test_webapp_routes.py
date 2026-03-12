@@ -693,6 +693,34 @@ def test_build_detail_page_missing_build_redirects_to_index(monkeypatch, test_wd
     assert "form_error=Build+not+found." in location
 
 
+def test_build_without_done_marker_is_visible_and_links_accessible(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    build_name = "beam_20260212_partial"
+    build_root = Path("data") / "TestClass" / build_name
+    build_root.mkdir(parents=True, exist_ok=True)
+    (build_root / "BUILD_CONFIG.json").write_text(
+        json.dumps({"class_name": "TestClass", "build_name": build_name}),
+        encoding="utf-8",
+    )
+    _write_link_explorer_variant(build_root / "with_link_code")
+
+    with client:
+        home = client.get("/?test_mode=1")
+        detail = client.get(f"/builds/TestClass/{build_name}?test_mode=1")
+        links_page = client.get(f"/builds/TestClass/{build_name}/links?test_mode=1&variant=with_link_code")
+        links_api = client.get(f"/api/builds/TestClass/{build_name}/links?variant=with_link_code")
+
+    assert home.status_code == 200
+    assert build_name in home.text
+    assert detail.status_code == 200
+    assert "Build Detail" in detail.text
+    assert links_page.status_code == 200
+    assert "Link Explorer" in links_page.text
+    assert links_api.status_code == 200
+    assert links_api.json().get("ok") is True
+    assert links_api.json().get("total", 0) >= 1
+
+
 def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
     client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     build_name = "beam_20260212_120012"

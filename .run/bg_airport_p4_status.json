@@ -1,6 +1,6 @@
 {
   "started_at": "2026-03-09 13:19:41",
-  "running": true,
+  "running": false,
   "runs": [
     {
       "label": "airport_p4_single_iata_custom_chars",
@@ -14,7 +14,12 @@
     {
       "label": "airport_p4_multi_iata_name_custom_chars",
       "started_at": "2026-03-09 13:33:33",
-      "ok": null
+      "ok": true,
+      "finished_at": "2026-03-09 13:47:59",
+      "out_dir": "data/Airport/beam_20260309_133416",
+      "links_tsv": "Download/Airport/align_cache/604ad22db02c2bae/wdc_wikidata_links.tsv",
+      "build_done": true
     }
-  ]
+  ],
+  "finished_at": "2026-03-09 13:47:59"
 }

@@ -1,0 +1,51 @@
+{
+  "started_at": "2026-03-09 13:44:51",
+  "running": false,
+  "runs": [
+    {
+      "label": "museum_single_tel_part0_custom_chars_v2",
+      "started_at": "2026-03-09 13:44:51",
+      "ok": true,
+      "finished_at": "2026-03-09 13:48:22",
+      "out_dir": "data/Museum/beam_20260309_134531",
+      "links_tsv": "Download/Museum/align_cache/1e4166228ce771e5/wdc_wikidata_links.tsv",
+      "build_done": true,
+      "build_skipped": false,
+      "build_skip_reason": null
+    },
+    {
+      "label": "museum_multi_tel_name_part0_custom_chars_v2",
+      "started_at": "2026-03-09 13:48:22",
+      "ok": true,
+      "finished_at": "2026-03-09 14:18:09",
+      "out_dir": "data/Museum/beam_20260309_134948",
+      "links_tsv": "Download/Museum/align_cache/e855cd2a55ca82b2/wdc_wikidata_links.tsv",
+      "build_done": true,
+      "build_skipped": false,
+      "build_skip_reason": null
+    },
+    {
+      "label": "airport_single_iata_part4_yago",
+      "started_at": "2026-03-09 14:18:09",
+      "ok": true,
+      "finished_at": "2026-03-09 14:19:58",
+      "out_dir": "data/Airport/beam_20260309_141827",
+      "links_tsv": "Download/Airport/align_cache/e7c709a1400a55f0/wdc_wikidata_links.tsv",
+      "build_done": true,
+      "build_skipped": false,
+      "build_skip_reason": null
+    },
+    {
+      "label": "airport_multi_iata_name_part4_yago",
+      "started_at": "2026-03-09 14:19:58",
+      "ok": true,
+      "finished_at": "2026-03-09 14:22:07",
+      "out_dir": "data/Airport/beam_20260309_142035",
+      "links_tsv": "Download/Airport/align_cache/966946f00dd253f9/wdc_wikidata_links.tsv",
+      "build_done": true,
+      "build_skipped": false,
+      "build_skip_reason": null
+    }
+  ],
+  "finished_at": "2026-03-09 14:22:07"
+}
