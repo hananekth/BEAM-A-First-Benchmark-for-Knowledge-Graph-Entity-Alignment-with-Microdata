@@ -327,6 +327,12 @@ with st.form("job_form"):
             placeholder="eidr / name / telephone / isrc",
             key="wdc_predicate_pattern",
         )
+        wdc_pattern_search_in = st.selectbox(
+            "Pattern search scope",
+            ["predicate", "value"],
+            help="Choose whether pattern is matched in WDC predicate names or in WDC values.",
+            key="wdc_pattern_search_in",
+        )
         wikidata_property = st.text_input(
             "Wikidata property",
             value="",
@@ -369,6 +375,7 @@ if submit:
         "class_name": class_name,
         "parts_spec": parts_spec,
         "wdc_predicate_pattern": wdc_predicate_pattern,
+        "wdc_pattern_search_in": wdc_pattern_search_in,
         "wikidata_property": wikidata_property,
         "wkd_class": wkd_class,
         "ignore_chars": "" if strict_matching else ignore_chars,

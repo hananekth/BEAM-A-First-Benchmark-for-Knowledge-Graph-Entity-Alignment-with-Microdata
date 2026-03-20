@@ -41,7 +41,7 @@ kill_pid_file() {
 kill_pid_file "$WORKER_PID_FILE" "worker"
 kill_pid_file "$WEBAPP_PID_FILE" "webapp"
 
-# Fallback cleanup for legacy/manual launches.
+# Fallback cleanup for manual launches.
 pkill -f "python -m worker.run" >/dev/null 2>&1 || true
 pkill -f "uvicorn webapp.main:app" >/dev/null 2>&1 || true
 

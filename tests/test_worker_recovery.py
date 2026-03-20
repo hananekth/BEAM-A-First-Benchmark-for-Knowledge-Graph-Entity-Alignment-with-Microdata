@@ -121,7 +121,7 @@ def test_recover_stale_running_cancelled_job(monkeypatch):
     assert build_row["status"] == "cancelled"
 
 
-def test_reconcile_legacy_skipped_build_jobs_marks_done_job_as_error(tmp_path):
+def test_reconcile_skipped_build_jobs_marks_done_job_as_error(tmp_path):
     params = {
         "class_name": "City",
         "parts_spec": "1",
@@ -151,7 +151,7 @@ def test_reconcile_legacy_skipped_build_jobs_marks_done_job_as_error(tmp_path):
         current_step="skipped",
     )
 
-    worker_run._reconcile_legacy_skipped_build_jobs()
+    worker_run._reconcile_skipped_build_jobs()
 
     job = db.get_job(job_id)
     assert job["status"] == "error"
@@ -162,7 +162,7 @@ def test_reconcile_legacy_skipped_build_jobs_marks_done_job_as_error(tmp_path):
     assert build_row["current_step"] == "skipped"
 
 
-def test_reconcile_legacy_skipped_build_jobs_repairs_partial_error_state():
+def test_reconcile_skipped_build_jobs_repairs_partial_error_state():
     params = {
         "class_name": "City",
         "parts_spec": "1",
@@ -191,7 +191,7 @@ def test_reconcile_legacy_skipped_build_jobs_repairs_partial_error_state():
         current_step="skipped",
     )
 
-    worker_run._reconcile_legacy_skipped_build_jobs()
+    worker_run._reconcile_skipped_build_jobs()
 
     job = db.get_job(job_id)
     assert job["status"] == "error"

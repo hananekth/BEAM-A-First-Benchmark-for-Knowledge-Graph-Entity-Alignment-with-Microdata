@@ -16,7 +16,9 @@ from beam import db
 from beam.pipeline import generate_benchmark, PipelineError, is_align_cache_reusable
 
 _CPU_COUNT = max(1, os.cpu_count() or 1)
-MAX_CONCURRENT_JOBS = int(os.environ.get("MAX_CONCURRENT_JOBS", "8"))
+# Hard cap at 2 concurrent jobs to keep queue behavior predictable.
+# You can still lower it via env (e.g. MAX_CONCURRENT_JOBS=1).
+MAX_CONCURRENT_JOBS = max(1, min(2, int(os.environ.get("MAX_CONCURRENT_JOBS", "2"))))
 POLL_INTERVAL = float(os.environ.get("JOB_POLL_INTERVAL", "1"))
 MAX_WORKERS_PER_JOB = int(os.environ.get("MAX_WORKERS_PER_JOB", str(_CPU_COUNT)))
 JOB_WORKER_CPU_SHARE = float(os.environ.get("JOB_WORKER_CPU_SHARE", "0.95"))
@@ -124,14 +126,13 @@ def _parse_eta_seconds(value):
 def _cfg_eta_fingerprint(params):
     data = params if isinstance(params, dict) else {}
     mode = str(data.get("matching_mode") or "").strip().lower()
-    if mode == "identifier":
-        mode = "property"
-    elif mode not in {"property", "sameas"}:
+    if mode not in {"property", "sameas", "sameas_or_property"}:
         mode = "sameas" if bool(data.get("wdc_value_is_wikidata")) else "property"
     def _txt(k):
         return str(data.get(k) or "").strip()
     def _b(k):
         return bool(data.get(k))
+    strict_duplicate_key_filter = bool(data.get("strict_duplicate_key_filter"))
     return (
         mode,
         _txt("class_name"),
@@ -141,8 +142,7 @@ def _cfg_eta_fingerprint(params):
         _txt("wkd_class"),
         _txt("ignore_chars"),
         _b("use_local_only"),
-        _b("force_one_to_one_links"),
-        _b("dedup_wdc_exact_subgraph_by_link_value"),
+        strict_duplicate_key_filter,
     )
 
 
@@ -471,11 +471,11 @@ def _looks_like_skipped_build_reason(text):
     return ("build skipped" in msg) or ("no alignments found" in msg)
 
 
-def _reconcile_legacy_skipped_build_jobs():
+def _reconcile_skipped_build_jobs():
     """
-    Legacy compatibility:
-    old versions could persist jobs as done when build was skipped due to 0 alignments.
-    Normalize those rows to error so UI state is consistent.
+    Normalize inconsistent skipped-build states:
+    rows persisted as done while build was skipped due to 0 alignments
+    are rewritten to error so UI state stays consistent.
     """
     now = time.time()
     rows = list(db.list_jobs_by_status("done")) + list(db.list_jobs_by_status("error"))
@@ -528,7 +528,7 @@ def _reconcile_legacy_skipped_build_jobs():
             db.insert_event(
                 job_id,
                 "system",
-                "Reconciled legacy skipped build result to error state",
+                "Reconciled skipped build result to error state",
                 phase="build",
                 kind="reconcile",
                 step="skipped",
@@ -1164,7 +1164,7 @@ def _run_job(job_id, workers):
 def main():
     db.init_db()
     _reconcile_terminal_subjobs()
-    _reconcile_legacy_skipped_build_jobs()
+    _reconcile_skipped_build_jobs()
     _recover_stale_running_jobs()
     running = {}
 

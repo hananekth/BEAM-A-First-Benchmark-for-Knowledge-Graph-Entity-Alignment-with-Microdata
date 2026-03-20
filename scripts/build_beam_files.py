@@ -78,13 +78,14 @@ def _progress_line(start_ts, done_bytes, total_bytes):
 def _split_worker(args):
     (
         input_path,
-        targets,
+        targets_inner,
         lowercase_wd,
         mask_values,
         exclude_props,
         exclude_prop_patterns,
         replace_map,
         follow_iri_objects,
+        linked_entities_inner,
     ) = args
     tmp_attr = input_path + f".tmp_attr_{os.getpid()}"
     tmp_rel = input_path + f".tmp_rel_{os.getpid()}"
@@ -102,8 +103,9 @@ def _split_worker(args):
             if not parsed:
                 continue
             s, p, o = parsed
+            s_inner = s[1:-1] if s.startswith("<") and s.endswith(">") else s
             p_norm = _normalize_prop_token(p)
-            if s not in targets:
+            if s_inner not in targets_inner:
                 continue
             if exclude_props_norm and p_norm in exclude_props_norm:
                 continue
@@ -127,6 +129,10 @@ def _split_worker(args):
                 attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
                 kept_attr += 1
             else:
+                if o.startswith("<") and linked_entities_inner:
+                    o_inner = o[1:-1]
+                    if o_inner not in linked_entities_inner:
+                        continue
                 rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
                 kept_rel += 1
                 if o.startswith("_:"):
@@ -431,12 +437,21 @@ def split_triples(
     replace_map=None,
     progress_every=0,
     follow_iri_objects=False,
+    linked_entity_iris=None,
 ):
     _cleanup_stale_temp_files(input_path)
     os.makedirs(os.path.dirname(out_attr_path), exist_ok=True)
     os.makedirs(os.path.dirname(out_rel_path), exist_ok=True)
 
     keep_subjects = set(s for s in seed_subjects if s)
+    linked_entities_inner = set()
+    for value in list(linked_entity_iris or []):
+        token = str(value or "").strip()
+        if not token:
+            continue
+        if token.startswith("<") and token.endswith(">"):
+            token = token[1:-1]
+        linked_entities_inner.add(token)
     processed_subjects = set()
 
     input_paths = _iter_input_paths(input_path)
@@ -449,6 +464,14 @@ def split_triples(
             targets = keep_subjects - processed_subjects
             if not targets:
                 break
+            targets_inner = set()
+            for value in targets:
+                token = str(value or "").strip()
+                if not token:
+                    continue
+                if token.startswith("<") and token.endswith(">"):
+                    token = token[1:-1]
+                targets_inner.add(token)
             new_subjects = set()
             line_count = 0
             kept_attr = 0
@@ -467,13 +490,14 @@ def split_triples(
                         _split_worker,
                         (
                             input_path,
-                            targets,
+                            targets_inner,
                             lowercase_wd,
                             mask_values,
                             exclude_props,
                             exclude_prop_patterns,
                             replace_map,
                             follow_iri_objects,
+                            linked_entities_inner,
                         ),
                     )
                     for input_path in input_paths
@@ -1202,6 +1226,8 @@ def run_pipeline(
         )
         for uri in wd_entities_raw
     ]
+    linked_only_entities = bool(getattr(args, "linked_only_entities", True))
+    wd_linked_entities_filter = set(wd_entities_raw) | set(wd_entities_out)
     write_links(out_links, wdc_entities, wd_entities_out, args.dedupe_links)
 
     split_triples(
@@ -1215,6 +1241,7 @@ def run_pipeline(
         exclude_prop_patterns=wdc_exclude_prop_patterns,
         progress_every=args.progress_every,
         follow_iri_objects=True,
+        linked_entity_iris=wdc_entities if linked_only_entities else None,
     )
     # Add labels/descriptions for WDC IRIs and properties found in WDC triples
     append_wdc_labels_descriptions(out_attr_1, out_rel_1, args.wdc_nq)
@@ -1235,6 +1262,7 @@ def run_pipeline(
             mask_values=wd_mask_values,
             exclude_props=wd_exclude_props,
             replace_map=replace_map,
+            linked_entity_iris=wd_linked_entities_filter if linked_only_entities else None,
         )
         if args.wd_prop_min_count > 0:
             filter_triples_by_prop_count(
@@ -1282,6 +1310,7 @@ def run_pipeline(
             state_path=args.state_file or os.path.join(out_dir, ".wd_state.json"),
             resume=args.resume,
             raw_triples_cache_path=wd_raw_cache_path,
+            linked_entity_iris=wd_linked_entities_filter if linked_only_entities else None,
         )
         if args.wd_prop_min_count > 0:
             filter_triples_by_prop_count(
@@ -1400,6 +1429,7 @@ def write_wikidata_from_sparql(
     state_path=None,
     resume=False,
     raw_triples_cache_path=None,
+    linked_entity_iris=None,
 ):
     os.makedirs(os.path.dirname(out_attr_path), exist_ok=True)
     os.makedirs(os.path.dirname(out_rel_path), exist_ok=True)
@@ -1457,6 +1487,14 @@ def write_wikidata_from_sparql(
     attr_mode = "a" if resume else "w"
     rel_mode = "a" if resume else "w"
     exclude_props_norm = {_normalize_prop_token(p) for p in exclude_props} if exclude_props else None
+    linked_entities_inner = set()
+    for value in list(linked_entity_iris or []):
+        token = str(value or "").strip()
+        if not token:
+            continue
+        if token.startswith("<") and token.endswith(">"):
+            token = token[1:-1]
+        linked_entities_inner.add(token)
     load_from_cache = bool(raw_triples_cache_path and os.path.exists(raw_triples_cache_path))
     cache_tmp_path = None
     cache_writer = None
@@ -1492,6 +1530,10 @@ def write_wikidata_from_sparql(
             attr_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
             kept_attr += 1
         else:
+            if o.startswith("<") and linked_entities_inner:
+                o_inner = o[1:-1]
+                if o_inner not in linked_entities_inner:
+                    return kept_attr, kept_rel
             rel_out.write(f"{s_out}\t{p_out}\t{o_out}\n")
             kept_rel += 1
         return kept_attr, kept_rel

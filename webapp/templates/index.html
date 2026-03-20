@@ -254,6 +254,18 @@
     .mapping-target-input {
       flex:1 1 0;
     }
+    .mapping-col {
+      display:flex;
+      flex-direction:column;
+      flex:1 1 0;
+      gap:4px;
+    }
+    .mapping-col-label {
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.1;
+      margin-left:2px;
+    }
     .mapping-norm-options {
       display:flex;
       gap:6px;
@@ -387,7 +399,7 @@
     }
     .mapping-norm-modal-row {
       display:grid;
-      grid-template-columns:1fr 1fr 2fr;
+      grid-template-columns:1fr 1fr 120px 2fr;
       gap:8px;
       align-items:flex-start;
       margin-bottom:8px;
@@ -416,6 +428,22 @@
       justify-content:flex-end;
       gap:8px;
       margin-top:10px;
+    }
+    .mapping-search-scope-select {
+      margin-top:0;
+      min-width:100px;
+      padding:6px 8px;
+      font-size:12px;
+    }
+    .pattern-row-mode-select {
+      width:auto;
+      min-width:110px;
+      flex:0 1 auto;
+      margin-top:0;
+      padding:4px 8px;
+      min-height:28px;
+      line-height:1.1;
+      font-size:12px;
     }
     .pattern-row-remove {
       width:auto;
@@ -599,6 +627,17 @@
       cursor:pointer;
     }
     .btn-icon.danger { color:#fca5a5; border-color:#7f1d1d; background:#2a0f10; }
+    .btn-icon.star {
+      color:#facc15;
+      border-color:#a16207;
+      background:#2b2107;
+      font-size:14px;
+    }
+    .btn-icon.star.off {
+      color:#94a3b8;
+      border-color:var(--border);
+      background:#0b0f17;
+    }
     a.btn-icon { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
     .build-title-link {
       color:var(--text);
@@ -623,6 +662,18 @@
     .job-actions form { margin:0; }
     .job-actions .btn { margin-top:0; }
     .builds { margin-top:20px; }
+    .build-group { margin:12px 0 16px; }
+    .build-group-title {
+      margin:0 0 8px;
+      padding:4px 2px 6px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:var(--text);
+    }
+    .build-group-count { color:var(--muted); font-size:12px; }
+    .build-group-body { display:block; }
     .build { border:1px solid var(--border); border-radius:10px; background:var(--card); padding:14px 16px; margin:10px 0; }
     .job.selectable-card, .build.selectable-card { cursor:pointer; }
     .history-tools {
@@ -751,6 +802,7 @@
       <select id="matching-mode-select" name="matching_mode">
         <option value="property" {% if form.matching_mode == "property" %}selected{% endif %}>Property (label, telephone, code...)</option>
         <option value="sameas" {% if form.matching_mode == "sameas" %}selected{% endif %}>sameAs</option>
+        <option value="sameas_or_property" {% if form.matching_mode == "sameas_or_property" %}selected{% endif %}>sameAs OR Property</option>
       </select>
     </div>
 
@@ -819,12 +871,24 @@
     <div class="property-mapping-subsection">
       <p class="subsection-title">Property Mapping</p>
       <div class="small subsection-help">Configure how WDC values are matched to target endpoint values.</div>
+      <div class="field-group">
+        <label>
+          <span class="label-help">
+            Pattern search scope
+            <span class="help-tip" tabindex="0" title="Choose whether WDC pattern tokens are matched against predicate names or object values. Example: use value + ror.org to match URL values containing ror.org.">?</span>
+          </span>
+        </label>
+        <select id="wdc-pattern-search-in-select" name="wdc_pattern_search_in">
+          <option value="predicate" {% if form.wdc_pattern_search_in != "value" %}selected{% endif %}>Property (predicate)</option>
+          <option value="value" {% if form.wdc_pattern_search_in == "value" %}selected{% endif %}>Value (object/literal)</option>
+        </select>
+      </div>
 
       <div class="property-mapping-grid">
         <div class="field-group" id="wdc-pattern-group">
           <label>
             <span class="label-help">
-              Property mapping rules
+              Property mapping rules (WDC -> Endpoint)
               <span id="required-wdc-pattern" class="required-star active" aria-label="required">*</span>
               <span class="help-tip" tabindex="0" title="Each row is one OR rule: WDC property : target property. You can add target alternatives with | (example: P212|P957).">?</span>
             </span>
@@ -838,7 +902,7 @@
           <input type="hidden" id="wikidata-property-input" name="target_property" value="{{ form.target_property }}" />
           <input type="hidden" name="wikidata_property" value="{{ form.wikidata_property }}" />
           <input type="hidden" id="ignore-chars-input" name="ignore_chars" value="{{ form.ignore_chars }}" />
-          <div class="small">Each row maps one WDC property to one target property (target alternatives allowed with <code>|</code>, e.g. <code>P212|P957</code>). Add a new row to create an alternative mapping rule (OR).</div>
+          <div class="small">Each row maps one WDC property to one endpoint property (target alternatives allowed with <code>|</code>, e.g. <code>P212|P957</code>). Add a new row to create an alternative mapping rule (OR).</div>
           <div class="small">Applied to both sides before matching. Example: <code>1.2.3.4.5.6</code> and <code>123-456</code> become <code>123456</code> if <code>.</code> and <code>-</code> are removed.</div>
         </div>
       </div>
@@ -886,16 +950,7 @@
             Ignore align cache (force re-run align)
             <span class="help-tip" tabindex="0" title="Forces a fresh alignment run even if a matching align cache already exists. Useful after changing extraction behavior.">?</span>
           </label>
-          <label class="checkrow">
-            <input id="force-one-to-one-links-checkbox" type="checkbox" name="force_one_to_one_links" {% if form.force_one_to_one_links %}checked{% endif %}>
-            Keep only 1-to-1 links (drop ambiguous links)
-            <span class="help-tip" tabindex="0" title="Before building the benchmark, remove any alignment pair where the WDC entity or the target entity appears in multiple links. This guarantees a 1-to-1 ent_links file.">?</span>
-          </label>
-          <label class="checkrow">
-            <input id="dedup-wdc-exact-subgraph-checkbox" type="checkbox" name="dedup_wdc_exact_subgraph_by_link_value" {% if form.dedup_wdc_exact_subgraph_by_link_value %}checked{% endif %}>
-            Deduplicate identical WDC mentions by exact subgraph (before 1-to-1)
-            <span class="help-tip" tabindex="0" title="Within the same linking value (e.g. same phone/code/label), compare the full outgoing WDC subgraph of each subject. Bnode IDs are ignored but their contents are compared recursively. Exact duplicates are collapsed before optional 1-to-1 filtering.">?</span>
-          </label>
+          <div class="small">One-to-one duplicate-key filter is always enabled (if several WDC entities share a key, the richest one is kept).</div>
         </div>
       </div>
     </div>
@@ -927,6 +982,7 @@
       <div class="mapping-norm-modal-head mapping-norm-modal-row">
         <div>WDC property</div>
         <div>Target property</div>
+        <div>Search in</div>
         <div>Normalization</div>
       </div>
       <div id="mapping-norm-modal-body"></div>
@@ -946,9 +1002,10 @@
         <option value="links_desc">Sort: entity links (high to low)</option>
         <option value="links_asc">Sort: entity links (low to high)</option>
       </select>
+      <button class="btn secondary" id="history-visibility-toggle-btn" type="button">Show: all</button>
       <form method="post" action="/builds/download_selected" id="download-selected-builds-form">
         <input type="hidden" name="selected_builds" id="selected-builds-input" value="[]" />
-        <button class="btn secondary" id="history-download-selected-btn" type="button" disabled>Download selected (0)</button>
+        <button class="btn secondary" id="history-download-selected-btn" type="button" disabled style="display:none">Download selected (0)</button>
       </form>
       <form method="post" action="/builds/purge_low_links" class="js-async-form" id="purge-low-links-form">
         <input type="hidden" name="max_links" value="10" />
@@ -966,9 +1023,20 @@
               <input type="checkbox" class="build-select-checkbox" data-no-card-toggle />
             </label>
             <a class="btn-icon js-toggle-build" data-build-id="{{ loop.index0 }}" href="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}" title="Open details" aria-label="Open details">&#8599;</a>
-            <div><a class="build-title-link" href="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}"><b>{{ b.class_name }}</b></a> <span class="small">· Completed: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}</span></div>
+            <div>
+              <a class="build-title-link" href="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}{% if is_test_mode %}?test_mode=1{% endif %}"><b>{{ b.class_name }}</b></a>
+              <span class="small">
+                · {{ b.endpoint_label or 'Wikidata' }}
+                {% if b.linking_elements_text %} - {{ b.linking_elements_text }}{% endif %}
+                - {{ b.done_label or 'Last update' }}: {{ b.done_at or 'N/A' }} · Links: {{ v.links_count if v and v.links_count is not none else 0 }}
+              </span>
+              {% if b.linking_stats_text %}
+              <div class="small">{{ b.linking_stats_text }}</div>
+              {% endif %}
+            </div>
           </div>
           <div class="head-actions">
+            <button class="btn-icon star off js-toggle-build-star" type="button" data-no-card-toggle data-build-key="{{ b.class_name }}::{{ b.build_name }}" title="Mark build" aria-label="Mark build">&#9734;</button>
             <form method="post" action="/builds/{{ b.class_name|urlencode }}/{{ b.build_name|urlencode }}/delete" class="js-async-form" data-delete-target="build-card-{{ loop.index0 }}">
               <button class="btn-icon danger" type="submit" title="Delete build" aria-label="Delete build">&#128465;</button>
             </form>
@@ -1087,6 +1155,11 @@
     <div class="small" id="build-search-empty-msg" style="display:none">(no history entries match your search)</div>
 
     <h2>Jobs</h2>
+    <div class="history-tools" style="margin-top:8px;">
+      <form method="post" action="/jobs/delete_stopped" class="js-async-form">
+        <button class="btn danger" type="submit">Delete stopped jobs</button>
+      </form>
+    </div>
     <div id="jobs-list">
   {% if jobs %}
     {% for job in jobs %}
@@ -1258,6 +1331,8 @@ const JOB_COLLAPSE_KEY = 'beam.minimizedJobs';
 const BUILD_COLLAPSE_KEY = 'beam.minimizedBuilds';
 const PENDING_TOAST_KEY = 'beam.pendingToast';
 const LAST_TOAST_ID_KEY = 'beam.lastToastId';
+const BUILD_STAR_KEY = 'beam.starredBuilds';
+const HISTORY_VISIBILITY_KEY = 'beam.historyVisibilityMode';
 const TERMINAL_STATUSES = new Set(['done', 'error', 'cancelled', 'interrupted']);
 let dashboardPollTimer = null;
 let dashboardPollBusy = false;
@@ -1292,6 +1367,70 @@ function getMinimizedBuilds() {
   } catch (_) {
     return {};
   }
+}
+
+function getStarredBuilds() {
+  try {
+    const raw = localStorage.getItem(BUILD_STAR_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveStarredBuilds(map) {
+  try {
+    localStorage.setItem(BUILD_STAR_KEY, JSON.stringify(map));
+  } catch (_) {}
+}
+
+function getHistoryVisibilityMode() {
+  try {
+    const raw = String(localStorage.getItem(HISTORY_VISIBILITY_KEY) || '').trim().toLowerCase();
+    if (raw === 'starred' || raw === 'selected') return raw;
+  } catch (_) {}
+  return 'all';
+}
+
+function saveHistoryVisibilityMode(mode) {
+  try {
+    localStorage.setItem(HISTORY_VISIBILITY_KEY, String(mode || 'all'));
+  } catch (_) {}
+}
+
+function updateHistoryVisibilityButton() {
+  const btn = document.getElementById('history-visibility-toggle-btn');
+  if (!btn) return;
+  const mode = getHistoryVisibilityMode();
+  if (mode === 'starred') {
+    btn.textContent = 'Show: starred';
+  } else if (mode === 'selected') {
+    btn.textContent = 'Show: selected';
+  } else {
+    btn.textContent = 'Show: all';
+  }
+}
+
+function cycleHistoryVisibilityMode() {
+  const mode = getHistoryVisibilityMode();
+  const next = mode === 'all' ? 'starred' : (mode === 'starred' ? 'selected' : 'all');
+  saveHistoryVisibilityMode(next);
+  updateHistoryVisibilityButton();
+  applyHistorySearchFilter();
+}
+
+function bindHistoryVisibilityToggle() {
+  const btn = document.getElementById('history-visibility-toggle-btn');
+  if (!btn || btn.dataset.bound === '1') {
+    updateHistoryVisibilityButton();
+    return;
+  }
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', () => {
+    cycleHistoryVisibilityMode();
+  });
+  updateHistoryVisibilityButton();
 }
 
 function saveMinimizedBuilds(map) {
@@ -1454,9 +1593,13 @@ function normalizeFormText(value) {
 
 function normalizeMatchingMode(value) {
   const mode = normalizeFormText(value).toLowerCase();
-  if (mode === 'identifier') return 'property';
-  if (['property', 'sameas'].includes(mode)) return mode;
+  if (['property', 'sameas', 'sameas_or_property'].includes(mode)) return mode;
   return '';
+}
+
+function modeIncludesSameAs(mode) {
+  const normalized = normalizeMatchingMode(mode);
+  return normalized === 'sameas' || normalized === 'sameas_or_property';
 }
 
 function parseWdcPatternSpec(value) {
@@ -1511,6 +1654,22 @@ function getRowPairNorms(row) {
   }
 }
 
+function getRowPairSearchModes(row) {
+  if (!row) return [];
+  const raw = String(row.dataset.pairSearchIn || '').trim();
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data.map((v) => {
+      const mode = normalizeFormText(v).toLowerCase();
+      return mode === 'value' ? 'value' : 'predicate';
+    });
+  } catch (_) {
+    return [];
+  }
+}
+
 function setRowPairNorms(row, norms) {
   if (!row) return;
   const cleaned = (Array.isArray(norms) ? norms : [])
@@ -1518,16 +1677,29 @@ function setRowPairNorms(row, norms) {
   row.dataset.pairNorms = JSON.stringify(cleaned);
 }
 
+function setRowPairSearchModes(row, modes) {
+  if (!row) return;
+  const cleaned = (Array.isArray(modes) ? modes : []).map((v) => {
+    const mode = normalizeFormText(v).toLowerCase();
+    return mode === 'value' ? 'value' : 'predicate';
+  });
+  row.dataset.pairSearchIn = JSON.stringify(cleaned);
+}
+
 function updateRowNormSummary(row) {
   if (!row) return;
   const summary = row.querySelector('.pattern-row-norm-summary');
   if (!summary) return;
   const norms = getRowPairNorms(row).filter((v) => v);
-  if (!norms.length) {
+  const modes = getRowPairSearchModes(row).filter((v) => v === 'value');
+  if (!norms.length && !modes.length) {
     summary.textContent = 'No per-property override';
     return;
   }
-  summary.textContent = `${norms.length} per-property normalization override(s)`;
+  const parts = [];
+  if (norms.length) parts.push(`${norms.length} normalization override(s)`);
+  if (modes.length) parts.push(`${modes.length} value-scope override(s)`);
+  summary.textContent = parts.join(' | ');
 }
 
 function syncWdcPatternRemoveButtons() {
@@ -1555,7 +1727,7 @@ function readWdcPatternRows() {
 function syncWdcPatternHiddenFromRows() {
   const hidden = getWdcPatternHiddenInput();
   const rulesHidden = getPropertyMappingRulesInput();
-  const legacyTargetProperty = document.getElementById('wikidata-property-input');
+  const primaryTargetProperty = document.getElementById('wikidata-property-input');
   if (!hidden || !rulesHidden) return [];
   const leftInputs = getWdcPatternRowInputs();
   const rightInputs = getTargetPropertyRowInputs();
@@ -1566,33 +1738,60 @@ function syncWdcPatternHiddenFromRows() {
   for (let i = 0; i < leftInputs.length; i += 1) {
     const left = normalizeFormText(leftInputs[i]?.value);
     const right = normalizeFormText(rightInputs[i]?.value);
+    const rowModeRaw = normalizeFormText(rows[i]?.dataset?.linkingMode).toLowerCase();
+    const rowMode = rowModeRaw === 'sameas' ? 'sameas' : 'property';
     const leftItems = parsePropertyList(left);
     const rightItems = parsePropertyList(right);
     if (left) leftTokens.push(left);
     if (right) firstRightTokens.push(right);
-    if (leftItems.length && rightItems.length && leftItems.length === rightItems.length) {
+    const rowShapeOk = rowMode === 'sameas'
+      ? !!leftItems.length
+      : (leftItems.length && rightItems.length && leftItems.length === rightItems.length);
+    if (rowShapeOk) {
       const pairNorms = getRowPairNorms(rows[i]);
-      let normPayload = "";
-      if (pairNorms.length > 0) {
-        const padded = [];
-        for (let j = 0; j < leftItems.length; j += 1) {
-          padded.push(normalizeFormText(pairNorms[j] || ""));
-        }
-        normPayload = JSON.stringify(padded);
+      const pairSearchIn = getRowPairSearchModes(rows[i]);
+      const paddedNorms = [];
+      const paddedSearchIn = [];
+      for (let j = 0; j < leftItems.length; j += 1) {
+        paddedNorms.push(normalizeFormText(pairNorms[j] || ""));
+        const mode = normalizeFormText(pairSearchIn[j] || 'predicate').toLowerCase();
+        paddedSearchIn.push(mode === 'value' ? 'value' : 'predicate');
       }
-      const row = `${left} => ${right}`;
+      const hasNormOverrides = paddedNorms.some((v) => v);
+      const hasSearchOverrides = paddedSearchIn.some((v) => v === 'value');
+      let normPayload = "";
+      if (hasNormOverrides || hasSearchOverrides || rowMode === 'sameas') {
+        const meta = {
+          mode: rowMode,
+          ignore_chars: paddedNorms,
+          search_in: paddedSearchIn,
+        };
+        normPayload = JSON.stringify(meta);
+      }
+      const row = rowMode === 'sameas' ? `${left} =>` : `${left} => ${right}`;
       rules.push(normPayload ? `${row} || ${normPayload}` : row);
     }
   }
   hidden.value = formatWdcPatternSpec(leftTokens);
   rulesHidden.value = rules.join('\n');
-  if (legacyTargetProperty) {
-    legacyTargetProperty.value = firstRightTokens.length ? firstRightTokens[0] : '';
+  if (primaryTargetProperty) {
+    primaryTargetProperty.value = firstRightTokens.length ? firstRightTokens[0] : '';
   }
   return leftTokens;
 }
 
 function onWdcPatternRowsChanged() {
+  const modeSelect = document.getElementById('matching-mode-select');
+  if (modeSelect) {
+    const rows = Array.from(document.querySelectorAll('.pattern-row'));
+    const hasSameAs = rows.some((row) => normalizeFormText(row.dataset.linkingMode).toLowerCase() === 'sameas');
+    const hasProperty = rows.some((row) => normalizeFormText(row.dataset.linkingMode).toLowerCase() !== 'sameas');
+    const desiredMode = hasSameAs && hasProperty ? 'sameas_or_property' : (hasSameAs ? 'sameas' : 'property');
+    if (normalizeMatchingMode(modeSelect.value) !== desiredMode) {
+      modeSelect.value = desiredMode;
+    }
+  }
+  refreshPatternRowEndpointLabels();
   syncWdcPatternRemoveButtons();
   syncWdcPatternHiddenFromRows();
   syncWikidataPropertyState();
@@ -1604,6 +1803,24 @@ function onWdcPatternRowsChanged() {
   }
 }
 
+function getEndpointPatternLabel() {
+  const endpoint = getSelectedTargetEndpoint();
+  const labels = {
+    wikidata: 'Wikidata pattern',
+    dbpedia: 'DBpedia pattern',
+    yago: 'YAGO pattern',
+    custom: 'Endpoint pattern',
+  };
+  return labels[endpoint] || 'Endpoint pattern';
+}
+
+function refreshPatternRowEndpointLabels() {
+  const text = getEndpointPatternLabel();
+  document.querySelectorAll('.mapping-target-label').forEach((el) => {
+    el.textContent = text;
+  });
+}
+
 function _createWdcPatternRow(value = '') {
   const initial = value && typeof value === 'object'
     ? {
@@ -1611,20 +1828,55 @@ function _createWdcPatternRow(value = '') {
       right: normalizeFormText(value.right),
       norm: normalizeFormText(value.norm),
       pairNorms: Array.isArray(value.pairNorms) ? value.pairNorms : [],
+      pairSearchIn: Array.isArray(value.pairSearchIn) ? value.pairSearchIn : [],
+      mode: normalizeFormText(value.mode).toLowerCase() === 'sameas' ? 'sameas' : 'property',
     }
-    : { left: normalizeFormText(value), right: '', norm: '', pairNorms: [] };
+    : { left: normalizeFormText(value), right: '', norm: '', pairNorms: [], pairSearchIn: [], mode: 'property' };
   const row = document.createElement('div');
   row.className = 'pattern-row';
+  row.dataset.linkingMode = initial.mode;
   const main = document.createElement('div');
   main.className = 'pattern-row-main';
+
+  const modeSelect = document.createElement('select');
+  modeSelect.className = 'mapping-search-scope-select pattern-row-mode-select';
+  modeSelect.innerHTML = '<option value="property">property</option><option value="sameas">sameAs</option>';
+  modeSelect.value = initial.mode;
+  modeSelect.addEventListener('change', () => {
+    row.dataset.linkingMode = modeSelect.value === 'sameas' ? 'sameas' : 'property';
+    const sameasMode = row.dataset.linkingMode === 'sameas';
+    rightInput.disabled = sameasMode;
+    rightInput.placeholder = sameasMode ? 'Ignored in sameAs mode' : 'p123,p124,p135';
+    if (sameasMode) {
+      rightInput.value = '';
+    }
+    configBtn.disabled = sameasMode;
+    summary.textContent = sameasMode ? 'Not used in sameAs mode' : 'No per-property override';
+    if (!sameasMode) updateRowNormSummary(row);
+    onWdcPatternRowsChanged();
+  });
+  const modeWrap = document.createElement('div');
+  modeWrap.className = 'mapping-col';
+  const modeLabel = document.createElement('span');
+  modeLabel.className = 'mapping-col-label';
+  modeLabel.textContent = 'Linking mode';
+  modeWrap.appendChild(modeLabel);
+  modeWrap.appendChild(modeSelect);
 
   const leftInput = document.createElement('input');
   leftInput.type = 'text';
   leftInput.className = 'mapping-wdc-input';
-  leftInput.placeholder = 'name, surname, date of birth';
+  leftInput.placeholder = 'WDC properties (e.g. name,iata)';
   leftInput.value = initial.left;
   leftInput.addEventListener('input', onWdcPatternRowsChanged);
   leftInput.addEventListener('change', onWdcPatternRowsChanged);
+  const leftWrap = document.createElement('div');
+  leftWrap.className = 'mapping-col';
+  const leftLabel = document.createElement('span');
+  leftLabel.className = 'mapping-col-label';
+  leftLabel.textContent = 'WDC pattern';
+  leftWrap.appendChild(leftLabel);
+  leftWrap.appendChild(leftInput);
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
@@ -1647,10 +1899,17 @@ function _createWdcPatternRow(value = '') {
   const rightInput = document.createElement('input');
   rightInput.type = 'text';
   rightInput.className = 'mapping-target-input';
-  rightInput.placeholder = 'p123,p124,p135';
+  rightInput.placeholder = 'Endpoint properties (e.g. P238 or dbo:isbn)';
   rightInput.value = initial.right;
   rightInput.addEventListener('input', onWdcPatternRowsChanged);
   rightInput.addEventListener('change', onWdcPatternRowsChanged);
+  const rightWrap = document.createElement('div');
+  rightWrap.className = 'mapping-col';
+  const rightLabel = document.createElement('span');
+  rightLabel.className = 'mapping-col-label mapping-target-label';
+  rightLabel.textContent = getEndpointPatternLabel();
+  rightWrap.appendChild(rightLabel);
+  rightWrap.appendChild(rightInput);
 
   const normRow = document.createElement('div');
   normRow.className = 'pattern-row-norm';
@@ -1671,9 +1930,10 @@ function _createWdcPatternRow(value = '') {
   summary.className = 'pattern-row-norm-summary';
   summary.textContent = 'No per-property override';
 
-  main.appendChild(leftInput);
+  main.appendChild(leftWrap);
   main.appendChild(sep);
-  main.appendChild(rightInput);
+  main.appendChild(rightWrap);
+  main.appendChild(modeWrap);
   main.appendChild(removeBtn);
   normRow.appendChild(normLabel);
   normRow.appendChild(configBtn);
@@ -1684,7 +1944,16 @@ function _createWdcPatternRow(value = '') {
     ? initial.pairNorms
     : (initial.norm ? [initial.norm] : []);
   setRowPairNorms(row, initialPairNorms);
-  updateRowNormSummary(row);
+  setRowPairSearchModes(row, Array.isArray(initial.pairSearchIn) ? initial.pairSearchIn : []);
+  if (initial.mode === 'sameas') {
+    rightInput.disabled = true;
+    rightInput.placeholder = 'Ignored in sameAs mode';
+    configBtn.disabled = true;
+    summary.textContent = 'Not used in sameAs mode';
+  } else {
+    updateRowNormSummary(row);
+  }
+  refreshPatternRowEndpointLabels();
   return row;
 }
 
@@ -1728,6 +1997,8 @@ function syncWdcPatternRowsFromHidden() {
     const rawNorm = normalizeFormText(splitNorm.slice(1).join('||'));
     let norm = rawNorm;
     let pairNorms = [];
+    let pairSearchIn = [];
+    let mode = 'property';
     if (rawNorm.startsWith('[')) {
       try {
         const parsed = JSON.parse(rawNorm);
@@ -1736,11 +2007,25 @@ function syncWdcPatternRowsFromHidden() {
           norm = normalizeFormText(pairNorms.find((v) => v) || '');
         }
       } catch (_) {}
+    } else if (rawNorm.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(rawNorm);
+        if (parsed && typeof parsed === 'object') {
+          if (normalizeFormText(parsed.mode).toLowerCase() === 'sameas') {
+            mode = 'sameas';
+          }
+          const parsedNorms = Array.isArray(parsed.ignore_chars) ? parsed.ignore_chars : [];
+          pairNorms = parsedNorms.map((v) => normalizeFormText(v));
+          const parsedModes = Array.isArray(parsed.search_in) ? parsed.search_in : [];
+          pairSearchIn = parsedModes.map((v) => (normalizeFormText(v).toLowerCase() === 'value' ? 'value' : 'predicate'));
+          norm = normalizeFormText(pairNorms.find((v) => v) || '');
+        }
+      } catch (_) {}
     }
     const parts = mappingText.split('=>');
     const left = normalizeFormText(parts[0]);
     const right = normalizeFormText(parts.slice(1).join('=>'));
-    if (left && right) rows.push({ left, right, norm, pairNorms });
+    if (left && (right || mode === 'sameas')) rows.push({ left, right, norm, pairNorms, pairSearchIn, mode });
   });
   if (!rows.length && tokens.length) {
     tokens.forEach((token) => rows.push({ left: token, right: fallbackTarget, norm: fallbackNorm }));
@@ -1805,6 +2090,11 @@ function openRowNormModal(row) {
   const modal = document.getElementById('mapping-norm-modal');
   const body = document.getElementById('mapping-norm-modal-body');
   if (!modal || !body || !row) return;
+  const rowMode = normalizeFormText(row.dataset.linkingMode).toLowerCase();
+  if (rowMode === 'sameas') {
+    showFormError('Per-property normalization is not used in sameAs mode.');
+    return;
+  }
   const left = normalizeFormText(row.querySelector('.mapping-wdc-input')?.value);
   const right = normalizeFormText(row.querySelector('.mapping-target-input')?.value);
   const leftItems = parsePropertyList(left);
@@ -1815,6 +2105,10 @@ function openRowNormModal(row) {
   }
   const baseNorm = normalizeFormText(document.getElementById('ignore-chars-input')?.value);
   const existing = getRowPairNorms(row);
+  const existingSearchModes = getRowPairSearchModes(row);
+  const globalSearchIn = normalizeFormText(document.getElementById('wdc-pattern-search-in-select')?.value).toLowerCase() === 'value'
+    ? 'value'
+    : 'predicate';
   body.innerHTML = '';
   const tokenDefs = [
     { token: 'spaces', label: 'spaces' },
@@ -1838,6 +2132,13 @@ function openRowNormModal(row) {
     wdcCell.textContent = leftItems[i];
     const targetCell = document.createElement('div');
     targetCell.textContent = rightItems[i];
+    const searchCell = document.createElement('div');
+    const searchSelect = document.createElement('select');
+    searchSelect.className = 'mapping-search-scope-select';
+    searchSelect.innerHTML = '<option value="predicate">property</option><option value="value">value</option>';
+    const selectedSearchIn = normalizeFormText(existingSearchModes[i] || globalSearchIn).toLowerCase();
+    searchSelect.value = selectedSearchIn === 'value' ? 'value' : 'predicate';
+    searchCell.appendChild(searchSelect);
     const normCell = document.createElement('div');
     normCell.className = 'mapping-norm-modal-cell';
     const normOptions = document.createElement('div');
@@ -1902,6 +2203,7 @@ function openRowNormModal(row) {
     normCell.appendChild(normWrap);
     rowEl.appendChild(wdcCell);
     rowEl.appendChild(targetCell);
+    rowEl.appendChild(searchCell);
     rowEl.appendChild(normCell);
     body.appendChild(rowEl);
   }
@@ -1941,6 +2243,7 @@ function applyMatchingMode(mode, fromUser = false) {
     const defaultPatternByMode = {
       property: 'name',
       sameas: 'sameAs',
+      sameas_or_property: 'sameAs',
     };
     const shouldResetPattern = (
       !current
@@ -1960,6 +2263,7 @@ function applyMatchingMode(mode, fromUser = false) {
     } else {
       const defaultPropertyByMode = {
         property: 'rdfs:label',
+        sameas_or_property: 'rdfs:label',
       };
       const shouldResetProp = (!currentProp || previousMode !== normalizedMode);
       if (shouldResetProp) {
@@ -1996,13 +2300,16 @@ function updateReadyChecklist() {
 
   const className = normalizeFormText(document.getElementById('class-name-select')?.value);
   const pattern = normalizeFormText(document.getElementById('wdc-pattern-input')?.value);
+  const patternSearchIn = normalizeFormText(document.getElementById('wdc-pattern-search-in-select')?.value) || 'predicate';
   const propertyMappingRules = normalizeFormText(document.getElementById('property-mapping-rules-input')?.value);
   const targetProperty = normalizeFormText(document.getElementById('wikidata-property-input')?.value);
   const targetClass = normalizeFormText(document.getElementById('wkd-class-input')?.value);
   const targetEndpoint = normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata';
   const targetEndpointUrl = normalizeFormText(document.getElementById('target-endpoint-url-input')?.value);
   const useLocalOnly = !!document.getElementById('use-local-only-checkbox')?.checked;
-  const urlMode = isEffectiveWikidataUrlMode();
+  const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value) || 'property';
+  const urlMode = selectedMode === 'sameas';
+  const includesSameAs = modeIncludesSameAs(selectedMode);
 
   const items = [];
   items.push({
@@ -2015,7 +2322,7 @@ function updateReadyChecklist() {
     ok: !!pattern || !!propertyMappingRules,
     detail: propertyMappingRules
       ? 'Using property mapping rules.'
-      : (pattern ? pattern : 'Set a property pattern (example: name, sameAs, telephone).'),
+      : (pattern ? `${pattern} (in ${patternSearchIn})` : 'Set a property pattern (example: name, sameAs, telephone).'),
   });
   items.push({
     label: 'Target endpoint set',
@@ -2024,19 +2331,20 @@ function updateReadyChecklist() {
       ? (targetEndpointUrl || 'Custom endpoint URL is required.')
       : targetEndpoint,
   });
-  if (urlMode) {
+  if (includesSameAs) {
     items.push({
       label: 'Target class filter set',
       ok: !!targetClass,
-      detail: targetClass ? targetClass : 'Required in URL/sameAs mode.',
+      detail: targetClass ? targetClass : 'Required in sameAs mode.',
     });
-  } else {
+  }
+  if (!urlMode) {
     items.push({
       label: 'Equivalent target property set',
       ok: !!targetProperty || !!propertyMappingRules,
       detail: propertyMappingRules
         ? 'Derived from property mapping rules.'
-        : (targetProperty ? targetProperty : 'Required unless URL/sameAs mode.'),
+        : (targetProperty ? targetProperty : 'Required unless pure sameAs mode.'),
     });
   }
 
@@ -2298,17 +2606,21 @@ function setRequiredState(inputId, starId, isRequired) {
 }
 
 function updateRequiredIndicators() {
-  const isWikidata = isEffectiveWikidataUrlMode();
+  const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value) || 'property';
+  const isWikidata = selectedMode === 'sameas';
+  const includesSameAs = modeIncludesSameAs(selectedMode);
   const hasRules = !!normalizeFormText(document.getElementById('property-mapping-rules-input')?.value);
   setRequiredState('class-name-select', 'required-class-name', true);
   setRequiredState('wdc-pattern-input', 'required-wdc-pattern', true);
   setRequiredState('wikidata-property-input', 'required-wikidata-property', !isWikidata && !hasRules);
-  setRequiredState('wkd-class-input', 'required-wkd-class', isWikidata);
+  setRequiredState('wkd-class-input', 'required-wkd-class', includesSameAs);
   setRequiredState('target-endpoint-url-input', 'required-target-endpoint-url', isCustomTargetEndpointSelected());
 }
 
 function syncWikidataPropertyState() {
   const isWikidata = isEffectiveWikidataUrlMode();
+  const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value) || 'property';
+  const includesSameAs = modeIncludesSameAs(selectedMode);
   const isCustomEndpoint = isCustomTargetEndpointSelected();
   const propInput = document.getElementById('wikidata-property-input');
   if (!propInput) return;
@@ -2385,6 +2697,7 @@ function syncWikidataPropertyState() {
     }
   }
 
+  refreshPatternRowEndpointLabels();
   updateRequiredIndicators();
   updateReadyChecklist();
 }
@@ -2407,6 +2720,8 @@ function validateGenerateForm(opts = {}) {
   const targetEndpoint = getSelectedTargetEndpoint();
   const targetEndpointUrl = normalizeFormText(document.getElementById('target-endpoint-url-input')?.value);
   const isWikidata = isEffectiveWikidataUrlMode();
+  const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value) || 'property';
+  const includesSameAs = modeIncludesSameAs(selectedMode);
 
   if (!className) return 'Class name is required.';
   if (!pattern && !propertyMappingRules) return 'Considered pattern for WDC properties is required.';
@@ -2422,8 +2737,34 @@ function validateGenerateForm(opts = {}) {
       if (parts.length < 2) return `Invalid property mapping rule at line ${i + 1}.`;
       const left = parts[0].split(',').map((v) => normalizeFormText(v)).filter((v) => v);
       const right = parts.slice(1).join('=>').split(',').map((v) => normalizeFormText(v)).filter((v) => v);
-      if (!left.length || !right.length) return `Invalid property mapping rule at line ${i + 1}: both sides are required.`;
-      if (left.length !== right.length) return `Invalid property mapping rule at line ${i + 1}: left/right counts differ.`;
+      const metaRaw = normalizeFormText(splitNorm.slice(1).join('||'));
+      let rowMode = 'property';
+      if (metaRaw.startsWith('[')) {
+        try {
+          const decoded = JSON.parse(metaRaw);
+          if (Array.isArray(decoded) && decoded.length !== left.length) {
+            return `Invalid property mapping rule at line ${i + 1}: per-pair normalization count differs from pair count.`;
+          }
+        } catch (_) {}
+      } else if (metaRaw.startsWith('{')) {
+        try {
+          const decoded = JSON.parse(metaRaw);
+          if (decoded && typeof decoded === 'object') {
+            rowMode = normalizeFormText(decoded.mode).toLowerCase() === 'sameas' ? 'sameas' : 'property';
+            if (Array.isArray(decoded.ignore_chars) && decoded.ignore_chars.length !== left.length) {
+              return `Invalid property mapping rule at line ${i + 1}: per-pair normalization count differs from pair count.`;
+            }
+            if (Array.isArray(decoded.search_in) && decoded.search_in.length !== left.length) {
+              return `Invalid property mapping rule at line ${i + 1}: per-pair search mode count differs from pair count.`;
+            }
+          }
+        } catch (_) {}
+      }
+      if (!left.length) return `Invalid property mapping rule at line ${i + 1}: left side is required.`;
+      if (rowMode !== 'sameas') {
+        if (!right.length) return `Invalid property mapping rule at line ${i + 1}: right side is required in property mode.`;
+        if (left.length !== right.length) return `Invalid property mapping rule at line ${i + 1}: left/right counts differ.`;
+      }
     }
   }
   if (!requireWikidataInputs) return '';
@@ -2431,6 +2772,7 @@ function validateGenerateForm(opts = {}) {
     if (!targetClass) return 'Target class filter is required when using sameAs mode.';
     return '';
   }
+  if (includesSameAs && !targetClass) return 'Target class filter is required when sameAs mode is enabled.';
   if (!targetProperty && !propertyMappingRules) return 'Equivalent target property is required when WDC values are not endpoint URLs.';
   return '';
 }
@@ -2502,13 +2844,14 @@ async function runPreflightCheck() {
   const preflightBtn = document.getElementById('preflight-btn');
   if (preflightBtn) preflightBtn.disabled = true;
   try {
-    const selectedMode = normalizeFormText(document.getElementById('matching-mode-select')?.value) || 'property';
-    const effectiveWikidataMode = selectedMode.toLowerCase() === 'sameas';
+    const selectedMode = normalizeMatchingMode(document.getElementById('matching-mode-select')?.value) || 'property';
+    const effectiveWikidataMode = selectedMode === 'sameas';
     const query = new URLSearchParams({
       matching_mode: selectedMode,
       class_name: normalizeFormText(document.getElementById('class-name-select')?.value),
       parts_spec: normalizeFormText(document.getElementById('parts-spec-input')?.value) || 'all',
       wdc_predicate_pattern: normalizeFormText(document.getElementById('wdc-pattern-input')?.value),
+      wdc_pattern_search_in: normalizeFormText(document.getElementById('wdc-pattern-search-in-select')?.value) || 'predicate',
       property_mapping_rules: normalizeFormText(document.getElementById('property-mapping-rules-input')?.value),
       target_endpoint: normalizeFormText(document.getElementById('target-endpoint-select')?.value) || 'wikidata',
       target_endpoint_url: normalizeFormText(document.getElementById('target-endpoint-url-input')?.value),
@@ -2875,6 +3218,42 @@ function bindBuildMinimize() {
   });
 }
 
+function setBuildStarState(btn, enabled) {
+  if (!btn) return;
+  btn.classList.toggle('off', !enabled);
+  btn.innerHTML = enabled ? '&#9733;' : '&#9734;';
+  btn.title = enabled ? 'Unmark build' : 'Mark build';
+  btn.setAttribute('aria-label', enabled ? 'Unmark build' : 'Mark build');
+}
+
+function bindBuildStars() {
+  const stars = getStarredBuilds();
+  document.querySelectorAll('.js-toggle-build-star[data-build-key]').forEach((btn) => {
+    const key = normalizeFormText(btn.dataset.buildKey);
+    if (!key) return;
+    setBuildStarState(btn, !!stars[key]);
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const buildKey = normalizeFormText(btn.dataset.buildKey);
+      if (!buildKey) return;
+      const map = getStarredBuilds();
+      if (map[buildKey]) {
+        delete map[buildKey];
+      } else {
+        map[buildKey] = 1;
+      }
+      saveStarredBuilds(map);
+      setBuildStarState(btn, !!map[buildKey]);
+      if (getHistoryVisibilityMode() !== 'all') {
+        applyHistorySearchFilter();
+      }
+    });
+  });
+}
+
 function refreshBuildEmptyState() {
   const list = document.getElementById('build-list');
   const empty = document.getElementById('build-empty-msg');
@@ -2915,12 +3294,63 @@ function parseBuildCardDoneAt(card) {
   return Number.NEGATIVE_INFINITY;
 }
 
+function regroupHistoryByClass() {
+  const list = document.getElementById('build-list');
+  if (!list) return;
+  const cards = Array.from(list.querySelectorAll('.build[data-build-key]'));
+  const oldGroups = Array.from(list.querySelectorAll('.build-group'));
+  oldGroups.forEach((g) => g.remove());
+  if (!cards.length) return;
+  const classOrder = [];
+  const buckets = new Map();
+  cards.forEach((card) => {
+    const className = normalizeFormText(card.dataset.className) || 'Unknown';
+    if (!buckets.has(className)) {
+      buckets.set(className, []);
+      classOrder.push(className);
+    }
+    buckets.get(className).push(card);
+  });
+  classOrder.forEach((className) => {
+    const section = document.createElement('section');
+    section.className = 'build-group';
+    section.dataset.className = className;
+    const title = document.createElement('div');
+    title.className = 'build-group-title';
+    const total = (buckets.get(className) || []).length;
+    title.innerHTML = `<b>${escapeHtml(className)}</b><span class="build-group-count">(${total})</span>`;
+    const body = document.createElement('div');
+    body.className = 'build-group-body';
+    (buckets.get(className) || []).forEach((card) => body.appendChild(card));
+    section.appendChild(title);
+    section.appendChild(body);
+    list.appendChild(section);
+  });
+}
+
+function refreshHistoryClassGroups() {
+  const list = document.getElementById('build-list');
+  if (!list) return;
+  const hasQuery = String(document.getElementById('history-search-input')?.value || '').trim().length > 0;
+  list.querySelectorAll('.build-group').forEach((group) => {
+    const cards = Array.from(group.querySelectorAll('.build[data-build-key]'));
+    const visible = cards.filter((card) => card.style.display !== 'none').length;
+    const total = cards.length;
+    const count = group.querySelector('.build-group-count');
+    if (count) {
+      count.textContent = hasQuery ? `(${visible}/${total})` : `(${total})`;
+    }
+    group.style.display = visible > 0 ? '' : 'none';
+  });
+}
+
 function applyHistorySortOrder() {
   const list = document.getElementById('build-list');
   if (!list) return;
   const sortSelect = document.getElementById('history-sort-select');
   const mode = String(sortSelect?.value || 'recent');
   const cards = Array.from(list.querySelectorAll('.build[data-build-key]'));
+  list.querySelectorAll('.build-group').forEach((group) => group.remove());
   const sorted = cards.sort((a, b) => {
     const aId = parseBuildCardId(a);
     const bId = parseBuildCardId(b);
@@ -2938,6 +3368,7 @@ function applyHistorySortOrder() {
     return bId - aId;
   });
   sorted.forEach((card) => list.appendChild(card));
+  regroupHistoryByClass();
 }
 
 function applyHistorySearchFilter() {
@@ -2948,16 +3379,25 @@ function applyHistorySearchFilter() {
   const input = document.getElementById('history-search-input');
   const queryRaw = String(input?.value || '').trim().toLowerCase();
   const terms = queryRaw.split(/\s+/).filter(Boolean);
+  const mode = getHistoryVisibilityMode();
+  const stars = getStarredBuilds();
   let visibleCount = 0;
   cards.forEach((card) => {
+    const buildKey = normalizeFormText(card.dataset.buildKey);
+    const cb = card.querySelector('.build-select-checkbox');
+    const matchesMode = mode === 'all'
+      ? true
+      : (mode === 'starred' ? !!stars[buildKey] : !!(cb && cb.checked));
     const haystack = String(card.textContent || '').toLowerCase();
-    const match = terms.every((term) => haystack.includes(term));
+    const match = matchesMode && terms.every((term) => haystack.includes(term));
     card.style.display = match ? '' : 'none';
     if (match) visibleCount += 1;
   });
+  refreshHistoryClassGroups();
   const searchEmpty = document.getElementById('build-search-empty-msg');
   if (searchEmpty) {
-    searchEmpty.style.display = (terms.length > 0 && cards.length > 0 && visibleCount === 0) ? '' : 'none';
+    const hasFilter = terms.length > 0 || mode !== 'all';
+    searchEmpty.style.display = (hasFilter && cards.length > 0 && visibleCount === 0) ? '' : 'none';
   }
   refreshBuildEmptyState();
   updateSelectedBuildsUi();
@@ -2997,6 +3437,7 @@ function updateSelectedBuildsUi() {
   const hidden = document.getElementById('selected-builds-input');
   if (hidden) hidden.value = JSON.stringify(refs);
   if (!btn) return;
+  btn.style.display = refs.length > 0 ? '' : 'none';
   btn.disabled = refs.length === 0;
   btn.textContent = `Download selected (${refs.length})`;
 }
@@ -3018,6 +3459,9 @@ function bindHistoryBulkDownload() {
     if (!(t instanceof Element)) return;
     if (!t.matches('.build-select-checkbox')) return;
     updateSelectedBuildsUi();
+    if (getHistoryVisibilityMode() === 'selected') {
+      applyHistorySearchFilter();
+    }
   });
   updateSelectedBuildsUi();
 }
@@ -3054,6 +3498,10 @@ function removeDoneJobsFromList(activeJobIds) {
 function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
   const className = String(build.class_name || '');
   const buildName = String(build.build_name || '');
+  const endpointLabel = String(build.endpoint_label || 'Wikidata');
+  const linkingElementsText = String(build.linking_elements_text || '').trim();
+  const linkingStatsText = String(build.linking_stats_text || '').trim();
+  const doneLabel = String(build.done_label || 'Last update');
   const doneAt = escapeHtml(build.done_at || 'N/A');
   const path = escapeHtml(build.path || '');
   const actionClass = encodeURIComponent(className);
@@ -3168,9 +3616,14 @@ function buildCardHtml(build, cardId, buildId, bodyId, buildKey) {
             <input type="checkbox" class="build-select-checkbox" data-no-card-toggle />
           </label>
           <a class="btn-icon js-toggle-build" data-build-id="${buildId}" href="${detailAction}" title="Open details" aria-label="Open details">&#8599;</a>
-          <div><a class="build-title-link" href="${detailAction}"><b>${escapeHtml(className)}</b></a> <span class="small">· Completed: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span></div>
+          <div>
+            <a class="build-title-link" href="${detailAction}"><b>${escapeHtml(className)}</b></a>
+            <span class="small">· ${escapeHtml(endpointLabel)}${linkingElementsText ? ` - ${escapeHtml(linkingElementsText)}` : ''} - ${escapeHtml(doneLabel)}: ${doneAt} · Links: ${escapeHtml(String(linksCount))}</span>
+            ${linkingStatsText ? `<div class="small">${escapeHtml(linkingStatsText)}</div>` : ''}
+          </div>
         </div>
         <div class="head-actions">
+          <button class="btn-icon star off js-toggle-build-star" type="button" data-no-card-toggle data-build-key="${escapeHtml(buildKey)}" title="Mark build" aria-label="Mark build">&#9734;</button>
           <form method="post" action="${deleteAction}" class="js-async-form" data-delete-target="${cardId}">
             <button class="btn-icon danger" type="submit" title="Delete build" aria-label="Delete build">&#128465;</button>
           </form>
@@ -3213,6 +3666,7 @@ function reconcileBuildList(builds) {
   if (inserted > 0) {
     setupAsyncForms();
     bindBuildMinimize();
+    bindBuildStars();
     applyHistorySearchFilter();
     updateSelectedBuildsUi();
   }
@@ -3627,6 +4081,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const classNameSelect = document.getElementById('class-name-select');
   const partsSpecInput = document.getElementById('parts-spec-input');
   const patternInput = document.getElementById('wdc-pattern-input');
+  const patternSearchInSelect = document.getElementById('wdc-pattern-search-in-select');
   const patternAddBtn = document.getElementById('wdc-pattern-add-btn');
   const propertyMappingRulesInput = document.getElementById('property-mapping-rules-input');
   const targetEndpointSelect = document.getElementById('target-endpoint-select');
@@ -3666,6 +4121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     classNameSelect,
     partsSpecInput,
     patternInput,
+    patternSearchInSelect,
     propertyMappingRulesInput,
     targetEndpointSelect,
     targetEndpointUrlInput,
@@ -3745,7 +4201,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const norms = Array.from(mappingNormBody.querySelectorAll('.mapping-norm-modal-row'))
         .map((rowEl) => readModalNormSpec(rowEl));
+      const searchModes = Array.from(mappingNormBody.querySelectorAll('.mapping-norm-modal-row'))
+        .map((rowEl) => {
+          const sel = rowEl.querySelector('.mapping-search-scope-select');
+          const mode = normalizeFormText(sel?.value).toLowerCase();
+          return mode === 'value' ? 'value' : 'predicate';
+        });
       setRowPairNorms(activeNormRow, norms);
+      setRowPairSearchModes(activeNormRow, searchModes);
       updateRowNormSummary(activeNormRow);
       onWdcPatternRowsChanged();
       closeMappingNormModal();
@@ -3798,8 +4261,10 @@ document.addEventListener('DOMContentLoaded', () => {
   showPendingToastFromStorage();
   pruneCardsForCurrentMode();
   bindHistorySearch();
+  bindHistoryVisibilityToggle();
   bindHistoryBulkDownload();
   bindBuildMinimize();
+  bindBuildStars();
   bindJobMinimize();
   applyHistorySearchFilter();
   refreshJobsEmptyState();

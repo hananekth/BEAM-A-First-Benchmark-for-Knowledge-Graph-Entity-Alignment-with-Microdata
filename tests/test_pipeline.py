@@ -152,6 +152,7 @@ def test_generate_benchmark_with_local_test_parts(monkeypatch):
 
     config = json.loads((out_dir / "BUILD_CONFIG.json").read_text(encoding="utf-8"))
     assert config["class_name"] == "TestClass"
+    assert config["wdc_pattern_search_in"] == "predicate"
     assert config["parts_count"] == 2
     assert [p["name"] for p in config["parts_manifest"]] == ["part_0001.nq", "part_0002.nq"]
 
@@ -166,86 +167,485 @@ def test_generate_benchmark_with_local_test_parts(monkeypatch):
     assert with_link["wd_raw_cache_path"] == without["wd_raw_cache_path"]
 
 
-def test_filter_links_one_to_one_drops_ambiguous_endpoints():
-    wdc_entities = [
-        "wdc:1",
-        "wdc:2",
-        "wdc:3",
-        "wdc:4",
-    ]
-    wd_entities = [
-        "http://www.wikidata.org/entity/Q10",
-        "http://www.wikidata.org/entity/Q10",  # duplicate WD endpoint
-        "http://www.wikidata.org/entity/Q11",
-        "http://www.wikidata.org/entity/Q12",
-    ]
-    wdc_values = ["A", "B", "C", "D"]
-    wd_values = ["A", "B", "C", "D"]
+def test_generate_benchmark_strict_duplicate_key_filter_writes_reports(monkeypatch):
+    _write_test_parts("TestClass")
+    _install_test_stubs(monkeypatch)
 
-    out_wdc, out_wd, out_wdc_vals, out_wd_vals, report = pipeline._filter_links_one_to_one(
-        wdc_entities, wd_entities, wdc_values, wd_values
+    result = pipeline.generate_benchmark(
+        {
+            "class_name": "TestClass",
+            "parts_spec": "all",
+            "wdc_predicate_pattern": "name",
+            "wikidata_property": "P31",
+            "wkd_class": "Q515",
+            "ignore_chars": "spaces;-;.",
+            "wdc_value_is_wikidata": False,
+            "use_local_only": True,
+            "force_align": True,
+            "strict_duplicate_key_filter": True,
+        },
+        workers=1,
     )
 
-    assert out_wdc == ["wdc:3", "wdc:4"]
-    assert out_wd == [
-        "http://www.wikidata.org/entity/Q11",
-        "http://www.wikidata.org/entity/Q12",
-    ]
-    assert out_wdc_vals == ["C", "D"]
-    assert out_wd_vals == ["C", "D"]
-    assert report["links_before"] == 4
-    assert report["links_after"] == 2
-    assert report["filtered_out_links"] == 2
-    assert report["ambiguous_wikidata_entities"] == 1
-    assert report["ambiguous_wdc_entities"] == 0
+    out_dir = Path(result["out_dir"])
+    report_path = out_dir / "WDC_DUPLICATE_KEY_FILTER_REPORT.json"
+    decisions_path = out_dir / "WDC_DUPLICATE_KEY_FILTER_DECISIONS.tsv"
+    build_cfg = json.loads((out_dir / "BUILD_CONFIG.json").read_text(encoding="utf-8"))
+    build_stats = json.loads((out_dir / "BUILD_STATS.json").read_text(encoding="utf-8"))
+
+    assert report_path.exists()
+    assert decisions_path.exists()
+    assert build_cfg["strict_duplicate_key_filter"] is True
+    assert build_stats["strict_duplicate_key_filter"] is True
+    assert build_stats["links_after_strict_duplicate_key_filter"] >= 0
+    assert isinstance(build_stats.get("links_by_source_after_filter"), list)
 
 
-def test_dedup_links_exact_wdc_subgraph_by_link_value_collapses_identical_bnode_mentions(tmp_path):
+def test_generate_benchmark_prefilters_wikidata_iata_with_wdc_values(monkeypatch):
+    class_name = "TestClassIataPrefilter"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    monkeypatch.setattr(
+        pipeline.align,
+        "extract_unique_iris_from_files",
+        lambda *args, **kwargs: (
+            {
+                "abc": [("ABC", "http://example.org/wdc/entity1")],
+                "def": [("DEF", "http://example.org/wdc/entity2")],
+            },
+            2,
+        ),
+    )
+
+    fetch_calls = []
+
+    def fetch_wikidata_values(wikidata_property, wkd_class, wkd_prop_class, **kwargs):
+        fetch_calls.append(
+            {
+                "property": wikidata_property,
+                "class": wkd_class,
+                "prop_class": wkd_prop_class,
+                "value_candidates": list(kwargs.get("value_candidates") or []),
+            }
+        )
+        return {"abc": [("ABC", "http://www.wikidata.org/entity/Q1")]}
+
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", fetch_wikidata_values)
+    monkeypatch.setattr(
+        pipeline.align,
+        "fuzzy_link",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "wdc_iri": "http://example.org/wdc/entity1",
+                    "wikidata_uri": "http://www.wikidata.org/entity/Q1",
+                    "wdc_value": "ABC",
+                    "wiki_value": "ABC",
+                    "method": "exact",
+                }
+            ],
+            {"abc"},
+        ),
+    )
+
+    def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "wdc_wikidata_links.tsv").write_text(
+            "wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1\tABC\tABC\texact\t3\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity1"],
+            ["http://www.wikidata.org/entity/Q1"],
+            ["ABC"],
+            ["ABC"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t2\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t2\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "property",
+            "wdc_predicate_pattern": "iata",
+            "wikidata_property": "P297",
+            "wkd_class": "Q1248784",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    assert len(fetch_calls) == 1
+    assert fetch_calls[0]["property"] == "P297"
+    assert fetch_calls[0]["class"] == "Q1248784"
+    assert fetch_calls[0]["value_candidates"] == ["ABC", "DEF"]
+
+
+def test_generate_benchmark_forwards_wdc_pattern_search_in(monkeypatch):
+    class_name = "TestClassSearchIn"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    seen = {"search_in": None}
+
+    def extract_unique_iris_from_files(files, pattern, **kwargs):
+        seen["search_in"] = kwargs.get("search_in")
+        return (
+            {"alpha node": [("Alpha Node", "http://example.org/wdc/entity1")]},
+            1,
+        )
+
+    monkeypatch.setattr(pipeline.align, "extract_unique_iris_from_files", extract_unique_iris_from_files)
+    monkeypatch.setattr(
+        pipeline.align,
+        "fetch_wikidata_values",
+        lambda *args, **kwargs: {"alpha node": [("Alpha Node", "http://www.wikidata.org/entity/Q1")]},
+    )
+    monkeypatch.setattr(
+        pipeline.align,
+        "fuzzy_link",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "wdc_iri": "http://example.org/wdc/entity1",
+                    "wikidata_uri": "http://www.wikidata.org/entity/Q1",
+                    "wdc_value": "Alpha Node",
+                    "wiki_value": "Alpha Node",
+                    "method": "exact",
+                }
+            ],
+            {"alpha node"},
+        ),
+    )
+
+    def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "wdc_wikidata_links.tsv").write_text(
+            "wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1\tAlpha Node\tAlpha Node\texact\t3\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity1"],
+            ["http://www.wikidata.org/entity/Q1"],
+            ["Alpha Node"],
+            ["Alpha Node"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t2\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t2\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "property",
+            "wdc_predicate_pattern": "ror.org",
+            "wdc_pattern_search_in": "value",
+            "wikidata_property": "rdfs:label",
+            "wkd_class": "Q515",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    assert seen["search_in"] == "value"
+
+
+def test_generate_benchmark_reuses_wdc_extract_cache_across_endpoints(monkeypatch):
+    class_name = "TestClassWdcCrossEndpointCache"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    extract_calls = {"count": 0}
+
+    def extract_unique_iris_from_files(files, pattern, **kwargs):
+        extract_calls["count"] += 1
+        assert pattern == "iata"
+        return ({"abc": [("ABC", "http://example.org/wdc/entity1")]}, 1)
+
+    monkeypatch.setattr(pipeline.align, "extract_unique_iris_from_files", extract_unique_iris_from_files)
+
+    def fetch_target_values(*_args, **_kwargs):
+        return {"abc": [("ABC", "http://target.example/entity/T1")]}
+
+    monkeypatch.setattr(pipeline.align, "fetch_target_values", fetch_target_values)
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        pipeline.align,
+        "fuzzy_link",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "wdc_iri": "http://example.org/wdc/entity1",
+                    "wikidata_uri": "http://target.example/entity/T1",
+                    "wdc_value": "ABC",
+                    "wiki_value": "ABC",
+                    "method": "exact",
+                }
+            ],
+            {"abc"},
+        ),
+    )
+
+    def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "wdc_wikidata_links.tsv").write_text(
+            "wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n"
+            "http://example.org/wdc/entity1\thttp://target.example/entity/T1\tABC\tABC\texact\t3\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity1"],
+            ["http://target.example/entity/T1"],
+            ["ABC"],
+            ["ABC"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity1\thttp://target.example/entity/T1\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t1\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t1\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    params_base = {
+        "class_name": class_name,
+        "parts_spec": "all",
+        "matching_mode": "property",
+        "wdc_predicate_pattern": "iata",
+        "wdc_pattern_search_in": "predicate",
+        "target_property": "P238",
+        "ignore_chars": "spaces;-;.",
+        "use_local_only": True,
+    }
+
+    pipeline.generate_benchmark(
+        {
+            **params_base,
+            "target_endpoint": "dbpedia",
+            "force_align": True,
+        },
+        workers=1,
+    )
+    pipeline.generate_benchmark(
+        {
+            **params_base,
+            "target_endpoint": "yago",
+            "force_align": False,
+        },
+        workers=1,
+    )
+
+    # Second run must reuse WDC extraction cache even with a different target endpoint.
+    assert extract_calls["count"] == 1
+
+
+def test_generate_benchmark_property_rules_forward_per_pair_search_modes(monkeypatch):
+    class_name = "TestClassRuleSearchModes"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    extract_calls = []
+
+    def extract_unique_iris_from_files(files, pattern, **kwargs):
+        extract_calls.append((pattern, kwargs.get("search_in")))
+        if pattern == "name":
+            return ({"alpha": [("Alpha", "http://example.org/wdc/entity1")]}, 1)
+        if pattern == "iata":
+            return ({"abc": [("ABC", "http://example.org/wdc/entity1")]}, 1)
+        return ({}, 0)
+
+    monkeypatch.setattr(pipeline.align, "extract_unique_iris_from_files", extract_unique_iris_from_files)
+    monkeypatch.setattr(
+        pipeline.align,
+        "fetch_wikidata_values",
+        lambda prop, *_args, **_kwargs: (
+            {"alpha": [("Alpha", "http://www.wikidata.org/entity/Q1")]}
+            if prop == "rdfs:label"
+            else {"abc": [("ABC", "http://www.wikidata.org/entity/Q1")]}
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline.align,
+        "fuzzy_link",
+        lambda *args, **kwargs: (
+            [
+                {
+                    "wdc_iri": "http://example.org/wdc/entity1",
+                    "wikidata_uri": "http://www.wikidata.org/entity/Q1",
+                    "wdc_value": "Alpha",
+                    "wiki_value": "Alpha",
+                    "method": "exact",
+                }
+            ],
+            {"alpha"},
+        ),
+    )
+
+    def export_results(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "wdc_wikidata_links.tsv").write_text(
+            "wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n"
+            "http://example.org/wdc/entity1\thttp://www.wikidata.org/entity/Q1\tAlpha\tAlpha\texact\t3\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity1"],
+            ["http://www.wikidata.org/entity/Q1"],
+            ["Alpha"],
+            ["Alpha"],
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline.build,
+        "run_pipeline",
+        lambda *args, **kwargs: None,
+    )
+
+    pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "property",
+            "wdc_predicate_pattern": "",
+            "wdc_pattern_search_in": "predicate",
+            "property_mapping_rules": (
+                'name,iata => rdfs:label,P238 || {"search_in":["value","predicate"]}'
+            ),
+            "wkd_class": "Q515",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    assert ("name", "value") in extract_calls
+    assert ("iata", "predicate") in extract_calls
+
+
+def test_strict_duplicate_key_filter_one_to_one_keeps_single_entity_for_duplicate_key(tmp_path):
     part = tmp_path / "part_0.nq"
     part.write_text(
         "\n".join(
             [
-                # Subject A
                 "_:a <http://schema.org/name> \"Fachhochschule Kiel\" .",
                 "_:a <http://schema.org/telephone> \"+494312100\" .",
                 "_:a <http://schema.org/email> \"info@fh-kiel.de\" .",
                 "_:a <http://schema.org/address> _:a_addr .",
                 "_:a_addr <http://schema.org/postalCode> \"24118\" .",
                 "_:a_addr <http://schema.org/addressCountry> \"DE\" .",
-                # Subject B (same content, different bnode ids)
                 "_:b <http://schema.org/name> \"Fachhochschule Kiel\" .",
                 "_:b <http://schema.org/telephone> \"+494312100\" .",
                 "_:b <http://schema.org/email> \"info@fh-kiel.de\" .",
                 "_:b <http://schema.org/address> _:b_addr .",
                 "_:b_addr <http://schema.org/postalCode> \"24118\" .",
                 "_:b_addr <http://schema.org/addressCountry> \"DE\" .",
-                # Subject C (same linking value but different address => should not dedup)
-                "_:c <http://schema.org/name> \"Fachhochschule Kiel\" .",
-                "_:c <http://schema.org/telephone> \"+494312100\" .",
-                "_:c <http://schema.org/email> \"info@fh-kiel.de\" .",
-                "_:c <http://schema.org/address> _:c_addr .",
-                "_:c_addr <http://schema.org/postalCode> \"99999\" .",
-                "_:c_addr <http://schema.org/addressCountry> \"DE\" .",
-                # Subject D (different linking value)
-                "_:d <http://schema.org/name> \"Other\" .",
-                "_:d <http://schema.org/telephone> \"+33123456\" .",
             ]
         )
         + "\n",
         encoding="utf-8",
     )
 
-    wdc_entities = ["_:a", "_:b", "_:c", "_:d"]
+    wdc_entities = ["_:a", "_:b"]
     wd_entities = [
-        "http://www.wikidata.org/entity/Q1",
-        "http://www.wikidata.org/entity/Q1",
         "http://www.wikidata.org/entity/Q1",
         "http://www.wikidata.org/entity/Q2",
     ]
-    wdc_values = ["+494312100", "+494312100", "+494312100", "+33123456"]
-    wd_values = ["+494312100", "+494312100", "+494312100", "+33123456"]
+    wdc_values = ["KIEL", "KIEL"]
+    wd_values = ["KIEL", "KIEL"]
 
-    out_wdc, out_wd, out_wdc_vals, out_wd_vals, report = pipeline._dedup_links_exact_wdc_subgraph_by_link_value(
+    out_wdc, out_wd, out_wdc_vals, out_wd_vals, report, decisions = pipeline._apply_strict_duplicate_key_filter(
         [str(part)],
         wdc_entities,
         wd_entities,
@@ -253,17 +653,128 @@ def test_dedup_links_exact_wdc_subgraph_by_link_value_collapses_identical_bnode_
         wd_values,
     )
 
-    assert len(out_wdc) == 3
-    assert len(out_wd) == 3
-    assert len(out_wdc_vals) == 3
-    assert len(out_wd_vals) == 3
-    assert set(out_wdc) == {"_:a", "_:c", "_:d"} or set(out_wdc) == {"_:b", "_:c", "_:d"}
-    assert report["links_before"] == 4
-    assert report["links_after"] == 3
-    assert report["filtered_out_links"] == 1
-    assert report["multi_link_value_groups"] == 1
-    assert report["subjects_profiled"] == 3
-    assert report["exact_duplicate_clusters"] == 1
+    assert out_wdc == ["_:a"]
+    assert out_wd == [wd_entities[0]]
+    assert out_wdc_vals == [wdc_values[0]]
+    assert out_wd_vals == [wd_values[0]]
+    assert report["summary"]["links_before"] == 2
+    assert report["summary"]["links_after"] == 1
+    assert report["summary"]["removed_groups_count"] == 1
+    assert len([r for r in decisions if r["decision"] == "remove"]) == 1
+
+
+def test_strict_duplicate_key_filter_keeps_richest_entity_in_collision_group(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "\n".join(
+            [
+                "_:a <http://schema.org/name> \"Alpha Airport\" .",
+                "_:a <http://schema.org/telephone> \"+111\" .",
+                "_:b <http://schema.org/name> \"Bravo Airport\" .",
+                "_:b <http://schema.org/telephone> \"+999\" .",
+                "_:c <http://schema.org/name> \"Charlie Airport\" .",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    out_wdc, _out_wd, _out_wdc_vals, _out_wd_vals, report, decisions = pipeline._apply_strict_duplicate_key_filter(
+        [str(part)],
+        ["_:a", "_:b", "_:c"],
+        [
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q2",
+            "http://www.wikidata.org/entity/Q3",
+        ],
+        ["AAA", "AAA", "CCC"],
+        ["AAA", "AAA", "CCC"],
+    )
+
+    assert out_wdc == ["_:a", "_:c"]
+    assert report["summary"]["removed_groups_count"] == 1
+    assert report["summary"]["filtered_out_links"] == 1
+    removed = [d for d in decisions if d["decision"] == "remove"]
+    assert len(removed) == 1
+
+
+def test_strict_duplicate_key_filter_normalization_is_stable_for_richness_selection(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "\n".join(
+            [
+                "_:a <http://schema.org/name> \"Aéroport de Paris\"@fr .",
+                "_:a <http://schema.org/dateModified> \"2026-01-01\"^^<http://www.w3.org/2001/XMLSchema#date> .",
+                "_:b <http://schema.org/name> \"AEROPORT DE PARIS\"@en .",
+                "_:b <http://schema.org/dateModified> \"2025-12-31\"^^<http://www.w3.org/2001/XMLSchema#date> .",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    out_wdc, _out_wd, _out_wdc_vals, _out_wd_vals, report, _decisions = pipeline._apply_strict_duplicate_key_filter(
+        [str(part)],
+        ["_:a", "_:b"],
+        ["http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q2"],
+        ["PAR", "PAR"],
+        ["PAR", "PAR"],
+    )
+
+    assert out_wdc == ["_:a"]
+    assert report["summary"]["removed_groups_count"] == 1
+    assert report["key_stats_after_filter"]["repeated_key_count"] == 0
+
+
+def test_strict_duplicate_key_filter_report_contains_required_sections(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "_:a <http://schema.org/name> \"Alpha\" .\n"
+        "_:b <http://schema.org/name> \"Beta\" .\n",
+        encoding="utf-8",
+    )
+    _out_wdc, _out_wd, _out_wdc_vals, _out_wd_vals, report, decisions = pipeline._apply_strict_duplicate_key_filter(
+        [str(part)],
+        ["_:a", "_:b"],
+        ["http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q2"],
+        ["AAA", "AAA"],
+        ["AAA", "AAA"],
+    )
+
+    assert "summary" in report
+    assert "kept_groups" in report
+    assert "removed_groups" in report
+    assert "entity_decisions" in report
+    assert "examples" in report
+    assert "key_stats_after_filter" in report
+    assert isinstance(decisions, list)
+    assert all("signature_hash" in row for row in decisions)
+
+
+def test_strict_duplicate_key_filter_large_sample_runs(tmp_path):
+    part = tmp_path / "part_0.nq"
+    lines = []
+    wdc_entities = []
+    wd_entities = []
+    wdc_values = []
+    for i in range(200):
+        subject = f"_:s{i}"
+        lines.append(f'{subject} <http://schema.org/name> "Airport {i}" .')
+        lines.append(f'{subject} <http://schema.org/identifier> "K{i:03d}" .')
+        wdc_entities.append(subject)
+        wd_entities.append(f"http://www.wikidata.org/entity/Q{i+1}")
+        wdc_values.append(f"K{i:03d}")
+    part.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    out_wdc, _out_wd, _out_wdc_vals, _out_wd_vals, report, _decisions = pipeline._apply_strict_duplicate_key_filter(
+        [str(part)],
+        wdc_entities,
+        wd_entities,
+        wdc_values,
+        wdc_values,
+    )
+    assert len(out_wdc) == 200
+    assert report["summary"]["links_after"] == 200
 
 
 def test_generate_benchmark_rejects_missing_required_values():
@@ -320,6 +831,7 @@ def test_generate_benchmark_resume_build_reuses_out_dir(monkeypatch):
         "class_name": class_name,
         "parts_spec": "all",
         "pattern": "name",
+        "pattern_search_in": "predicate",
         "wikidata_property": "P31",
         "wkd_class": "Q515",
         "ignore_chars": None,
@@ -457,6 +969,187 @@ def test_generate_benchmark_wikidata_mode_fails_when_class_filter_has_no_hits(mo
         )
 
 
+def test_generate_benchmark_sameas_non_wikidata_uses_value_candidates(monkeypatch):
+    class_name = "TestClassSameAsNonWikidataCandidates"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+    monkeypatch.setattr(
+        pipeline.align,
+        "extract_unique_iris_from_files",
+        lambda *args, **kwargs: (
+            {
+                "httpwwwwikidataorgentityq17146713": [
+                    ("https://www.wikidata.org/wiki/Q17146713", "http://example.org/wdc/entity1")
+                ]
+            },
+            1,
+        ),
+    )
+
+    captured = {}
+
+    def _fetch_target_values(**kwargs):
+        captured.update(kwargs)
+        return {}
+
+    monkeypatch.setattr(pipeline.align, "fetch_target_values", _fetch_target_values)
+    monkeypatch.setattr(
+        pipeline.align,
+        "fetch_wikidata_values",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("should not query Wikidata in non-wikidata endpoint mode")),
+    )
+
+    with pytest.raises(
+        pipeline.PipelineError,
+        match="No target entities matched class filter",
+    ):
+        pipeline.generate_benchmark(
+            {
+                "class_name": class_name,
+                "parts_spec": "all",
+                "matching_mode": "sameas",
+                "wdc_predicate_pattern": "sameAs",
+                "target_endpoint": "dbpedia",
+                "target_class": "dbo:Museum",
+                "use_local_only": True,
+                "force_align": True,
+            },
+            workers=1,
+        )
+
+    assert captured["target_property"] == "owl:sameAs"
+    assert captured["entity_iris"] is None
+    vals = set(captured["value_candidates"])
+    assert "http://www.wikidata.org/entity/Q17146713" in vals
+    assert "https://www.wikidata.org/entity/Q17146713" in vals
+
+
+def test_generate_benchmark_sameas_or_property_combines_matches(monkeypatch):
+    class_name = "TestClassSameAsOrProperty"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    def _extract(*_args, **kwargs):
+        if kwargs.get("wdc_value_is_wd_iri"):
+            return (
+                {"k_same": [("https://www.wikidata.org/wiki/Q1", "http://example.org/wdc/entity_same")]},
+                1,
+            )
+        return (
+            {"k_prop": [("ABC", "http://example.org/wdc/entity_prop")]},
+            1,
+        )
+
+    monkeypatch.setattr(pipeline.align, "extract_unique_iris_from_files", _extract)
+
+    def _fetch_wikidata_values(prop=None, *_args, **kwargs):
+        if prop is None and kwargs.get("entity_iris"):
+            return {"k_same": [("http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q1")]}
+        if prop:
+            return {"k_prop": [("ABC", "http://www.wikidata.org/entity/Q2")]}
+        return {}
+
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", _fetch_wikidata_values)
+
+    def _fuzzy_link(local_wdc_map, local_wd_map, **_kwargs):
+        if "k_same" in local_wdc_map and "k_same" in local_wd_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity_same",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q1",
+                        "wdc_value": "https://www.wikidata.org/wiki/Q1",
+                        "wiki_value": "http://www.wikidata.org/entity/Q1",
+                        "method": "exact",
+                    }
+                ],
+                {"https://www.wikidata.org/wiki/Q1"},
+            )
+        if "k_prop" in local_wdc_map and "k_prop" in local_wd_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity_prop",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q2",
+                        "wdc_value": "ABC",
+                        "wiki_value": "ABC",
+                        "method": "exact",
+                    }
+                ],
+                {"ABC"},
+            )
+        return ([], set())
+
+    monkeypatch.setattr(pipeline.align, "fuzzy_link", _fuzzy_link)
+
+    def export_results(matches, *args, **_kwargs):
+        output_dir = args[3]
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        lines = ["wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n"]
+        for m in matches:
+            lines.append(
+                f"{m['wdc_iri']}\t{m['wikidata_uri']}\t{m['wdc_value']}\t{m['wiki_value']}\t{m['method']}\t1\n"
+            )
+        (out / "wdc_wikidata_links.tsv").write_text("".join(lines), encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results)
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity_same", "http://example.org/wdc/entity_prop"],
+            ["http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q2"],
+            ["https://www.wikidata.org/wiki/Q1", "ABC"],
+            ["http://www.wikidata.org/entity/Q1", "ABC"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity_same\thttp://www.wikidata.org/entity/Q1\n"
+            "http://example.org/wdc/entity_prop\thttp://www.wikidata.org/entity/Q2\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t2\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t2\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    result = pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "sameas_or_property",
+            "wdc_predicate_pattern": "sameAs",
+            "wdc_pattern_search_in": "value",
+            "target_property": "P238",
+            "target_class": "Q5",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    links_tsv = Path(result["links_tsv"])
+    rows = [ln for ln in links_tsv.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    assert len(rows) == 3
+
+
 def test_generate_benchmark_with_property_mapping_rules(monkeypatch):
     class_name = "TestClassRules"
     _write_test_parts(class_name)
@@ -583,6 +1276,150 @@ def test_generate_benchmark_with_property_mapping_rules(monkeypatch):
     out_dir = Path(result["out_dir"])
     cfg = json.loads((out_dir / "BUILD_CONFIG.json").read_text(encoding="utf-8"))
     assert cfg["property_mapping_rules"] == "name => rdfs:label\niata => P238"
+
+
+def test_generate_benchmark_with_mixed_rule_modes(monkeypatch):
+    class_name = "TestClassMixedRuleModes"
+    _write_test_parts(class_name)
+
+    monkeypatch.setattr(pipeline.align, "set_normalization", lambda enabled: None)
+    monkeypatch.setattr(pipeline.align, "set_extra_strip_chars", lambda chars: None)
+    monkeypatch.setattr(pipeline.align, "parse_strip_list", lambda text: {" ", "-", "."})
+    monkeypatch.setattr(pipeline.align, "set_cancel_checker", lambda checker: None)
+
+    def extract_with_cache_stub(
+        work_dir,
+        class_name,
+        parts_spec,
+        decompressed_files,
+        pattern,
+        search_in,
+        wdc_value_is_wd_iri,
+        **kwargs,
+    ):
+        if pattern == "sameAsId" and wdc_value_is_wd_iri:
+            return (
+                {"q1": [("https://www.wikidata.org/wiki/Q1", "http://example.org/wdc/entity_same")]},
+                1,
+                False,
+            )
+        if pattern == "name" and not wdc_value_is_wd_iri:
+            return (
+                {"alpha node": [("Alpha Node", "http://example.org/wdc/entity_prop")]},
+                1,
+                False,
+            )
+        return ({}, 0, False)
+
+    monkeypatch.setattr(pipeline, "_extract_wdc_values_with_cache", extract_with_cache_stub)
+
+    def fetch_wikidata_values_stub(wikidata_property=None, wkd_class=None, wkd_prop_class=None, entity_iris=None, **kwargs):
+        if entity_iris:
+            return {"q1": [("http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q1")]}
+        if wikidata_property == "rdfs:label":
+            return {"alpha node": [("Alpha Node", "http://www.wikidata.org/entity/Q2")]}
+        return {}
+
+    monkeypatch.setattr(pipeline.align, "fetch_wikidata_values", fetch_wikidata_values_stub)
+
+    def fuzzy_link_stub(wdc_map, wikidata_map, **kwargs):
+        if "q1" in wdc_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity_same",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q1",
+                        "wdc_value": "https://www.wikidata.org/wiki/Q1",
+                        "wiki_value": "http://www.wikidata.org/entity/Q1",
+                        "method": "exact",
+                    }
+                ],
+                {"q1"},
+            )
+        if "alpha node" in wdc_map:
+            return (
+                [
+                    {
+                        "wdc_iri": "http://example.org/wdc/entity_prop",
+                        "wikidata_uri": "http://www.wikidata.org/entity/Q2",
+                        "wdc_value": "Alpha Node",
+                        "wiki_value": "Alpha Node",
+                        "method": "exact",
+                    }
+                ],
+                {"alpha node"},
+            )
+        return ([], set())
+
+    monkeypatch.setattr(pipeline.align, "fuzzy_link", fuzzy_link_stub)
+
+    def export_results_stub(matches, wdc_values_matched, wdc_map, wikidata_map, output_dir, **kwargs):
+        out = Path(output_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        with (out / "wdc_wikidata_links.tsv").open("w", encoding="utf-8") as f:
+            f.write("wdc_iri\twikidata_uri\twdc_value\twiki_value\tmethod\tmin_len\n")
+            for m in matches:
+                f.write(
+                    f"{m['wdc_iri']}\t{m['wikidata_uri']}\t{m['wdc_value']}\t{m['wiki_value']}\t{m['method']}\t1\n"
+                )
+
+    monkeypatch.setattr(pipeline.align, "export_results", export_results_stub)
+
+    monkeypatch.setattr(
+        pipeline.build,
+        "read_links",
+        lambda *args, **kwargs: (
+            ["http://example.org/wdc/entity_same", "http://example.org/wdc/entity_prop"],
+            ["http://www.wikidata.org/entity/Q1", "http://www.wikidata.org/entity/Q2"],
+            ["Q1", "Alpha Node"],
+            ["Q1", "Alpha Node"],
+        ),
+    )
+
+    def run_pipeline_stub(args, wdc_entities, wd_entities_raw, wdc_values, wd_values, out_dir, *rest, **kwargs):
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "ent_links").write_text(
+            "wdc_iri\twikidata_uri\n"
+            "http://example.org/wdc/entity_same\thttp://www.wikidata.org/entity/Q1\n"
+            "http://example.org/wdc/entity_prop\thttp://www.wikidata.org/entity/Q2\n",
+            encoding="utf-8",
+        )
+        (out / "attr_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_1").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "attr_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "rel_triples_2").write_text("s\tp\to\n", encoding="utf-8")
+        (out / "prop_stats_wdc.tsv").write_text("property\tcount\nname\t2\n", encoding="utf-8")
+        (out / "prop_stats_wd.tsv").write_text("property\tcount\nP31\t2\n", encoding="utf-8")
+
+    monkeypatch.setattr(pipeline.build, "run_pipeline", run_pipeline_stub)
+
+    result = pipeline.generate_benchmark(
+        {
+            "class_name": class_name,
+            "parts_spec": "all",
+            "matching_mode": "property",
+            "wdc_predicate_pattern": "",
+            "property_mapping_rules": 'sameAsId => || {"mode":"sameas"}\nname => rdfs:label',
+            "wikidata_property": "",
+            "wkd_class": "Q5",
+            "ignore_chars": "spaces;-;.",
+            "use_local_only": True,
+            "force_align": True,
+        },
+        workers=1,
+    )
+
+    links_tsv = Path(result["links_tsv"])
+    rows = [ln for ln in links_tsv.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    assert len(rows) == 3
+
+
+def test_parse_property_mapping_rules_accepts_sameas_mode_without_target_property():
+    rows = pipeline._parse_property_mapping_rules('sameAs => || {"mode":"sameas"}')
+    assert len(rows) == 1
+    assert rows[0]["mode"] == "sameas"
+    assert rows[0]["pairs"] == [("sameAs", "")]
 
 
 @pytest.mark.parametrize(

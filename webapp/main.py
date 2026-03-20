@@ -165,10 +165,6 @@ PRESETS = {
     },
 }
 
-LEGACY_PRESET_ALIASES = {
-    "property_movie": "code_movie",
-}
-
 TARGET_ENDPOINTS = {
     "wikidata": {
         "label": "Wikidata",
@@ -203,6 +199,7 @@ def _default_form():
         "class_name": "",
         "parts_spec": "all",
         "wdc_predicate_pattern": "",
+        "wdc_pattern_search_in": "predicate",
         "target_endpoint": "wikidata",
         "target_endpoint_url": "",
         "target_prefixes": "",
@@ -214,8 +211,7 @@ def _default_form():
         "ignore_chars": "spaces;-;.",
         "force_align": False,
         "use_local_only": False,
-        "force_one_to_one_links": False,
-        "dedup_wdc_exact_subgraph_by_link_value": False,
+        "strict_duplicate_key_filter": True,
     }
 
 
@@ -270,15 +266,13 @@ def _parse_property_mapping_rules_text(value: str):
         left_raw, right_raw = mapping_text.split("=>", 1)
         wdc_props = [_clean_text(tok) for tok in left_raw.split(",") if _clean_text(tok)]
         target_props = [_clean_text(tok) for tok in right_raw.split(",") if _clean_text(tok)]
-        if not wdc_props or not target_props:
+        if not wdc_props:
             raise ValueError(
-                f"Invalid property mapping rule at line {line_no}: both sides must contain at least one property"
-            )
-        if len(wdc_props) != len(target_props):
-            raise ValueError(
-                f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
+                f"Invalid property mapping rule at line {line_no}: left side must contain at least one property"
             )
         pair_ignore_chars = []
+        pair_search_in = []
+        row_mode = "property"
         norm_text = _clean_text(norm)
         if norm_text.startswith("["):
             try:
@@ -287,9 +281,39 @@ def _parse_property_mapping_rules_text(value: str):
                 decoded = None
             if isinstance(decoded, list):
                 pair_ignore_chars = [_clean_text(v) for v in decoded]
+        elif norm_text.startswith("{"):
+            try:
+                decoded = json.loads(norm_text)
+            except Exception:
+                decoded = None
+            if isinstance(decoded, dict):
+                raw_ignore = decoded.get("ignore_chars")
+                if isinstance(raw_ignore, list):
+                    pair_ignore_chars = [_clean_text(v) for v in raw_ignore]
+                raw_search = decoded.get("search_in")
+                if isinstance(raw_search, list):
+                    pair_search_in = [_normalize_wdc_pattern_search_in(v) for v in raw_search]
+                raw_mode = _clean_text(str(decoded.get("mode", ""))).lower()
+                if raw_mode in {"property", "sameas"}:
+                    row_mode = raw_mode
+        if row_mode == "property":
+            if not target_props:
+                raise ValueError(
+                    f"Invalid property mapping rule at line {line_no}: right side must contain at least one property"
+                )
+            if len(wdc_props) != len(target_props):
+                raise ValueError(
+                    f"Invalid property mapping rule at line {line_no}: left/right property counts differ"
+                )
+        else:
+            target_props = [""] * len(wdc_props)
         if pair_ignore_chars and len(pair_ignore_chars) != len(wdc_props):
             raise ValueError(
                 f"Invalid property mapping rule at line {line_no}: per-pair normalization count differs from pair count"
+            )
+        if pair_search_in and len(pair_search_in) != len(wdc_props):
+            raise ValueError(
+                f"Invalid property mapping rule at line {line_no}: per-pair search mode count differs from pair count"
             )
         rows.append(
             {
@@ -298,6 +322,8 @@ def _parse_property_mapping_rules_text(value: str):
                 "raw": line,
                 "ignore_chars": norm,
                 "pair_ignore_chars": pair_ignore_chars,
+                "pair_search_in": pair_search_in,
+                "mode": row_mode,
             }
         )
     return rows
@@ -332,7 +358,7 @@ def _extract_linking_combinations(config: dict):
         _clean_text(str(config.get("matching_mode", ""))),
         fallback_wdc_value_is_wikidata=_is_wikidata_url_mode(config),
     )
-    if mode == "sameas":
+    if not _mode_includes_property(mode):
         return []
 
     combos = []
@@ -343,16 +369,23 @@ def _extract_linking_combinations(config: dict):
         except Exception:
             parsed = []
         for i, row in enumerate(parsed, 1):
+            row_mode = _clean_text(str(row.get("mode", "property"))).lower()
+            if row_mode not in {"property", "sameas"}:
+                row_mode = "property"
             pairs = [{"wdc": _clean_text(l), "target": _clean_text(r)} for l, r in (row.get("pairs") or [])]
-            pairs = [p for p in pairs if p["wdc"] and p["target"]]
+            if row_mode == "sameas":
+                pairs = [p for p in pairs if p["wdc"]]
+            else:
+                pairs = [p for p in pairs if p["wdc"] and p["target"]]
             if not pairs:
                 continue
             combos.append(
                 {
                     "id": i,
-                    "label": f"OR #{i}",
+                    "label": f"OR #{i} ({'sameAs' if row_mode == 'sameas' else 'property'})",
                     "pairs": pairs,
                     "raw": _clean_text(row.get("raw", "")),
+                    "mode": row_mode,
                 }
             )
         return combos
@@ -371,6 +404,30 @@ def _extract_linking_combinations(config: dict):
     return combos
 
 
+def _extract_linking_elements(config: dict):
+    if not isinstance(config, dict):
+        return []
+    out = []
+    seen = set()
+    combos = _extract_linking_combinations(config)
+    for combo in list(combos or []):
+        for pair in list((combo or {}).get("pairs") or []):
+            left = _clean_text(str((pair or {}).get("wdc", "")))
+            if not left:
+                continue
+            low = left.lower()
+            if low in seen:
+                continue
+            seen.add(low)
+            out.append(left)
+    if out:
+        return out
+    fallback = _clean_text(str(config.get("wdc_predicate_pattern", "")))
+    if fallback:
+        return [fallback]
+    return []
+
+
 def _sync_target_alias_fields(params: dict):
     if not isinstance(params, dict):
         return params
@@ -378,11 +435,14 @@ def _sync_target_alias_fields(params: dict):
     params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
     params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
     params["property_mapping_rules"] = _clean_text(params.get("property_mapping_rules"))
+    params["wdc_pattern_search_in"] = _normalize_wdc_pattern_search_in(params.get("wdc_pattern_search_in"))
     params["target_property"] = _clean_text(params.get("target_property") or params.get("wikidata_property"))
     params["target_class"] = _clean_text(params.get("target_class") or params.get("wkd_class"))
     # Backward-compatible aliases.
     params["wikidata_property"] = params["target_property"]
     params["wkd_class"] = params["target_class"]
+    # One-to-one duplicate-key filtering is always enabled.
+    params["strict_duplicate_key_filter"] = True
     if params["target_endpoint"] != "custom":
         params["target_endpoint_url"] = ""
     return params
@@ -390,11 +450,24 @@ def _sync_target_alias_fields(params: dict):
 
 def _normalize_matching_mode(value: Optional[str], fallback_wdc_value_is_wikidata: bool = False) -> str:
     mode = _clean_text(value).lower()
-    if mode == "identifier":
-        return "property"
-    if mode in {"property", "sameas"}:
+    if mode in {"property", "sameas", "sameas_or_property"}:
         return mode
     return "sameas" if bool(fallback_wdc_value_is_wikidata) else "property"
+
+
+def _mode_includes_sameas(mode: Optional[str]) -> bool:
+    return _normalize_matching_mode(mode) in {"sameas", "sameas_or_property"}
+
+
+def _mode_includes_property(mode: Optional[str]) -> bool:
+    return _normalize_matching_mode(mode) in {"property", "sameas_or_property"}
+
+
+def _normalize_wdc_pattern_search_in(value: Optional[str]) -> str:
+    mode = _clean_text(value).lower()
+    if mode in {"value", "object"}:
+        return "value"
+    return "predicate"
 
 
 def _is_wikidata_url_mode(params: dict) -> bool:
@@ -415,6 +488,7 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["class_name"] = _clean_text(params.get("class_name"))
     params["parts_spec"] = _clean_text(params.get("parts_spec")) or "all"
     params["wdc_predicate_pattern"] = _clean_text(params.get("wdc_predicate_pattern"))
+    params["wdc_pattern_search_in"] = _normalize_wdc_pattern_search_in(params.get("wdc_pattern_search_in"))
     params["target_endpoint"] = _normalize_target_endpoint(params.get("target_endpoint"))
     params["target_endpoint_url"] = _clean_text(params.get("target_endpoint_url"))
     params["target_prefixes"] = _clean_text(params.get("target_prefixes"))
@@ -426,10 +500,8 @@ def _validate_and_normalize_job_params(raw_params: dict):
     params["ignore_chars"] = _clean_text(params.get("ignore_chars"))
     params["force_align"] = bool(params.get("force_align"))
     params["use_local_only"] = bool(params.get("use_local_only"))
-    params["force_one_to_one_links"] = bool(params.get("force_one_to_one_links"))
-    params["dedup_wdc_exact_subgraph_by_link_value"] = bool(
-        params.get("dedup_wdc_exact_subgraph_by_link_value")
-    )
+    # One-to-one duplicate-key filtering is always enabled.
+    params["strict_duplicate_key_filter"] = True
 
     if not params["class_name"]:
         return params, "Class name is required."
@@ -453,7 +525,15 @@ def _validate_and_normalize_job_params(raw_params: dict):
         except ValueError as exc:
             return params, str(exc)
 
-    if _is_wikidata_url_mode(params):
+    mode = _normalize_matching_mode(params.get("matching_mode"))
+    includes_sameas = _mode_includes_sameas(mode)
+    includes_property = _mode_includes_property(mode)
+    rules_include_sameas = any(_clean_text(str(r.get("mode", "property"))).lower() == "sameas" for r in parsed_rules)
+    rules_include_property = any(_clean_text(str(r.get("mode", "property"))).lower() != "sameas" for r in parsed_rules)
+    effective_includes_sameas = includes_sameas or rules_include_sameas
+    effective_includes_property = includes_property if not parsed_rules else rules_include_property
+
+    if mode == "sameas" and not parsed_rules:
         params["target_property"] = ""
         params["wikidata_property"] = ""
         params["ignore_chars"] = ""
@@ -461,11 +541,13 @@ def _validate_and_normalize_job_params(raw_params: dict):
         if not params["target_class"]:
             return params, "Target class filter is required when using sameAs mode."
     else:
+        if effective_includes_sameas and not params["target_class"]:
+            return params, "Target class filter is required when sameAs mode is enabled."
         if not params["wdc_predicate_pattern"] and not parsed_rules:
             return params, "Considered pattern for WDC properties is required."
-        if not params["ignore_chars"]:
+        if effective_includes_property and not params["ignore_chars"]:
             params["ignore_chars"] = "spaces;-;."
-        if not params["target_property"] and not parsed_rules:
+        if effective_includes_property and not params["target_property"] and not parsed_rules:
             return params, "Equivalent target property is required when WDC values are not endpoint URLs."
 
     params["wkd_class"] = params["target_class"]
@@ -514,6 +596,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params.get("class_name", ""),
             params.get("parts_spec", ""),
             params.get("wdc_predicate_pattern", ""),
+            params.get("wdc_pattern_search_in", "predicate"),
             params.get("target_endpoint", "wikidata"),
             params.get("target_endpoint_url", ""),
             params.get("target_prefixes", ""),
@@ -521,8 +604,7 @@ def _get_recent_presets(limit=50, test_mode: Optional[bool] = None):
             params.get("target_property", ""),
             params.get("target_class", ""),
             params.get("ignore_chars", ""),
-            params.get("force_one_to_one_links", ""),
-            params.get("dedup_wdc_exact_subgraph_by_link_value", ""),
+            params.get("strict_duplicate_key_filter", ""),
         )
         if key in seen:
             continue
@@ -886,6 +968,7 @@ def _build_preflight_report(
     class_name: str,
     parts_spec: str,
     wdc_predicate_pattern: str,
+    wdc_pattern_search_in: str,
     ignore_chars: str,
     matching_mode: str,
     use_local_only: bool,
@@ -903,6 +986,7 @@ def _build_preflight_report(
     class_name = _clean_text(class_name)
     parts_spec = _clean_text(parts_spec) or "all"
     pattern = _clean_text(wdc_predicate_pattern)
+    pattern_search_in = _normalize_wdc_pattern_search_in(wdc_pattern_search_in)
     ignore_chars = _clean_text(ignore_chars)
     endpoint_key = _normalize_target_endpoint(target_endpoint)
     target_endpoint_url = _clean_text(target_endpoint_url)
@@ -911,9 +995,11 @@ def _build_preflight_report(
     target_property = _clean_text(target_property or wikidata_property)
     target_class = _clean_text(target_class or wkd_class)
     mode_norm = _normalize_matching_mode(matching_mode)
+    includes_sameas = _mode_includes_sameas(mode_norm)
+    includes_property = _mode_includes_property(mode_norm)
     wdc_value_is_wikidata = mode_norm == "sameas"
     parsed_rules = []
-    if mode_norm != "sameas" and property_mapping_rules:
+    if property_mapping_rules:
         try:
             parsed_rules = _parse_property_mapping_rules_text(property_mapping_rules)
         except ValueError as exc:
@@ -924,7 +1010,12 @@ def _build_preflight_report(
                 "confidence": "low",
             }
             return report
-    if mode_norm != "sameas" and parsed_rules:
+    rules_include_sameas = any(_clean_text(str(r.get("mode", "property"))).lower() == "sameas" for r in parsed_rules)
+    rules_include_property = any(_clean_text(str(r.get("mode", "property"))).lower() != "sameas" for r in parsed_rules)
+    effective_includes_sameas = includes_sameas or rules_include_sameas
+    effective_includes_property = includes_property if not parsed_rules else rules_include_property
+
+    if effective_includes_property and parsed_rules:
         first_pair = parsed_rules[0]["pairs"][0]
         if not pattern:
             pattern = _clean_text(first_pair[0])
@@ -938,6 +1029,7 @@ def _build_preflight_report(
         "class_name": class_name,
         "parts_spec": parts_spec,
         "pattern": pattern,
+        "pattern_search_in": pattern_search_in,
         "matching_mode": mode_norm,
         "target_endpoint": endpoint_key,
         "target_endpoint_url": target_endpoint_url,
@@ -945,7 +1037,7 @@ def _build_preflight_report(
         "property_mapping_rules": property_mapping_rules,
         "target_property": target_property,
         "target_class": target_class,
-        "wdc_value_is_wikidata": bool(wdc_value_is_wikidata),
+        "wdc_value_is_wikidata": bool(wdc_value_is_wikidata or effective_includes_sameas),
         "scan_limit_lines": int(max(1000, scan_limit_lines)),
         "selected_files_count": 0,
         "selected_files": [],
@@ -1016,14 +1108,18 @@ def _build_preflight_report(
                 _s, p_tok, o_tok = parsed
                 predicate = p_tok.strip("<>")
                 predicate_counts[predicate] += 1
-                if not align_script.predicate_matches_prepared_patterns(predicate, prepared_patterns):
-                    continue
-
-                matched += 1
                 if o_tok.startswith('"'):
                     raw_value = _literal_lex(o_tok) or o_tok.strip('"')
                 else:
                     raw_value = o_tok.strip("<>")
+                if pattern_search_in == "value":
+                    if not align_script.value_matches_prepared_patterns(raw_value, prepared_patterns):
+                        continue
+                else:
+                    if not align_script.predicate_matches_prepared_patterns(predicate, prepared_patterns):
+                        continue
+
+                matched += 1
                 if raw_value:
                     normalized = _normalize_preflight_value(raw_value, ignore_chars)
                     if normalized:
@@ -1413,6 +1509,40 @@ def _variant_stats(base: Path, variant: str):
     }
 
 
+def _load_build_stats(base: Path):
+    stats_path = base / "BUILD_STATS.json"
+    if not stats_path.exists() or not stats_path.is_file():
+        return {}
+    try:
+        raw = json.loads(stats_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _format_link_source_stats(stats: dict):
+    if not isinstance(stats, dict):
+        return ""
+    rows = stats.get("links_by_source_after_filter")
+    if not isinstance(rows, list) or not rows:
+        rows = stats.get("links_by_source_align")
+    if not isinstance(rows, list) or not rows:
+        return ""
+    parts = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        src = _clean_text(str(row.get("source", "")))
+        try:
+            cnt = int(row.get("count", 0))
+        except Exception:
+            cnt = 0
+        if not src:
+            continue
+        parts.append(f"{cnt} {src}")
+    return " | ".join(parts)
+
+
 def _scan_builds(limit=30):
     builds = []
     root = Path("data")
@@ -1448,6 +1578,7 @@ def _build_config_groups(cfg: dict):
             [
                 "matching_mode",
                 "wdc_predicate_pattern",
+                "wdc_pattern_search_in",
                 "target_endpoint",
                 "target_endpoint_url",
                 "target_prefixes",
@@ -1462,8 +1593,7 @@ def _build_config_groups(cfg: dict):
             [
                 "force_align",
                 "use_local_only",
-                "force_one_to_one_links",
-                "dedup_wdc_exact_subgraph_by_link_value",
+                "strict_duplicate_key_filter",
                 "build_name",
                 "result_path",
             ],
@@ -1517,15 +1647,8 @@ def _is_build_dir_candidate(base: Path) -> bool:
     if not base.name.lower().startswith("beam"):
         return False
     marker = base / "BUILD_DONE"
-    cfg = base / "BUILD_CONFIG.json"
-    with_variant = base / "with_link_code"
-    without_variant = base / "without_link_code"
-    return (
-        marker.exists()
-        or cfg.exists()
-        or with_variant.exists()
-        or without_variant.exists()
-    )
+    # History must only show completed builds.
+    return marker.exists() and marker.is_file()
 
 
 def _build_summary_from_dir(base: Path):
@@ -1553,6 +1676,7 @@ def _build_summary_from_dir(base: Path):
 
     with_link = _variant_stats(base, "with_link_code")
     without_link = _variant_stats(base, "without_link_code")
+    build_stats = _load_build_stats(base)
     if not marker.exists() and not build_config and not with_link and not without_link:
         return None
 
@@ -1580,10 +1704,14 @@ def _build_summary_from_dir(base: Path):
         "build_name": base.name,
         "path": str(base),
         "done_at": done_at,
+        "is_completed": bool(marker.exists()),
+        "done_label": "Completed" if marker.exists() else "Last update",
         "with_link": with_link,
         "without_link": without_link,
         "variants_same": variants_same,
         "build_config": build_config,
+        "build_stats": build_stats,
+        "linking_stats_text": _format_link_source_stats(build_stats),
         "sort_ts": sort_ts,
     }
 
@@ -1597,6 +1725,7 @@ def _build_summary_from_dir(base: Path):
             "build_name": build["build_name"],
             "result_path": build["path"],
             "config_source": "inferred",
+            "wdc_pattern_search_in": "predicate",
             "target_endpoint": "wikidata",
             "target_endpoint_url": "",
             "target_prefixes": "",
@@ -1613,6 +1742,12 @@ def _build_summary_from_dir(base: Path):
     build["parts_total_size_human"] = build["config"].get("parts_total_size_human")
     build["config_groups"] = _build_config_groups(build["config"])
     build["linking_combinations"] = _extract_linking_combinations(build["config"])
+    endpoint_key = _normalize_target_endpoint(_clean_text(str(build["config"].get("target_endpoint", "wikidata"))))
+    endpoint_label = _clean_text(str((TARGET_ENDPOINTS.get(endpoint_key) or {}).get("label", ""))) or "Wikidata"
+    linking_elements = _extract_linking_elements(build["config"])
+    build["endpoint_label"] = endpoint_label
+    build["linking_elements"] = linking_elements
+    build["linking_elements_text"] = ", ".join(linking_elements)
     return build
 
 
@@ -2698,6 +2833,7 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "class_name": _clean_text(str(_pick("class_name", class_name))),
         "parts_spec": _clean_text(str(_pick("parts_spec", "all"))),
         "wdc_predicate_pattern": _clean_text(str(_pick("wdc_predicate_pattern", ""))),
+        "wdc_pattern_search_in": _clean_text(str(_pick("wdc_pattern_search_in", "predicate"))),
         "target_endpoint": _clean_text(str(_pick("target_endpoint", "wikidata"))),
         "target_endpoint_url": _clean_text(str(_pick("target_endpoint_url", ""))),
         "target_prefixes": _clean_text(str(_pick("target_prefixes", ""))),
@@ -2709,10 +2845,7 @@ def _rerun_params_from_build_config(build_dir: Path, class_name: str):
         "ignore_chars": _clean_text(str(_pick("ignore_chars", "spaces;-;."))),
         "force_align": _bool_from_any(_pick("force_align", False)),
         "use_local_only": _bool_from_any(_pick("use_local_only", False)),
-        "force_one_to_one_links": _bool_from_any(_pick("force_one_to_one_links", False)),
-        "dedup_wdc_exact_subgraph_by_link_value": _bool_from_any(
-            _pick("dedup_wdc_exact_subgraph_by_link_value", False)
-        ),
+        "strict_duplicate_key_filter": True,
     }
     return _validate_and_normalize_job_params(raw_params)
 
@@ -2812,8 +2945,7 @@ def _build_dashboard_state(job_limit: int = 50, build_limit: int = 200, test_mod
         jobs_params[jid] = all_jobs_params.get(jid, {})
         jobs_subjobs[jid] = [dict(s) for s in db.list_subjobs(jid)]
 
-    # Legacy safety: some old rows can be persisted as "done" even when build was skipped
-    # due to 0 alignments. Normalize the state in dashboard payload to avoid misleading UI.
+    # Safety: normalize inconsistent rows persisted as "done" when build was skipped.
     for j in all_jobs:
         if j.get("status") != "done":
             continue
@@ -2897,10 +3029,9 @@ def index(
     visible_presets = _filter_presets_by_mode(is_test_mode)
     selected_preset = ""
     if preset:
-        canonical_preset = LEGACY_PRESET_ALIASES.get(preset, preset)
-        if canonical_preset in visible_presets:
-            form.update(visible_presets[canonical_preset])
-            selected_preset = canonical_preset
+        if preset in visible_presets:
+            form.update(visible_presets[preset])
+            selected_preset = preset
 
     if recent:
         job = db.get_job(recent)
@@ -3099,7 +3230,7 @@ def build_link_detail_api(
     build_name: str,
     idx: int,
     variant: Optional[str] = None,
-    wait_ms: int = 0,
+    wait_ms: int = 250,
 ):
     build_dir = _resolve_build_dir(class_name, build_name)
     if not build_dir:
@@ -3191,10 +3322,15 @@ def dashboard_api(job_limit: int = 80, build_limit: int = 200, test_mode: Option
                 "build_name": b.get("build_name"),
                 "path": b.get("path"),
                 "done_at": b.get("done_at"),
+                "is_completed": bool(b.get("is_completed")),
+                "done_label": b.get("done_label") or "Last update",
                 "with_link": b.get("with_link"),
                 "without_link": b.get("without_link"),
                 "variants_same": b.get("variants_same"),
                 "config_groups": b.get("config_groups") or [],
+                "endpoint_label": b.get("endpoint_label") or "Wikidata",
+                "linking_elements_text": b.get("linking_elements_text") or "",
+                "linking_stats_text": b.get("linking_stats_text") or "",
             }
         )
 
@@ -3222,6 +3358,7 @@ def preflight_api(
     parts_spec: str = "all",
     matching_mode: str = "property",
     wdc_predicate_pattern: str = "",
+    wdc_pattern_search_in: str = "predicate",
     target_endpoint: str = "wikidata",
     target_endpoint_url: str = "",
     target_prefixes: str = "",
@@ -3240,6 +3377,7 @@ def preflight_api(
         parts_spec=parts_spec,
         matching_mode=matching_mode,
         wdc_predicate_pattern=wdc_predicate_pattern,
+        wdc_pattern_search_in=wdc_pattern_search_in,
         target_endpoint=target_endpoint,
         target_endpoint_url=target_endpoint_url,
         target_prefixes=target_prefixes,
@@ -3315,6 +3453,8 @@ def rerun_job(job_id: int):
         params = json.loads(job["params_json"])
     except Exception:
         return RedirectResponse(url="/", status_code=303)
+    # Always enforce one-to-one behavior in reruns.
+    params["strict_duplicate_key_filter"] = True
     db.insert_job(params)
     return RedirectResponse(url="/", status_code=303)
 
@@ -3328,6 +3468,8 @@ def rerun_job_nocache(job_id: int):
         params = json.loads(job["params_json"])
     except Exception:
         return RedirectResponse(url="/", status_code=303)
+    # Always enforce one-to-one behavior in reruns.
+    params["strict_duplicate_key_filter"] = True
     params["force_align"] = True
     params["skip_build"] = False
     params.pop("require_cached_align", None)
@@ -3344,6 +3486,8 @@ def rerun_align(job_id: int):
         params = json.loads(job["params_json"])
     except Exception:
         return RedirectResponse(url="/", status_code=303)
+    # Always enforce one-to-one behavior in reruns.
+    params["strict_duplicate_key_filter"] = True
     params["skip_build"] = True
     db.insert_job(params)
     return RedirectResponse(url="/", status_code=303)
@@ -3358,6 +3502,8 @@ def rerun_build(job_id: int):
         params = json.loads(job["params_json"])
     except Exception:
         return RedirectResponse(url="/", status_code=303)
+    # Always enforce one-to-one behavior in reruns.
+    params["strict_duplicate_key_filter"] = True
     params["require_cached_align"] = True
     params["skip_build"] = False
     db.insert_job(params)
@@ -3376,12 +3522,27 @@ def delete_job(job_id: int):
     return RedirectResponse(url="/", status_code=303)
 
 
+@app.post("/jobs/delete_stopped")
+def delete_stopped_jobs():
+    # Remove only non-active jobs; keep running/queued jobs intact.
+    for row in db.list_jobs(limit=50000):
+        status = str(row["status"] or "").strip().lower()
+        if status in {"running", "queued"}:
+            continue
+        try:
+            db.delete_job(int(row["id"]))
+        except Exception:
+            continue
+    return RedirectResponse(url="/", status_code=303)
+
+
 @app.post("/jobs")
 def create_job(
     matching_mode: str = Form("property"),
     class_name: str = Form(...),
     parts_spec: str = Form(""),
     wdc_predicate_pattern: str = Form(""),
+    wdc_pattern_search_in: str = Form("predicate"),
     target_endpoint: str = Form("wikidata"),
     target_endpoint_url: str = Form(""),
     target_prefixes: str = Form(""),
@@ -3393,14 +3554,13 @@ def create_job(
     ignore_chars: str = Form(""),
     force_align: Optional[str] = Form(None),
     use_local_only: Optional[str] = Form(None),
-    force_one_to_one_links: Optional[str] = Form(None),
-    dedup_wdc_exact_subgraph_by_link_value: Optional[str] = Form(None),
 ):
     raw_params = {
         "matching_mode": _clean_text(matching_mode),
         "class_name": _clean_text(class_name),
         "parts_spec": _clean_text(parts_spec),
         "wdc_predicate_pattern": _clean_text(wdc_predicate_pattern),
+        "wdc_pattern_search_in": _clean_text(wdc_pattern_search_in),
         "target_endpoint": _clean_text(target_endpoint),
         "target_endpoint_url": _clean_text(target_endpoint_url),
         "target_prefixes": _clean_text(target_prefixes),
@@ -3412,8 +3572,7 @@ def create_job(
         "ignore_chars": _clean_text(ignore_chars),
         "force_align": bool(force_align),
         "use_local_only": bool(use_local_only),
-        "force_one_to_one_links": bool(force_one_to_one_links),
-        "dedup_wdc_exact_subgraph_by_link_value": bool(dedup_wdc_exact_subgraph_by_link_value),
+        "strict_duplicate_key_filter": True,
     }
     params, validation_error = _validate_and_normalize_job_params(raw_params)
     if validation_error:
@@ -3511,15 +3670,16 @@ def download_selected_builds(selected_builds: str = Form("[]")):
     os.close(fd)
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for _, _, build_dir, folder_prefix in selected_dirs:
+        for class_name, _, build_dir, folder_prefix in selected_dirs:
+            class_token = _safe_filename_token(class_name, fallback="class")
             for fp in build_dir.rglob("*"):
                 if not fp.is_file():
                     continue
                 try:
                     rel = fp.resolve().relative_to(build_dir.resolve())
-                    arcname = str(Path(folder_prefix) / rel)
+                    arcname = str(Path(class_token) / folder_prefix / rel)
                 except Exception:
-                    arcname = str(Path(folder_prefix) / fp.name)
+                    arcname = str(Path(class_token) / folder_prefix / fp.name)
                 zf.write(fp, arcname=arcname)
 
     ts = time.strftime("%Y%m%d_%H%M%S")

@@ -169,6 +169,29 @@ def test_extract_unique_iris_supports_multiple_predicate_patterns(tmp_path):
     assert all_values == {"A", "B"}
 
 
+def test_extract_unique_iris_supports_value_pattern_search(tmp_path):
+    part = tmp_path / "part_0.nq"
+    part.write_text(
+        "<http://example.org/s1> <http://schema.org/sameAs> <https://ror.org/04pf8en64> <http://example.org/g> .\n"
+        '<http://example.org/s2> <http://schema.org/name> "Plain name" <http://example.org/g> .\n',
+        encoding="utf-8",
+    )
+
+    value_map, matched_count = align.extract_unique_iris_from_files(
+        [part],
+        pattern="ror.org",
+        collect_top_props=False,
+        parallel=False,
+        progress_every=0,
+        wdc_value_is_wd_iri=False,
+        search_in="value",
+    )
+
+    assert matched_count == 1
+    all_values = {v for entries in value_map.values() for (v, _s) in entries}
+    assert all_values == {"https://ror.org/04pf8en64"}
+
+
 def test_predicate_matching_is_case_insensitive_even_when_value_normalization_disabled():
     align.set_normalization(False)
     try:
@@ -313,6 +336,54 @@ def test_fetch_wikidata_values_batches_large_entity_values(monkeypatch):
     assert q3_norm in result
 
 
+def test_fetch_wikidata_values_batches_large_value_candidates(monkeypatch):
+    monkeypatch.setenv("WIKIDATA_CACHE_DISABLED", "1")
+    monkeypatch.setenv("WIKIDATA_VALUE_BATCH_SIZE", "2")
+
+    class _Resp:
+        def __init__(self, text):
+            self.text = text
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
+    calls = {"n": 0, "queries": []}
+
+    def _fake_post(*args, **kwargs):
+        calls["n"] += 1
+        query = str((kwargs or {}).get("data", {}).get("query", ""))
+        calls["queries"].append(query)
+        if '"ABC"' in query:
+            payload = (
+                '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q1"},'
+                '"value":{"value":"ABC"}}]}}'
+            )
+        elif '"GHI"' in query:
+            payload = (
+                '{"results":{"bindings":[{"entity":{"value":"http://www.wikidata.org/entity/Q3"},'
+                '"value":{"value":"GHI"}}]}}'
+            )
+        else:
+            payload = '{"results":{"bindings":[]}}'
+        return _Resp(payload)
+
+    monkeypatch.setattr(align.requests, "post", _fake_post)
+    result = align.fetch_wikidata_values(
+        "P297",
+        wkd_class="Q1248784",
+        wkd_prop_class=None,
+        value_candidates=["ABC", "DEF", "GHI"],
+    )
+
+    assert calls["n"] == 2  # 3 values with batch size 2 => 2 SPARQL requests
+    assert any("VALUES ?value" in q for q in calls["queries"])
+    assert any("wdt:P297" in q for q in calls["queries"])
+    assert any("wdt:P279* wd:Q1248784" in q for q in calls["queries"])
+    assert align.normalize_for_matching("ABC") in result
+    assert align.normalize_for_matching("GHI") in result
+
+
 def test_fetch_wikidata_values_without_prop_requires_entity_list(monkeypatch):
     monkeypatch.setenv("WIKIDATA_CACHE_DISABLED", "1")
     calls = {"n": 0}
@@ -331,3 +402,72 @@ def test_fetch_wikidata_values_without_prop_requires_entity_list(monkeypatch):
 
     assert result == {}
     assert calls["n"] == 0
+
+
+def test_normalize_target_property_maps_common_aliases_for_non_wikidata():
+    assert align.normalize_target_property("P238", "dbpedia") == "dbp:iata"
+    assert align.normalize_target_property("iata", "dbpedia") == "dbp:iata"
+    assert align.normalize_target_property("P212", "dbpedia") == "dbo:isbn"
+    assert align.normalize_target_property("telephone", "dbpedia") == "dbp:telephone"
+
+    assert align.normalize_target_property("P238", "yago") == "schema:iataCode"
+    assert align.normalize_target_property("isbn", "yago") == "schema:isbn"
+    assert align.normalize_target_property("P1329", "yago") == "schema:telephone"
+
+
+def test_fetch_target_values_supports_value_candidates_for_sameas(monkeypatch):
+    captured = {}
+
+    def _fake_runner(endpoint_url, query, headers, timeout_s, max_attempts, base_delay):
+        captured["endpoint_url"] = endpoint_url
+        captured["query"] = query
+        return {
+            "results": {
+                "bindings": [
+                    {
+                        "entity": {"value": "http://dbpedia.org/resource/Torture_Museum,_Amsterdam"},
+                        "value": {"value": "http://www.wikidata.org/entity/Q17146713"},
+                    }
+                ]
+            }
+        }
+
+    monkeypatch.setattr(align, "_run_sparql_query_with_retry_to_endpoint", _fake_runner)
+
+    out = align.fetch_target_values(
+        target_property="owl:sameAs",
+        target_class="dbo:Museum",
+        target_endpoint="dbpedia",
+        value_candidates=["http://www.wikidata.org/entity/Q17146713"],
+    )
+
+    assert "VALUES ?value" in captured["query"]
+    assert "owl:sameAs" in captured["query"]
+    assert "dbo:Museum" in captured["query"]
+    norm = align.normalize_country_code(
+        align.normalize_value_for_matching("http://www.wikidata.org/entity/Q17146713")
+    )
+    assert norm in out
+    assert out[norm][0][1] == "http://dbpedia.org/resource/Torture_Museum,_Amsterdam"
+
+
+def test_fetch_target_values_quotes_literal_value_candidates(monkeypatch):
+    captured = {}
+
+    def _fake_runner(endpoint_url, query, headers, timeout_s, max_attempts, base_delay):
+        captured["query"] = query
+        return {"results": {"bindings": []}}
+
+    monkeypatch.setattr(align, "_run_sparql_query_with_retry_to_endpoint", _fake_runner)
+
+    out = align.fetch_target_values(
+        target_property="dbp:telephone",
+        target_class="dbo:Hotel",
+        target_endpoint="dbpedia",
+        value_candidates=["+33 1 40 20 50 50"],
+    )
+
+    assert out == {}
+    assert "VALUES ?value" in captured["query"]
+    assert '"+33 1 40 20 50 50"' in captured["query"]
+    assert "<+33 1 40 20 50 50>" not in captured["query"]

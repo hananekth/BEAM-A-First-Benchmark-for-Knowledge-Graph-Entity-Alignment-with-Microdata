@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 from scripts import build_beam_files as build
 
@@ -374,3 +375,125 @@ def test_write_wikidata_from_sparql_reuses_raw_cache(monkeypatch):
 
     assert out_attr_1.read_text(encoding="utf-8") == out_attr_2.read_text(encoding="utf-8")
     assert out_rel_1.read_text(encoding="utf-8") == out_rel_2.read_text(encoding="utf-8")
+
+
+def test_write_wikidata_from_sparql_keeps_only_linked_entities_in_relations(monkeypatch):
+    out_dir = Path("data") / "TestClass" / "beam_test_wd_linked_only" / "without_link_code"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_attr = out_dir / "attr_triples_2"
+    out_rel = out_dir / "rel_triples_2"
+
+    def _fake_construct(*args, **kwargs):
+        yield 1, (
+            "<http://www.wikidata.org/entity/Q1>",
+            "<http://www.wikidata.org/prop/direct/P31>",
+            "<http://www.wikidata.org/entity/Q5>",
+        )
+        yield 1, (
+            "<http://www.wikidata.org/entity/Q1>",
+            "<http://www.wikidata.org/prop/direct/P31>",
+            "<http://www.wikidata.org/entity/Q999>",
+        )
+        yield 1, None
+
+    monkeypatch.setattr(build, "sparql_construct", _fake_construct)
+
+    build.write_wikidata_from_sparql(
+        endpoint="https://query.wikidata.org/sparql",
+        subjects=["http://www.wikidata.org/entity/Q1"],
+        out_attr_path=str(out_attr),
+        out_rel_path=str(out_rel),
+        lowercase_wd=True,
+        language="en",
+        batch_size=50,
+        sleep_s=0.0,
+        timeout=30,
+        retries=1,
+        backoff=2.0,
+        linked_entity_iris=[
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q5",
+        ],
+    )
+
+    rel_text = out_rel.read_text(encoding="utf-8")
+    assert "http://www.wikidata.org/entity/q5" in rel_text
+    assert "http://www.wikidata.org/entity/q999" not in rel_text
+
+
+def test_run_pipeline_keeps_only_linked_entities_for_wdc_and_wikidata(monkeypatch, tmp_path):
+    wdc_nq = tmp_path / "wdc.nq"
+    wd_nq = tmp_path / "wd.nq"
+    out_dir = tmp_path / "beam_out"
+
+    wdc_nq.write_text(
+        "<http://example.org/wdc/a> <http://schema.org/name> \"A\" .\n"
+        "<http://example.org/wdc/a> <http://schema.org/relatedLink> <http://example.org/wdc/b> .\n"
+        "<http://example.org/wdc/a> <http://schema.org/relatedLink> <http://example.org/wdc/c> .\n"
+        "<http://example.org/wdc/b> <http://schema.org/name> \"B\" .\n"
+        "<http://example.org/wdc/c> <http://schema.org/name> \"C\" .\n",
+        encoding="utf-8",
+    )
+    wd_nq.write_text(
+        "<http://www.wikidata.org/entity/Q1> <http://www.wikidata.org/prop/direct/P31> <http://www.wikidata.org/entity/Q5> .\n"
+        "<http://www.wikidata.org/entity/Q1> <http://www.wikidata.org/prop/direct/P31> <http://www.wikidata.org/entity/Q999> .\n"
+        "<http://www.wikidata.org/entity/Q5> <http://www.w3.org/2000/01/rdf-schema#label> \"Human\"@en .\n"
+        "<http://www.wikidata.org/entity/Q999> <http://www.w3.org/2000/01/rdf-schema#label> \"Ghost\"@en .\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(build, "append_wdc_labels_descriptions", lambda *args, **kwargs: None)
+    monkeypatch.setattr(build, "write_prop_stats_wdc", lambda *args, **kwargs: None)
+    monkeypatch.setattr(build, "write_prop_stats", lambda *args, **kwargs: None)
+
+    args = SimpleNamespace(
+        wdc_nq=[str(wdc_nq)],
+        wd_nq=str(wd_nq),
+        dedupe_links=False,
+        max_depth=-1,
+        progress_every=0,
+        wd_prop_min_count=0,
+        no_wd_labels=True,
+        sparql_url="https://query.wikidata.org/sparql",
+        lang="en",
+        batch_size=50,
+        sleep=0.0,
+        timeout=30,
+        retries=1,
+        backoff=2.0,
+        resume=False,
+        state_file=None,
+        linked_only_entities=True,
+    )
+
+    build.run_pipeline(
+        args,
+        wdc_entities=[
+            "<http://example.org/wdc/a>",
+            "<http://example.org/wdc/b>",
+        ],
+        wd_entities_raw=[
+            "http://www.wikidata.org/entity/Q1",
+            "http://www.wikidata.org/entity/Q5",
+        ],
+        wdc_values=[],
+        wd_values=[],
+        out_dir=str(out_dir),
+        wdc_mask_values=None,
+        wd_mask_values=None,
+        wdc_exclude_props=set(),
+        wdc_exclude_prop_patterns=set(),
+        wd_exclude_props=set(),
+        replace_map={},
+        lowercase_wd=True,
+        add_wd_labels=False,
+    )
+
+    rel_wdc = (out_dir / "rel_triples_1").read_text(encoding="utf-8")
+    attr_wdc = (out_dir / "attr_triples_1").read_text(encoding="utf-8")
+    rel_wd = (out_dir / "rel_triples_2").read_text(encoding="utf-8")
+
+    assert "http://example.org/wdc/c" not in rel_wdc
+    assert "http://example.org/wdc/c" not in attr_wdc
+    assert "http://www.wikidata.org/entity/q999" not in rel_wd
+    assert "http://www.wikidata.org/entity/q5" in rel_wd

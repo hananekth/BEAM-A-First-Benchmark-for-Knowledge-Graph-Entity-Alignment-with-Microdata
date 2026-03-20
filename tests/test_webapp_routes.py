@@ -1,5 +1,7 @@
 import importlib
+import io
 import json
+import zipfile
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -43,8 +45,7 @@ def _make_build_tree(build_root: Path, links_count: int = 2, class_name: str = "
                 "ignore_chars": "spaces;-;.",
                 "force_align": False,
                 "use_local_only": True,
-                "force_one_to_one_links": False,
-                "dedup_wdc_exact_subgraph_by_link_value": False,
+                "strict_duplicate_key_filter": False,
                 "build_name": build_root.name,
                 "result_path": str(build_root),
                 "parts_count": 2,
@@ -52,6 +53,19 @@ def _make_build_tree(build_root: Path, links_count: int = 2, class_name: str = "
                 "parts_manifest": [
                     {"name": "part_0001.nq", "size_human": "1.0 MB"},
                     {"name": "part_0002.nq", "size_human": "1.0 MB"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (build_root / "BUILD_STATS.json").write_text(
+        json.dumps(
+            {
+                "class_name": class_name,
+                "build_name": build_root.name,
+                "links_by_source_after_filter": [
+                    {"source": "via iata", "count": 582},
+                    {"source": "via wikidata", "count": 2},
                 ],
             }
         ),
@@ -385,13 +399,13 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
         "class_name": "  TestClass  ",
         "parts_spec": "  all  ",
         "wdc_predicate_pattern": "  name  ",
+        "wdc_pattern_search_in": "value",
         "wikidata_property": "  P31  ",
         "wkd_class": "  Q515  ",
         "ignore_chars": "  spaces;-;.  ",
         "force_align": "",
         "use_local_only": "",
-        "force_one_to_one_links": "on",
-        "dedup_wdc_exact_subgraph_by_link_value": "on",
+        "strict_duplicate_key_filter": "on",
     }
     with client:
         resp = client.post("/jobs", data=form, follow_redirects=False)
@@ -404,9 +418,9 @@ def test_create_job_persists_params(monkeypatch, test_wdc_classes):
     assert params["parts_spec"] == "all"
     assert params["matching_mode"] == "property"
     assert params["wdc_predicate_pattern"] == "name"
+    assert params["wdc_pattern_search_in"] == "value"
     assert params["wikidata_property"] == "P31"
-    assert params["force_one_to_one_links"] is True
-    assert params["dedup_wdc_exact_subgraph_by_link_value"] is True
+    assert params["strict_duplicate_key_filter"] is True
 
 
 def test_create_job_requires_wikidata_property_when_not_url_mode(monkeypatch, test_wdc_classes):
@@ -518,7 +532,63 @@ def test_create_job_url_mode_requires_wikidata_class(monkeypatch, test_wdc_class
     assert web_main.db.list_jobs(limit=10) == []
 
 
-def test_create_job_accepts_property_mapping_rules_without_legacy_fields(monkeypatch, test_wdc_classes):
+def test_create_job_sameas_or_property_requires_both_class_and_property(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form_missing_class = {
+        "matching_mode": "sameas_or_property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameAs",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form_missing_class, follow_redirects=False)
+    assert resp.status_code == 303
+    assert "form_error=" in (resp.headers.get("location") or "")
+    assert web_main.db.list_jobs(limit=10) == []
+
+    form_missing_prop = {
+        "matching_mode": "sameas_or_property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameAs",
+        "wikidata_property": "",
+        "wkd_class": "Q486972",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form_missing_prop, follow_redirects=False)
+    assert resp.status_code == 303
+    assert "form_error=" in (resp.headers.get("location") or "")
+    assert web_main.db.list_jobs(limit=10) == []
+
+
+def test_create_job_sameas_or_property_persists_mode(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    form = {
+        "matching_mode": "sameas_or_property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "sameAs",
+        "wikidata_property": "rdfs:label",
+        "wkd_class": "Q486972",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["matching_mode"] == "sameas_or_property"
+    assert params["wikidata_property"] == "rdfs:label"
+    assert params["wkd_class"] == "Q486972"
+
+
+def test_create_job_accepts_property_mapping_rules_without_compat_fields(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     form = {
         "matching_mode": "property",
@@ -539,6 +609,54 @@ def test_create_job_accepts_property_mapping_rules_without_legacy_fields(monkeyp
     params = json.loads(jobs[0]["params_json"])
     assert params["property_mapping_rules"] == "name => rdfs:label\niata => P238"
     assert params["wikidata_property"] == ""
+
+
+def test_create_job_accepts_property_mapping_rules_with_per_pair_search_modes(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    rules = 'name,iata => rdfs:label,P238 || {"search_in":["value","predicate"]}'
+    form = {
+        "matching_mode": "property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "",
+        "property_mapping_rules": rules,
+        "wikidata_property": "",
+        "wkd_class": "Q515",
+        "ignore_chars": "spaces;-;.",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["property_mapping_rules"] == rules
+
+
+def test_create_job_accepts_sameas_rule_mode_without_target_property(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    rules = 'sameAs => || {"mode":"sameas"}'
+    form = {
+        "matching_mode": "property",
+        "class_name": "TestClass",
+        "parts_spec": "all",
+        "wdc_predicate_pattern": "",
+        "property_mapping_rules": rules,
+        "wikidata_property": "",
+        "wkd_class": "Q515",
+        "ignore_chars": "",
+    }
+    with client:
+        resp = client.post("/jobs", data=form, follow_redirects=False)
+
+    assert resp.status_code == 303
+    jobs = web_main.db.list_jobs(limit=1)
+    assert len(jobs) == 1
+    params = json.loads(jobs[0]["params_json"])
+    assert params["property_mapping_rules"] == rules
+    assert params["wikidata_property"] == ""
+    assert params["wkd_class"] == "Q515"
 
 
 def test_create_job_rejects_invalid_property_mapping_rules(monkeypatch, test_wdc_classes):
@@ -599,6 +717,37 @@ def test_preflight_api_reports_matches(monkeypatch, test_wdc_classes):
     assert payload["selected_files_count"] == 1
 
 
+def test_preflight_api_supports_value_pattern_scope(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    class_dir = Path("Download") / "TestClass"
+    class_dir.mkdir(parents=True, exist_ok=True)
+    (class_dir / "part_0001.nq").write_text(
+        "<http://example.org/e1> <http://schema.org/sameAs> <https://ror.org/04pf8en64> .\n"
+        "<http://example.org/e2> <http://schema.org/name> \"Berlin\" .\n",
+        encoding="utf-8",
+    )
+
+    with client:
+        resp = client.get(
+            "/api/preflight",
+            params={
+                "class_name": "TestClass",
+                "parts_spec": "all",
+                "matching_mode": "property",
+                "wdc_predicate_pattern": "ror.org",
+                "wdc_pattern_search_in": "value",
+                "ignore_chars": "spaces;-;.",
+                "use_local_only": "true",
+                "scan_limit_lines": "10000",
+            },
+        )
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["ok"] is True
+    assert payload["matched_triples"] == 1
+
+
 def test_create_job_does_not_block_high_risk_preflight(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     class_dir = Path("Download") / "TestClass"
@@ -641,6 +790,33 @@ def test_builds_render_and_download(monkeypatch, test_wdc_classes):
 
     assert zipped.status_code == 200
     assert zipped.headers["content-type"].startswith("application/zip")
+
+
+def test_download_selected_builds_groups_files_under_class_subfolders(monkeypatch, test_wdc_classes):
+    client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+    airport_build = "beam_20260212_airport"
+    book_build = "beam_20260212_book"
+    _make_build_tree(Path("data") / "Airport" / airport_build, class_name="Airport")
+    _make_build_tree(Path("data") / "Book" / book_build, class_name="Book")
+
+    selected = json.dumps(
+        [
+            {"class_name": "Airport", "build_name": airport_build},
+            {"class_name": "Book", "build_name": book_build},
+        ]
+    )
+
+    with client:
+        resp = client.post("/builds/download_selected", data={"selected_builds": selected})
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/zip")
+
+    with zipfile.ZipFile(io.BytesIO(resp.content), "r") as zf:
+        names = zf.namelist()
+    lower_names = [name.lower() for name in names]
+    assert any(name.startswith("airport/") for name in lower_names)
+    assert any(name.startswith("book/") for name in lower_names)
 
 
 def test_history_card_exposes_build_detail_url(monkeypatch, test_wdc_classes):
@@ -693,7 +869,7 @@ def test_build_detail_page_missing_build_redirects_to_index(monkeypatch, test_wd
     assert "form_error=Build+not+found." in location
 
 
-def test_build_without_done_marker_is_visible_and_links_accessible(monkeypatch, test_wdc_classes):
+def test_build_without_done_marker_is_hidden_and_inaccessible(monkeypatch, test_wdc_classes):
     client, _web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
     build_name = "beam_20260212_partial"
     build_root = Path("data") / "TestClass" / build_name
@@ -706,19 +882,18 @@ def test_build_without_done_marker_is_visible_and_links_accessible(monkeypatch, 
 
     with client:
         home = client.get("/?test_mode=1")
-        detail = client.get(f"/builds/TestClass/{build_name}?test_mode=1")
-        links_page = client.get(f"/builds/TestClass/{build_name}/links?test_mode=1&variant=with_link_code")
+        detail = client.get(f"/builds/TestClass/{build_name}?test_mode=1", follow_redirects=False)
+        links_page = client.get(
+            f"/builds/TestClass/{build_name}/links?test_mode=1&variant=with_link_code",
+            follow_redirects=False,
+        )
         links_api = client.get(f"/api/builds/TestClass/{build_name}/links?variant=with_link_code")
 
     assert home.status_code == 200
-    assert build_name in home.text
-    assert detail.status_code == 200
-    assert "Build Detail" in detail.text
-    assert links_page.status_code == 200
-    assert "Link Explorer" in links_page.text
-    assert links_api.status_code == 200
-    assert links_api.json().get("ok") is True
-    assert links_api.json().get("total", 0) >= 1
+    assert build_name not in home.text
+    assert detail.status_code == 303
+    assert links_page.status_code == 303
+    assert links_api.status_code == 404
 
 
 def test_link_explorer_page_and_api(monkeypatch, test_wdc_classes):
@@ -1086,6 +1261,7 @@ def test_dashboard_api_returns_live_jobs_and_builds(monkeypatch, test_wdc_classe
     assert build_entry["with_link"]["top_wdc_props"]
     assert build_entry["with_link"]["top_wd_props"]
     assert isinstance(build_entry["with_link"]["qa_warnings"], list)
+    assert "via iata" in build_entry.get("linking_stats_text", "")
     assert payload["job_count"] >= 2
     assert running_job_id in payload["active_job_ids"]
     assert done_job_id not in payload["active_job_ids"]
@@ -1135,6 +1311,31 @@ def test_dashboard_api_filters_test_mode(monkeypatch, test_wdc_classes):
     assert test_job_id not in [j["id"] for j in prod_payload["jobs"]]
 
 
+def test_delete_stopped_jobs_keeps_only_active(monkeypatch, test_wdc_classes):
+    client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
+
+    running_id = web_main.db.insert_job({"class_name": "City"})
+    web_main.db.update_job(running_id, status="running")
+    queued_id = web_main.db.insert_job({"class_name": "City"})
+    web_main.db.update_job(queued_id, status="queued")
+    done_id = web_main.db.insert_job({"class_name": "City"})
+    web_main.db.update_job(done_id, status="done")
+    error_id = web_main.db.insert_job({"class_name": "City"})
+    web_main.db.update_job(error_id, status="error")
+    cancelled_id = web_main.db.insert_job({"class_name": "City"})
+    web_main.db.update_job(cancelled_id, status="cancelled")
+
+    with client:
+        resp = client.post("/jobs/delete_stopped", follow_redirects=False)
+
+    assert resp.status_code == 303
+    assert web_main.db.get_job(running_id) is not None
+    assert web_main.db.get_job(queued_id) is not None
+    assert web_main.db.get_job(done_id) is None
+    assert web_main.db.get_job(error_id) is None
+    assert web_main.db.get_job(cancelled_id) is None
+
+
 def test_dashboard_api_keeps_failed_job_visible_when_no_build_output(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
 
@@ -1160,7 +1361,7 @@ def test_dashboard_api_keeps_failed_job_visible_when_no_build_output(monkeypatch
     assert done_with_build_job_id not in payload["visible_job_ids"]
 
 
-def test_dashboard_api_normalizes_legacy_done_skipped_build_to_error(monkeypatch, test_wdc_classes):
+def test_dashboard_api_normalizes_done_skipped_build_to_error(monkeypatch, test_wdc_classes):
     client, web_main = _client_with_test_classes(monkeypatch, test_wdc_classes)
 
     reason = "No alignments found (0); build skipped."

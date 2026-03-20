@@ -109,7 +109,7 @@
     <a class="back-link" href="/{% if is_test_mode %}?test_mode=1{% endif %}">&larr; Back to dashboard</a>
     <div class="card">
       <h1>{{ build.class_name }} · {{ build.build_name }}</h1>
-      <div class="small">Completed: {{ build.done_at or "N/A" }}</div>
+      <div class="small">{{ build.done_label or "Last update" }}: {{ build.done_at or "N/A" }}</div>
       <div class="small">Path: {{ build.path }}</div>
 
       <div class="actions">

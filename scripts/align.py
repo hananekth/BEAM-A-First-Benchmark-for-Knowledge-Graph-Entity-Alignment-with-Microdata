@@ -52,6 +52,30 @@ TARGET_ENDPOINTS = {
         "supports_qid": False,
     },
 }
+
+# Endpoint-aware aliases for common Wikidata/semantic properties when querying non-Wikidata targets.
+NON_WIKIDATA_PROPERTY_ALIASES = {
+    "dbpedia": {
+        "p238": "dbp:iata",
+        "iata": "dbp:iata",
+        "iatacode": "dbp:iata",
+        "p212": "dbo:isbn",
+        "isbn": "dbo:isbn",
+        "p1329": "dbp:telephone",
+        "telephone": "dbp:telephone",
+        "phone": "dbp:phone",
+    },
+    "yago": {
+        "p238": "schema:iataCode",
+        "iata": "schema:iataCode",
+        "iatacode": "schema:iataCode",
+        "p212": "schema:isbn",
+        "isbn": "schema:isbn",
+        "p1329": "schema:telephone",
+        "telephone": "schema:telephone",
+        "phone": "schema:telephone",
+    },
+}
 _PREFIX_DECL_RE = re.compile(r"^PREFIX\s+([A-Za-z][A-Za-z0-9_-]*)\s*:\s*<([^>\s]+)>\s*$", re.IGNORECASE)
 _CPU_COUNT = max(1, os.cpu_count() or 1)
 MAX_PARALLEL_WORKERS = int(os.environ.get("ALIGN_MAX_WORKERS", str(_CPU_COUNT)))
@@ -725,6 +749,27 @@ def predicate_matches_prepared_patterns(predicate, prepared_patterns):
             return True
     return False
 
+
+def _normalize_search_in_mode(search_in):
+    mode = str(search_in or "predicate").strip().lower()
+    if mode in {"value", "object"}:
+        return "value"
+    return "predicate"
+
+
+def value_matches_prepared_patterns(value, prepared_patterns):
+    """
+    True if an object/literal value matches any prepared pattern (OR semantics).
+    Matching is case-insensitive substring on raw value text.
+    """
+    if not prepared_patterns:
+        return False
+    value_raw = str(value or "").lower()
+    for pattern_normalized, _use_raw, _original in prepared_patterns:
+        if pattern_normalized in value_raw:
+            return True
+    return False
+
 def normalize_predicate_for_match(predicate, use_raw):
     return str(predicate or "").lower()
 
@@ -872,7 +917,32 @@ def normalize_target_property(target_property, target_endpoint="wikidata"):
         return raw
     if raw.startswith("http://") or raw.startswith("https://"):
         return f"<{raw}>"
+    low = raw.lower()
+    alias = (NON_WIKIDATA_PROPERTY_ALIASES.get(key) or {}).get(low)
+    if alias:
+        return alias
     return raw
+
+
+def _target_phone_fallback_properties(target_endpoint="wikidata"):
+    key = normalize_target_endpoint_key(target_endpoint)
+    if key == "dbpedia":
+        return [
+            "dbp:telephone",
+            "dbp:phone",
+            "schema:telephone",
+            "schema:phone",
+            "foaf:phone",
+        ]
+    if key == "yago":
+        return [
+            "schema:telephone",
+            "<https://schema.org/telephone>",
+            "schema:phone",
+            "<https://schema.org/phone>",
+            "foaf:phone",
+        ]
+    return []
 
 
 def normalize_prefix_declarations(prefix_text):
@@ -1364,7 +1434,8 @@ def _extract_batch(lines):
     return value_map, all_raw_values, all_iris, country_code_changes, line_count
 
 def _extract_batch_with_pattern(args):
-    lines, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode = args
+    lines, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_in = args
+    search_mode = _normalize_search_in_mode(search_in)
     value_map = defaultdict(list)
     all_raw_values = set()
     all_iris = set()
@@ -1378,12 +1449,6 @@ def _extract_batch_with_pattern(args):
         if not (subject and predicate_tok and obj_tok):
             continue
         predicate = predicate_tok.strip("<>")
-        if collect_top_props:
-            predicates_found[predicate] += 1
-        if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
-            continue
-        
-        matched_count += 1
         if obj_tok.startswith('"'):
             value = _literal_lex(obj_tok)
             if value is None:
@@ -1392,6 +1457,16 @@ def _extract_batch_with_pattern(args):
             value = obj_tok[1:-1]
         else:
             continue
+        if collect_top_props:
+            predicates_found[predicate] += 1
+        if search_mode == "value":
+            if not value_matches_prepared_patterns(value, prepared_patterns):
+                continue
+        else:
+            if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
+                continue
+
+        matched_count += 1
 
         value_for_norm = value
         if wdc_value_is_wd_iri:
@@ -1399,7 +1474,7 @@ def _extract_batch_with_pattern(args):
             if not wd_iri:
                 continue
             value_for_norm = wd_iri
-        elif not obj_tok.startswith('"'):
+        elif search_mode != "value" and not obj_tok.startswith('"'):
             # In non-Wikidata mode, only literal values should be aligned.
             continue
 
@@ -1525,11 +1600,19 @@ def extract_unique_iris(filtered_file, parallel=True, workers=None, batch_size=2
     
     return value_map
 
-def _process_extract_window(window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, executor):
+def _process_extract_window(
+    window_batches,
+    prepared_patterns,
+    collect_top_props,
+    wdc_value_is_wd_iri,
+    phone_mode,
+    search_in,
+    executor,
+):
     futures = [
         executor.submit(
             _extract_batch_with_pattern,
-            (b, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode),
+            (b, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_in),
         )
         for b in window_batches
     ]
@@ -1537,12 +1620,27 @@ def _process_extract_window(window_batches, prepared_patterns, collect_top_props
         vmap, raw_vals, iris, cc_changes, lines, matched, preds = fut.result()
         yield vmap, raw_vals, iris, cc_changes, lines, matched, preds
 
-def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False, type_filter_iris=None):
+def extract_unique_iris_from_graph(
+    graph_file,
+    pattern,
+    collect_top_props=False,
+    top_n=100,
+    parallel=True,
+    workers=None,
+    batch_size=500000,
+    lock_path=None,
+    progress_every=100,
+    top_props_file=None,
+    wdc_value_is_wd_iri=False,
+    type_filter_iris=None,
+    search_in="predicate",
+):
     """
     Scanne un fichier NQuads complet, filtre par pattern de prédicat,
     et extrait les valeurs distinctes sans générer de fichier filtré.
     """
     print_color(f"\n📊 Extraction directe depuis le graphe (sans fichier filtré)...", Colors.BLUE)
+    search_mode = _normalize_search_in_mode(search_in)
     prepared_patterns = prepare_predicate_patterns(pattern)
     if not prepared_patterns:
         return {}, 0
@@ -1606,7 +1704,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
 
                     if len(window_batches) >= window_size:
                         for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                            window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                            window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_mode, ex
                         ):
                             matched_lines += matched
                             all_raw_values.update(raw_vals)
@@ -1629,7 +1727,7 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     window_batches.append(buffer)
                 if window_batches:
                     for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                        window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                        window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_mode, ex
                     ):
                         matched_lines += matched
                         all_raw_values.update(raw_vals)
@@ -1657,12 +1755,6 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                 if allowed_subjects is not None and subject not in allowed_subjects:
                     continue
                 predicate = predicate_tok.strip("<>")
-                if collect_top_props:
-                    predicates_found[predicate] += 1
-                if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
-                    continue
-                
-                matched_lines += 1
                 if obj_tok.startswith('"'):
                     value = _literal_lex(obj_tok)
                     if value is None:
@@ -1671,13 +1763,22 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
                     value = obj_tok[1:-1]
                 else:
                     continue
+                if collect_top_props:
+                    predicates_found[predicate] += 1
+                if search_mode == "value":
+                    if not value_matches_prepared_patterns(value, prepared_patterns):
+                        continue
+                else:
+                    if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
+                        continue
+                matched_lines += 1
                 value_for_norm = value
                 if wdc_value_is_wd_iri:
                     wd_iri = extract_wd_entity_iri(value)
                     if not wd_iri:
                         continue
                     value_for_norm = wd_iri
-                elif not obj_tok.startswith('"'):
+                elif search_mode != "value" and not obj_tok.startswith('"'):
                     continue
                 all_raw_values.add(value)
                 all_iris.add(subject)
@@ -1746,12 +1847,27 @@ def extract_unique_iris_from_graph(graph_file, pattern, collect_top_props=False,
     
     return value_map, matched_lines
 
-def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_n=100, parallel=True, workers=None, batch_size=500000, lock_path=None, progress_every=100, top_props_file=None, wdc_value_is_wd_iri=False, type_filter_iris=None):
+def extract_unique_iris_from_files(
+    files,
+    pattern,
+    collect_top_props=False,
+    top_n=100,
+    parallel=True,
+    workers=None,
+    batch_size=500000,
+    lock_path=None,
+    progress_every=100,
+    top_props_file=None,
+    wdc_value_is_wd_iri=False,
+    type_filter_iris=None,
+    search_in="predicate",
+):
     """
     Scanne plusieurs fichiers NQuads (parts), filtre par pattern de prédicat,
     et extrait les valeurs distinctes sans générer de fichier fusionné.
     """
     print_color(f"\n📊 Extraction directe depuis les parts (sans graphe fusionné)...", Colors.BLUE)
+    search_mode = _normalize_search_in_mode(search_in)
     prepared_patterns = prepare_predicate_patterns(pattern)
     if not prepared_patterns:
         return {}, 0
@@ -1823,7 +1939,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
 
                         if len(window_batches) >= window_size:
                             for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                                window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                                window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_mode, ex
                             ):
                                 matched_lines += matched
                                 all_raw_values.update(raw_vals)
@@ -1852,7 +1968,7 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                 window_batches.append(buffer)
             if window_batches:
                 for vmap, raw_vals, iris, cc_changes, lines, matched, preds in _process_extract_window(
-                    window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, ex
+                    window_batches, prepared_patterns, collect_top_props, wdc_value_is_wd_iri, phone_mode, search_mode, ex
                 ):
                     matched_lines += matched
                     all_raw_values.update(raw_vals)
@@ -1884,12 +2000,6 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                     if allowed_subjects is not None and subject not in allowed_subjects:
                         continue
                     predicate = predicate_tok.strip("<>")
-                    if collect_top_props:
-                        predicates_found[predicate] += 1
-                    if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
-                        continue
-                    
-                    matched_lines += 1
                     if obj_tok.startswith('"'):
                         value = _literal_lex(obj_tok)
                         if value is None:
@@ -1898,13 +2008,22 @@ def extract_unique_iris_from_files(files, pattern, collect_top_props=False, top_
                         value = obj_tok[1:-1]
                     else:
                         continue
+                    if collect_top_props:
+                        predicates_found[predicate] += 1
+                    if search_mode == "value":
+                        if not value_matches_prepared_patterns(value, prepared_patterns):
+                            continue
+                    else:
+                        if not predicate_matches_prepared_patterns(predicate, prepared_patterns):
+                            continue
+                    matched_lines += 1
                     value_for_norm = value
                     if wdc_value_is_wd_iri:
                         wd_iri = extract_wd_entity_iri(value)
                         if not wd_iri:
                             continue
                         value_for_norm = wd_iri
-                    elif not obj_tok.startswith('"'):
+                    elif search_mode != "value" and not obj_tok.startswith('"'):
                         continue
                     all_raw_values.add(value)
                     all_iris.add(subject)
@@ -2074,7 +2193,28 @@ def _truthy_env(value):
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _wikidata_cache_path(prop, wkd_class_norm, wkd_prop_class_norm, entity_iris=None, lang_key="all"):
+def _sparql_quote_literal(value):
+    # JSON string escaping is compatible with SPARQL string literals.
+    return json.dumps(str(value or ""), ensure_ascii=False)
+
+
+def _is_absolute_iri(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return False
+    if raw.startswith("<") and raw.endswith(">"):
+        raw = raw[1:-1].strip()
+    return raw.startswith("http://") or raw.startswith("https://")
+
+
+def _wikidata_cache_path(
+    prop,
+    wkd_class_norm,
+    wkd_prop_class_norm,
+    entity_iris=None,
+    value_candidates=None,
+    lang_key="all",
+):
     entity_iris = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
     entity_hash = "none"
     if entity_iris:
@@ -2083,14 +2223,24 @@ def _wikidata_cache_path(prop, wkd_class_norm, wkd_prop_class_norm, entity_iris=
             sha.update(iri.encode("utf-8", errors="ignore"))
             sha.update(b"\n")
         entity_hash = sha.hexdigest()
+    value_candidates = sorted({str(v).strip() for v in (value_candidates or []) if str(v).strip()})
+    value_hash = "none"
+    if value_candidates:
+        sha = hashlib.sha1()
+        for value in value_candidates:
+            sha.update(value.encode("utf-8", errors="ignore"))
+            sha.update(b"\n")
+        value_hash = sha.hexdigest()
     key_payload = {
-        "v": 1,
+        "v": 2,
         "prop": prop or "?prop",
         "wkd_class": wkd_class_norm or "",
         "wkd_prop_class": wkd_prop_class_norm or "",
         "lang": str(lang_key or "all"),
         "entity_count": len(entity_iris),
         "entity_hash": entity_hash,
+        "value_count": len(value_candidates),
+        "value_hash": value_hash,
     }
     cache_key = hashlib.sha1(
         json.dumps(key_payload, sort_keys=True, ensure_ascii=True).encode("utf-8", errors="ignore")
@@ -2166,7 +2316,13 @@ def _save_wikidata_value_cache(path, value_map):
         return False
 
 
-def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None, entity_iris=None):
+def fetch_wikidata_values(
+    wikidata_property,
+    wkd_class=None,
+    wkd_prop_class=None,
+    entity_iris=None,
+    value_candidates=None,
+):
     """Récupère les valeurs depuis Wikidata pour une propriété donnée, avec filtre de classe optionnel"""
     print_color(f"\n🌐 Récupération des valeurs Wikidata ({wikidata_property})...", Colors.BLUE)
     
@@ -2194,8 +2350,12 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
     """
     
     entity_iris_sorted = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
+    value_candidates_sorted = sorted({str(v).strip() for v in (value_candidates or []) if str(v).strip()})
     if not prop and not entity_iris_sorted:
         print_color("❌ No Wikidata entity IRIs provided (empty VALUES set).", Colors.RED)
+        return {}
+    if value_candidates_sorted and not prop:
+        print_color("❌ value_candidates requires a Wikidata property.", Colors.RED)
         return {}
 
     cache_disabled = _truthy_env(os.environ.get("WIKIDATA_CACHE_DISABLED", "0"))
@@ -2205,6 +2365,7 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
         wkd_class_norm=wkd_class_norm,
         wkd_prop_class_norm=wkd_prop_class_norm,
         entity_iris=entity_iris_sorted,
+        value_candidates=value_candidates_sorted,
         lang_key=cache_lang,
     )
     if not cache_disabled:
@@ -2246,6 +2407,7 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
         base_delay = max(0.1, float(os.environ.get("WIKIDATA_QUERY_RETRY_DELAY", "2.0")))
         timeout_s = max(1, int(os.environ.get("WIKIDATA_QUERY_TIMEOUT", "300")))
         entity_batch_size = max(1, int(os.environ.get("WIKIDATA_ENTITY_BATCH_SIZE", "500")))
+        value_batch_size = max(1, int(os.environ.get("WIKIDATA_VALUE_BATCH_SIZE", "500")))
         headers = {
             "Accept": "application/sparql-results+json",
             "User-Agent": "beam-align/1.0",
@@ -2277,11 +2439,41 @@ def fetch_wikidata_values(wikidata_property, wkd_class=None, wkd_prop_class=None
                     batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
                     if isinstance(batch_bindings, list):
                         bindings.extend(batch_bindings)
+        elif value_candidates_sorted and len(value_candidates_sorted) > value_batch_size:
+            batches = list(_chunk_list(value_candidates_sorted, value_batch_size))
+            print(
+                f"   Batching values: {len(value_candidates_sorted):,} values in "
+                f"{len(batches)} batches (size={value_batch_size})"
+            )
+            for idx, value_batch in enumerate(batches, 1):
+                values = " ".join(_sparql_quote_literal(v) for v in value_batch)
+                values_filter = f"VALUES ?value {{ {values} }}\n"
+                batch_query = query_template.format(
+                    values_filter=values_filter,
+                    property_triple=property_triple,
+                    prop_class_filter=prop_class_filter,
+                    class_filter=class_filter,
+                )
+                print(f"   [WD] value-batch {idx}/{len(batches)} size={len(value_batch)}")
+                results = _run_sparql_query_with_retry(
+                    batch_query,
+                    headers=headers,
+                    timeout_s=timeout_s,
+                    max_attempts=max_attempts,
+                    base_delay=base_delay,
+                )
+                if results and isinstance(results, dict):
+                    batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                    if isinstance(batch_bindings, list):
+                        bindings.extend(batch_bindings)
         else:
             values_filter = ""
             if entity_iris_sorted:
                 values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
                 values_filter = f"VALUES ?entity {{ {values} }}\n"
+            elif value_candidates_sorted:
+                values = " ".join(_sparql_quote_literal(v) for v in value_candidates_sorted)
+                values_filter = f"VALUES ?value {{ {values} }}\n"
             query = query_template.format(
                 values_filter=values_filter,
                 property_triple=property_triple,
@@ -2350,9 +2542,11 @@ def fetch_target_values(
     target_class=None,
     target_prop_class=None,
     entity_iris=None,
+    value_candidates=None,
     target_endpoint="wikidata",
     target_endpoint_url=None,
     target_prefixes=None,
+    _phone_fallback_attempted=False,
 ):
     endpoint_key = normalize_target_endpoint_key(target_endpoint)
     if endpoint_key == "wikidata":
@@ -2376,8 +2570,12 @@ def fetch_target_values(
     prop = normalize_target_property(target_property, endpoint_key)
     class_norm = normalize_target_class(target_class, endpoint_key)
     entity_iris_sorted = sorted({str(v).strip() for v in (entity_iris or []) if str(v).strip()})
+    value_candidates_sorted = sorted({str(v).strip() for v in (value_candidates or []) if str(v).strip()})
     if not prop and not entity_iris_sorted:
         print_color("❌ target_property is required when no entity IRIs are provided.", Colors.RED)
+        return {}
+    if value_candidates_sorted and not prop:
+        print_color("❌ value_candidates requires target_property.", Colors.RED)
         return {}
 
     if not prop and entity_iris_sorted:
@@ -2418,6 +2616,28 @@ def fetch_target_values(
             "User-Agent": "beam-align/1.0",
         }
         bindings = []
+        
+        def _build_values_filter(entity_batch=None, value_batch=None):
+            chunks = []
+            if entity_batch:
+                values = " ".join(f"<{uri}>" for uri in entity_batch)
+                chunks.append(f"VALUES ?entity {{ {values} }}")
+            if value_batch:
+                rendered = []
+                for raw in value_batch:
+                    value = str(raw or "").strip()
+                    if not value:
+                        continue
+                    if _is_absolute_iri(value):
+                        if value.startswith("<") and value.endswith(">"):
+                            rendered.append(value)
+                        else:
+                            rendered.append(f"<{value}>")
+                    else:
+                        rendered.append(_sparql_quote_literal(value))
+                values = " ".join(rendered)
+                chunks.append(f"VALUES ?value {{ {values} }}")
+            return ("\n".join(chunks) + "\n") if chunks else ""
 
         if entity_iris_sorted and len(entity_iris_sorted) > entity_batch_size:
             batches = list(_chunk_list(entity_iris_sorted, entity_batch_size))
@@ -2425,8 +2645,7 @@ def fetch_target_values(
                 f"   Batching entities: {len(entity_iris_sorted):,} IRIs in {len(batches)} batches (size={entity_batch_size})"
             )
             for idx, entity_batch in enumerate(batches, 1):
-                values = " ".join(f"<{uri}>" for uri in entity_batch)
-                values_filter = f"VALUES ?entity {{ {values} }}\n"
+                values_filter = _build_values_filter(entity_batch=entity_batch, value_batch=value_candidates_sorted)
                 batch_query = query_template.format(
                     custom_prefixes=custom_prefixes,
                     values_filter=values_filter,
@@ -2446,11 +2665,34 @@ def fetch_target_values(
                     batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
                     if isinstance(batch_bindings, list):
                         bindings.extend(batch_bindings)
+        elif value_candidates_sorted and len(value_candidates_sorted) > entity_batch_size:
+            batches = list(_chunk_list(value_candidates_sorted, entity_batch_size))
+            print(
+                f"   Batching values: {len(value_candidates_sorted):,} values in {len(batches)} batches (size={entity_batch_size})"
+            )
+            for idx, value_batch in enumerate(batches, 1):
+                values_filter = _build_values_filter(entity_batch=entity_iris_sorted, value_batch=value_batch)
+                batch_query = query_template.format(
+                    custom_prefixes=custom_prefixes,
+                    values_filter=values_filter,
+                    property_triple=property_triple,
+                    class_filter=class_filter,
+                )
+                print(f"   [TARGET] value-batch {idx}/{len(batches)} size={len(value_batch)}")
+                results = _run_sparql_query_with_retry_to_endpoint(
+                    endpoint_url,
+                    query=batch_query,
+                    headers=headers,
+                    timeout_s=timeout_s,
+                    max_attempts=max_attempts,
+                    base_delay=base_delay,
+                )
+                if results and isinstance(results, dict):
+                    batch_bindings = (((results.get("results") or {}).get("bindings")) or [])
+                    if isinstance(batch_bindings, list):
+                        bindings.extend(batch_bindings)
         else:
-            values_filter = ""
-            if entity_iris_sorted:
-                values = " ".join(f"<{uri}>" for uri in entity_iris_sorted)
-                values_filter = f"VALUES ?entity {{ {values} }}\n"
+            values_filter = _build_values_filter(entity_batch=entity_iris_sorted, value_batch=value_candidates_sorted)
             query = query_template.format(
                 custom_prefixes=custom_prefixes,
                 values_filter=values_filter,
@@ -2470,6 +2712,49 @@ def fetch_target_values(
                 if isinstance(direct_bindings, list):
                     bindings.extend(direct_bindings)
         if not bindings:
+            if (
+                (not _phone_fallback_attempted)
+                and _looks_like_phone_mode(target_property)
+                and endpoint_key in {"dbpedia", "yago"}
+            ):
+                fallback_props = _target_phone_fallback_properties(endpoint_key)
+                merged = defaultdict(list)
+                seen_pairs = set()
+                any_found = False
+                for alt_prop in fallback_props:
+                    alt_prop = str(alt_prop or "").strip()
+                    if not alt_prop:
+                        continue
+                    if prop and alt_prop == prop:
+                        continue
+                    alt_map = fetch_target_values(
+                        target_property=alt_prop,
+                        target_class=target_class,
+                        target_prop_class=target_prop_class,
+                        entity_iris=entity_iris,
+                        value_candidates=value_candidates,
+                        target_endpoint=target_endpoint,
+                        target_endpoint_url=target_endpoint_url,
+                        target_prefixes=target_prefixes,
+                        _phone_fallback_attempted=True,
+                    )
+                    if alt_map is None:
+                        continue
+                    if alt_map:
+                        any_found = True
+                    for norm, entries in alt_map.items():
+                        for raw_value, iri in list(entries or []):
+                            pair = (str(raw_value or ""), str(iri or ""))
+                            if pair in seen_pairs:
+                                continue
+                            seen_pairs.add(pair)
+                            merged[str(norm or "")].append(pair)
+                if any_found:
+                    print_color(
+                        f"ℹ️ Phone fallback matched {sum(len(v) for v in merged.values())} value→entity pairs via alternate properties.",
+                        Colors.BLUE,
+                    )
+                    return dict(merged)
             return {}
 
         phone_mode = _looks_like_phone_mode(target_property)
