@@ -11,6 +11,9 @@ It lets you:
 
 This README focuses on how to install, run, and operate the app.
 
+For a fresh VM deployment guide, see:
+- `docs/DEPLOYMENT_VM.md`
+
 ## What Runs In This Project
 
 Main components:
