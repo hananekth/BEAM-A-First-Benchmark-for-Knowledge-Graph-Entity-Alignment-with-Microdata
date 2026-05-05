@@ -1,0 +1,556 @@
+predicate	count	label	description
+http://www.w3.org/2000/01/rdf-schema#label	1566		
+http://schema.org/description	1511		
+http://www.wikidata.org/prop/direct/p1174	508	visitors per year	number of people visiting a location or an event each year
+http://www.w3.org/2004/02/skos/core#altLabel	470		
+http://www.wikidata.org/prop/direct/p625	221	coordinate location	geocoordinates of the subject. For Earth, please note that only the WGS84 geodetic datum is currently supported
+http://schema.org/dateModified	199		
+http://schema.org/version	199		
+http://wikiba.se/ontology#identifiers	198		
+http://wikiba.se/ontology#sitelinks	198		
+http://wikiba.se/ontology#statements	198		
+http://www.wikidata.org/prop/direct/p214	184	VIAF cluster ID	identifier for the Virtual International Authority File database [format: up to 22 digits]; please note: VIAF is a cluster, the ID can include multiple items
+http://www.wikidata.org/prop/direct/p373	179	Commons category	name of the Wikimedia Commons category containing files related to this item (without the prefix 
+http://www.wikidata.org/prop/direct/p571	164	inception	time when an entity begins to exist; for date of official opening use P1619
+http://www.wikidata.org/prop/direct/p8093	158	donations	sum of donations an organization receives
+http://www.wikidata.org/prop/direct/p213	148	ISNI	International Standard Name Identifier for an identity. Starting with 0000.
+http://www.wikidata.org/prop/direct/p244	144	Library of Congress authority ID	Library of Congress name authority (persons, families, corporate bodies, events, places, works and expressions) and subject authority identifier [Format: 1-2 specific letters followed by 8-10 digits (see regex). For manifestations, use P1144]
+http://www.wikidata.org/prop/direct/p281	132	postal code	code assigned by postal authorities for the subject area or building for the purpose of sorting and routing mail
+http://www.wikidata.org/prop/direct/p646	130	Freebase ID	identifier for a page in the Freebase database. Format: 
+http://www.wikidata.org/prop/direct/p2139	129	total revenue	income gained by an organization during a given time frame. Not to be confused with fiscal revenue
+http://www.wikidata.org/prop/direct/p269	125	IdRef ID	identifier for authority control in the French collaborative library catalog (see also P1025). Format: 8 digits followed by a digit or 
+http://www.wikidata.org/prop/direct/p13591	119	Yale LUX ID	identifier for an entity in Yale's LUX cross collection knowledge graph
+http://www.wikidata.org/prop/direct/p227	117	GND ID	identifier from the Gemeinsame Normdatei authority file of names, subjects, and organizations
+http://www.wikidata.org/prop/direct/p1619	115	date of official opening	date or point in time a place, organization, or event officially opened
+http://www.wikidata.org/prop/direct/p1612	114	Commons Institution page	name of the institutions's page on Wikimedia Commons (without the prefix 
+http://www.wikidata.org/prop/direct/p8687	114	social media followers	number of subscribers on a particular social media website (use as main statement only; see P3744 instead for qualifier). Qualify with 
+http://www.wikidata.org/prop/direct/p8189	112	National Library of Israel J9U ID	identifier used by the National Library of Israel
+http://www.wikidata.org/prop/direct/p1128	110	employees	total number of employees of a company at a given 
+http://www.wikidata.org/prop/direct/p691	104	NL CR AUT ID	identifier in the Czech National Authority Database of National Library of the Czech Republic (NL CR)
+http://www.wikidata.org/prop/direct/p268	101	Bibliothèque nationale de France ID	identifier for the subject issued by BNF (Bibliothèque nationale de France). Format: 8 digits followed by a check-digit or letter, do not include the initial 'cb'.
+http://www.wikidata.org/prop/direct/p2002	100	X (Twitter) username	username on X (formerly Twitter); do not include the '@' symbol
+http://www.wikidata.org/prop/direct/p2403	90	total assets	value of assets held by a private or public entity
+http://www.wikidata.org/prop/direct/p6155	85	Sotheby's Museum Network ID	identifier for a museum on the Sotheby's Museum Network website
+http://www.wikidata.org/prop/direct/p10689	81	OpenStreetMap way ID	identifier for a way in OpenStreetMap
+http://www.wikidata.org/prop/direct/p2013	80	Facebook username	identifier for an official (preferably) Facebook person, product or organization page (everything that follows URL part 'https://www.facebook.com/')
+http://www.wikidata.org/prop/direct/p245	74	Union List of Artist Names ID	identifier from the Getty Union List of Artist Names
+http://www.wikidata.org/prop/direct/p271	73	NACSIS-CAT author ID	identifier for book authors in NACSIS-CAT, the union catalog for university libraries and research institutions in Japan
+http://www.wikidata.org/prop/direct/p11496	72	CiNii Research ID	19-digits identifier in CiNii Research
+http://www.wikidata.org/prop/direct/p2046	72	area	area occupied by an object
+http://www.wikidata.org/prop/direct/p1436	70	collection or exhibition size	number of items in a collection or exhibition
+http://www.wikidata.org/prop/direct/p2003	70	Instagram username	item's username on Instagram
+http://www.wikidata.org/prop/direct/p1566	62	GeoNames ID	identifier in the GeoNames geographical database
+http://www.wikidata.org/prop/direct/p3065	62	RERO ID (legacy)	identifier in the Library network of Western Switzerland's RERO database
+http://www.wikidata.org/prop/direct/p11686	61	University of Barcelona authority ID	register of authorities of the University of Barcelona
+http://www.wikidata.org/prop/direct/p9984	60	CANTIC ID	identifier for authority control managed by the Library of Catalonia
+http://www.wikidata.org/prop/direct/p409	59	Libraries Australia ID	identifier issued by the National Library of Australia. VIAF component. Format: 1-12 digits, removing leading zero-padding.
+http://www.wikidata.org/prop/direct/p1417	58	Encyclopædia Britannica Online ID	identifier for an article in the online version of Encyclopædia Britannica
+http://www.wikidata.org/prop/direct/p3500	58	Ringgold ID	identifier for organisations in the publishing industry supply chain
+http://www.wikidata.org/prop/direct/p4702	56	Google Arts & Culture partner ID	identifier for a museum or other partner on the Google Arts & Culture website
+http://www.wikidata.org/prop/direct/p1207	55	NUKAT ID	identifier for authority control in the Center of Warsaw University Library catalog
+http://www.wikidata.org/prop/direct/p4146	55	Athenaeum museum ID	museum or other repository/source id in work Athenaeum artworks
+http://www.wikidata.org/prop/direct/p9964	54	Kalliope-Verbund (GND) ID	identifier for an entity in the Kalliope-Verbund database
+http://www.wikidata.org/prop/direct/p3134	53	TripAdvisor ID	identifier of a place (region, hotel, restaurant, attraction), in TripAdvisor
+http://www.wikidata.org/prop/direct/p2186	51	Wiki Loves Monuments ID	unique ID for the monuments included in Wiki Loves Monuments national lists
+http://www.wikidata.org/prop/direct/p2397	51	YouTube channel ID	ID of the YouTube channel of a person or organisation (not to be confused with the name of the channel) The ID can also be used for music.youtube.com IDs
+http://www.wikidata.org/prop/direct/p3977	50	Songkick venue ID	identifier for a venue, on Songkick
+http://www.wikidata.org/prop/direct/p1015	49	BIBSYS ID	Norwegian Authority File: Persons and Corporate Bodies
+http://www.wikidata.org/prop/direct/p3417	49	Quora topic ID	identifier for a topic on Quora (English language version)
+http://www.wikidata.org/prop/direct/p8179	49	Canadiana Name Authority ID	system control number used in the Canadiana Name Authority File, format: 
+http://www.wikidata.org/prop/direct/p6375	47	street address	full street address where subject is located. Include building number, city/locality, post code, but not country; use also P669 if the street has its own separate item
+http://www.wikidata.org/prop/direct/p6125	46	number of volunteers	number of people who volunteer for an organization at a particular time
+http://www.wikidata.org/prop/direct/p5383	45	archINFORM project ID	identifier for a project on the archINFORM website
+http://www.wikidata.org/prop/direct/p950	45	National Library of Spain SpMaBN ID (BNE v1.0)	semi-deprecated control number of the National Library of Spain catalog powered by Symphony. Format for persons: 
+http://www.wikidata.org/prop/direct/p6782	44	ROR ID	identifier for the Research Organization Registry
+http://www.wikidata.org/prop/direct/p2427	43	GRID ID	institutional identifier from the GRID.ac global research identifier database
+http://www.wikidata.org/prop/direct/p3987	43	SHARE Catalogue author ID	identifier for authors in SHARE Catalogue, a linked data federated catalogue of several Southern Italy universities
+http://www.wikidata.org/prop/direct/p5782	42	DBUnico MIBACT ID	database identifier from the Italian Ministry MIBACT (DBUnico 2.0)
+http://www.wikidata.org/prop/direct/p935	41	Commons gallery	name of the Wikimedia Commons gallery page(s) related to this item (is suitable to allow multiple links to more gallery pages)
+http://www.wikidata.org/prop/direct/p8034	39	Vatican Library VcBA ID	authority control for a subject on the website opac.vatlib.it of the Vatican Library. Format 3 digits + 
+http://www.wikidata.org/prop/direct/p11693	38	OpenStreetMap node ID	ID of a node in OpenStreetMap for the item
+http://www.wikidata.org/prop/direct/p2671	38	Google Knowledge Graph ID	identifier for Google Knowledge Graph API, starting with 
+http://www.wikidata.org/prop/direct/p12187	36	Thesaurus Linguae Aegyptiae thesaurus ID	identifier for a metadata thesaurus entry in the Thesaurus Linguae Aegyptiae
+http://www.wikidata.org/prop/direct/p2900	36	fax number	telephone number of a facsimile line
+http://www.wikidata.org/prop/direct/p402	35	OpenStreetMap relation ID	identifier for a relation in OpenStreetMap
+http://www.wikidata.org/prop/direct/p3749	33	Google Maps Customer ID	in Google Maps, Customer identifier for a place
+http://www.wikidata.org/prop/direct/p1273	32	CANTIC ID (former scheme)	old identifier for authority control managed by the Library of Catalonia. Format: 
+http://www.wikidata.org/prop/direct/p1315	32	NLA Trove people ID	identifier for people or organizations per National Library of Australia (see also P409 for the older Libraries Australia identifier). Format: 5 to 7 digits.
+http://www.wikidata.org/prop/direct/p6698	31	Japan Search name ID	identifier in the Japan Search portal
+http://www.wikidata.org/prop/direct/p7293	31	National Library of Poland MMS ID	National Library of Poland record no. identifier. Format: 
+http://www.wikidata.org/prop/direct/p5490	30	artist-info location ID	identifier in the artist-info location database of exhibition records
+http://www.wikidata.org/prop/direct/p1368	29	National Library of Latvia ID	identifier assigned by the National Library of Latvia
+http://www.wikidata.org/prop/direct/p10227	28	National Library of Ireland ID	identifier of a National Library of Ireland authority record
+http://www.wikidata.org/prop/direct/p11729	28	Kulturenvanteri monument ID	numerical identifier for a monument or heritage site in the Kulturenvanteri.com database of Turkey
+http://www.wikidata.org/prop/direct/p539	27	Museofile ID	identifier for a museum in the Museofile database of the French ministry of culture
+http://www.wikidata.org/prop/direct/p10565	26	Encyclopedia of China (Third Edition) ID	identifier for an article in the online version of Encyclopedia of China (third edition)
+http://www.wikidata.org/prop/direct/p4839	26	Wolfram Language entity code	input form for an entity in Wolfram Language
+http://www.wikidata.org/prop/direct/p13092	25	KISTI ID	institute identifier issued by the Korea Institute of Science & Technology Information
+http://www.wikidata.org/prop/direct/p7699	25	National Library of Lithuania ID	authority id at the National Library of Lithuania, part of VIAF (code LIH)
+http://www.wikidata.org/prop/direct/p8313	25	Lex ID	identifier of an article in the online encyclopedia.lex.dk
+http://www.wikidata.org/prop/direct/p9918	25	Kallías ID	identifier in Kallías, the catalog of the German Literature Archive Marbach (DLA Marbach)
+http://www.wikidata.org/prop/direct/p1004	24	MusicBrainz place ID	Identifier for a place in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p2555	24	fee	fee or toll payable to use, transit or enter the subject (only for one-time fees, do NOT use it for an ongoing fee, tuition fee or trading fee)
+http://www.wikidata.org/prop/direct/p2924	24	Great Russian Encyclopedia Online ID (2017)	identifier for an entry on old.bigenc.ru, the official site of the Great Russian Encyclopedia Online 2014–2017 (current version of bigenc.ru is P11514)
+http://www.wikidata.org/prop/direct/p7772	24	Atlas Obscura place ID	identifier for places on the Atlas Obscura website
+http://www.wikidata.org/prop/direct/p349	23	NDL Authority ID	identifier for authority control per the National Diet Library of Japan
+http://www.wikidata.org/prop/direct/p9495	23	National Historical Museums of Sweden ID	authority identification for an entry in the collections of the National Historical Museums of Sweden
+http://www.wikidata.org/prop/direct/p12674	22	Kunstenpunt Knowledge Graph ID	identifier in the Flanders Arts Institute database for performing arts
+http://www.wikidata.org/prop/direct/p454	22	Structurae structure ID	identifier for a building in the Structurae database
+http://www.wikidata.org/prop/direct/p5587	22	Libris-URI	identifier for an item in the catalogue of the Swedish National Library
+http://www.wikidata.org/prop/direct/p791	22	ISIL	identifier for a library or related organization
+http://www.wikidata.org/prop/direct/p1005	21	Portuguese National Library author ID	identifier for an author in the Biblioteca Nacional de Portugal
+http://www.wikidata.org/prop/direct/p1017	21	Vatican Library ID (former scheme)	historical identifier for authority control used at the Vatican Library. Format: 
+http://www.wikidata.org/prop/direct/p11245	21	YouTube handle	unique identifier of a person, organization or channel on YouTube; do not include the 
+http://www.wikidata.org/prop/direct/p5164	21	Flanders Arts Institute organisation ID (former scheme)	identifier of an organisation in the Flanders Arts Institute database for performing arts
+http://www.wikidata.org/prop/direct/p6366	21	Microsoft Academic ID (discontinued)	identifier for an object or topic in the Microsoft Academic Graph (until 31 December 2021)
+http://www.wikidata.org/prop/direct/p12597	20	museum-digital ID	identification of a person or institution in the vocabulary of the digital museum
+http://www.wikidata.org/prop/direct/p13249	20	Museum Data Service museum ID	identifier for a museum or museum collection in the UK (also Channel Islands and Isle of Man), in the MDS database
+http://www.wikidata.org/prop/direct/p2581	20	BabelNet ID	ID in BabelNet encyclopedic dictionary
+http://www.wikidata.org/prop/direct/p648	20	Open Library ID	identifier for a work (
+http://www.wikidata.org/prop/direct/p10873	19	Mapping Museums ID	identifier for a UK museum existing in the 1960 to 2022 period, in Mapping Museums database
+http://www.wikidata.org/prop/direct/p1602	19	Art UK venue ID	authority control identifier for venues housing art, in the UK
+http://www.wikidata.org/prop/direct/p1711	19	British Museum person or institution ID	identifier for a person or institution in the British Museum person-institution thesaurus
+http://www.wikidata.org/prop/direct/p3630	19	Babelio author ID	identifier for an author on the literature website Babelio
+http://www.wikidata.org/prop/direct/p8168	19	FactGrid item ID	identifier for an item in FactGrid
+http://www.wikidata.org/prop/direct/p1375	18	NSK (VIAF) ID	identifier for an item in the National and University Library in Zagreb (including leading zeroes), used in VIAF
+http://www.wikidata.org/prop/direct/p1705	18	native label	label for the items in their official language or their original language
+http://www.wikidata.org/prop/direct/p3222	18	NE.se ID	ID of article on the Swedish Nationalencyklopedin (NE.se) site
+http://www.wikidata.org/prop/direct/p9756	18	Schoenberg Database of Manuscripts name ID	identifier for an agent (person or corporate body) in the Schoenberg Database of Manuscripts
+http://www.wikidata.org/prop/direct/p12800	17	Vikidia article ID	identifier for an article on Vikidia (format 
+http://www.wikidata.org/prop/direct/p13818	17	AGORHA UUID	item ID in the AGORHA database (INHA)
+http://www.wikidata.org/prop/direct/p2163	17	FAST ID	authority control identifier in WorldCat's “FAST Linked Data” authority file
+http://www.wikidata.org/prop/direct/p4342	17	Great Norwegian Encyclopedia ID	identifier of an article in the online encyclopedia snl.no
+http://www.wikidata.org/prop/direct/p5432	17	setlist.fm venue ID	identifier for a music venue at Setlist.fm
+http://www.wikidata.org/prop/direct/p906	17	SELIBR ID	identifier per National Library of Sweden Libris library catalog
+http://www.wikidata.org/prop/direct/p10283	16	OpenAlex ID	identifier for works, grants, authors, institutes, venues, concepts/subjects in OpenAlex
+http://www.wikidata.org/prop/direct/p1297	16	IRS Employer Identification Number	number given to businesses and charities by the United States Internal Revenue Service
+http://www.wikidata.org/prop/direct/p4399	16	Itaú Cultural ID	unique identifier for a entity in the Itaú Cultural Encyclopedia website
+http://www.wikidata.org/prop/direct/p4553	16	RA Collections ID	identifier for an entry in the collections database of the Royal Academy of Arts, London
+http://www.wikidata.org/prop/direct/p5763	16	Directorio de Museos y Colecciones de España ID	identifier for a museum on the Directorio de Museos y Colecciones de España website
+http://www.wikidata.org/prop/direct/p6379	16	has works in the collection	collection that has works of this person or organisation (use archives at [P485] for archives)
+http://www.wikidata.org/prop/direct/p396	15	SBN author ID	identifier issued by National Library Service (SBN) of Italy
+http://www.wikidata.org/prop/direct/p4619	15	National Library of Brazil ID	identifier for an element in the database of the National Library of Brazil
+http://www.wikidata.org/prop/direct/p4861	15	Charity Navigator ID (obsolete)	identifier for a charitable organisation in the United States, formerly in the Charity Navigator database (deprecated, the website now uses the IRS EIN (P1297))
+http://www.wikidata.org/prop/direct/p12385	14	Gran Enciclopèdia Catalana ID	identifier for an item in the Gran Enciclopèdia Catalana
+http://www.wikidata.org/prop/direct/p1296	14	Gran Enciclopèdia Catalana ID (former scheme)	identifier for an item in the Gran Enciclopèdia Catalana. Replaced with 
+http://www.wikidata.org/prop/direct/p3836	14	Pinterest username	username of the Pinterest account of a person or an organization
+http://www.wikidata.org/prop/direct/p4527	14	UK Parliament thesaurus ID	identifier in the thesaurus of subject headings maintained by the librarians in the House of Commons in the UK
+http://www.wikidata.org/prop/direct/p12086	13	WikiKids ID	identifier of the article on WikiKids
+http://www.wikidata.org/prop/direct/p3280	13	BAnQ authority ID	identifier for an authority record for authors, works, and subject headings in the Bibliothèque et Archives nationales du Québec (BAnQ).
+http://www.wikidata.org/prop/direct/p11514	12	Great Russian Encyclopedia portal ID	identifier of an entry on the web portal based on the Great Russian Encyclopedia (for the older version of encyclopedia use P2924)
+http://www.wikidata.org/prop/direct/p1949	12	CulturaItalia ID	identification number for the CulturaItalia LOD section
+http://www.wikidata.org/prop/direct/p3219	12	Encyclopædia Universalis ID	identifier for an article in the online version of Encyclopædia Universalis
+http://www.wikidata.org/prop/direct/p3348	12	National Library of Greece ID	authority ID from the National Library of Greece Authority Records
+http://www.wikidata.org/prop/direct/p3393	12	LittleSis organization ID	organisation in the LittleSis who-knows-who of government and business database
+http://www.wikidata.org/prop/direct/p3544	12	Te Papa agent ID	identifier assigned to a person or organisation by the Museum of New Zealand Te Papa Tongarewa
+http://www.wikidata.org/prop/direct/p3642	12	ARCHON code	unique number used to identify archival collection locations within the UK and key global repositories holding collections relating to British history
+http://www.wikidata.org/prop/direct/p4264	12	LinkedIn company or organization ID	identifier for an official company, school, organisation page, or showcase page, on LinkedIn
+http://www.wikidata.org/prop/direct/p4808	12	Royal Academy ID	new (2018) identifier for a person (or sometimes a thing) in the collections and archives of the Royal Academy, London
+http://www.wikidata.org/prop/direct/p5436	12	number of viewers/listeners	number of viewers of a television or broadcasting program; web traffic on websites
+http://www.wikidata.org/prop/direct/p613	12	OS grid reference	grid location reference from the Ordnance Survey National Grid reference system used in Great Britain
+http://www.wikidata.org/prop/direct/p7305	12	Online PWN Encyclopedia ID	identifier for an entry in the online release of the Online PWN Encyclopedia
+http://www.wikidata.org/prop/direct/p2037	11	GitHub account	account of this project, person or organization on GitHub
+http://www.wikidata.org/prop/direct/p3430	11	SNAC ARK ID	identifier for items in the Social Networks and Archival Context system
+http://www.wikidata.org/prop/direct/p4173	11	Instagram location ID	identifier for a location on Instagram
+http://www.wikidata.org/prop/direct/p8317	11	Philadelphia Museum of Art entity ID	identifier for a person or organization in the Philadelphia Museum of Art
+http://www.wikidata.org/prop/direct/p8501	11	Gateway to Research organisation ID	identifier for an organisation in the UK Research and Innovation (UKRI)'s Gateway to Research (GtR) database of research funding
+http://www.wikidata.org/prop/direct/p12485	10	British Listed Buildings ID	identifier for the British Listed Buildings website
+http://www.wikidata.org/prop/direct/p1617	10	BBC Things ID	identifier in the BBC Things database, automatically enriched with Wikipedia and MusicBrainz content
+http://www.wikidata.org/prop/direct/p1838	10	PSS-archi ID	identifier for a building in the PSS-archi database
+http://www.wikidata.org/prop/direct/p1968	10	Foursquare City Guide venue ID	ID of a place in Foursquare City Guide
+http://www.wikidata.org/prop/direct/p3221	10	New York Times topic ID	identifier of a topic at the New York Times website
+http://www.wikidata.org/prop/direct/p4090	10	Biodiversity Repository ID	identifier of a repository, in the Biodiversity Repository database
+http://www.wikidata.org/prop/direct/p6334	10	Agence photo RMN package ID	identifier for a museum, exhibition, collection, or theme, on the 'Agence photo de la Réunion des Musées nationaux et du Grand Palais' website
+http://www.wikidata.org/prop/direct/p6385	10	Krugosvet article (archived)	link to article of Russian-language online encyclopedia
+http://www.wikidata.org/prop/direct/p949	10	National Library of Israel ID (old)	former identifier for authority control used at the National Library of Israel. Replaced with 
+http://www.wikidata.org/prop/direct/p1448	9	official name	official name of the subject in its official language(s)
+http://www.wikidata.org/prop/direct/p2847	9	Google+ ID	Google Plus, account identifier of this person or organization: either starting with a 
+http://www.wikidata.org/prop/direct/p6683	9	Alexander Turnbull Library ID	identifier for names in the Alexander Turnbull Library thesaurus module for unpublished collections
+http://www.wikidata.org/prop/direct/p7085	9	TikTok username	this item's username on TikTok; do not include the “@” symbol
+http://www.wikidata.org/prop/direct/p7700	9	Slovak National Library (VIAF) ID	authority id in Slovak National Library, a VIAF component (code SKMASNL)
+http://www.wikidata.org/prop/direct/p9371	9	FranceArchives agent ID	identifier for a person on FranceArchives
+http://www.wikidata.org/prop/direct/p10046	8	Apple Maps ID	identifier of a place in Apple Maps (either legacy numeric AUID or hex “place-id”)
+http://www.wikidata.org/prop/direct/p10882	8	Met Constituent ID	identifier from the Metropolitan Museum of Art that describes people, institutions, or entities attributed for the creation of a work
+http://www.wikidata.org/prop/direct/p12063	8	Pinakes institution ID	numeric identifier for an institution in the Pinakes database
+http://www.wikidata.org/prop/direct/p2011	8	Cooper Hewitt person ID	identifier for a person or organization in the Cooper Hewitt (Smithsonian Institution) catalogue
+http://www.wikidata.org/prop/direct/p3108	8	Yelp ID	identifier of a place, in Yelp.com
+http://www.wikidata.org/prop/direct/p5019	8	Brockhaus Enzyklopädie online ID	identifier for an article in the online version of Brockhaus Enzyklopädie
+http://www.wikidata.org/prop/direct/p6645	8	Stedelijk Museum Amsterdam ID	identifier for an artist on the Stedelijk Museum Amsterdam website
+http://www.wikidata.org/prop/direct/p7846	8	Beta maṣāḥǝft ID	stable identifier of a resource linked to the Ethiopic manuscript tradition present in the Beta maṣāḥǝft research environment (https://betamasaheft.eu/)
+http://www.wikidata.org/prop/direct/p8272	8	BaGLAMa GID	unique identifier of category in the BaGLAMa tool
+http://www.wikidata.org/prop/direct/p8309	8	Yle topic ID	identifier for topics in Finland's national broadcaster Yle's web services
+http://www.wikidata.org/prop/direct/p12016	7	Museo Italia ID	identifier for a touristic attraction in Italy on the website museionline.info (or 
+http://www.wikidata.org/prop/direct/p1216	7	National Heritage List for England number	number on the National Heritage List for England
+http://www.wikidata.org/prop/direct/p12749	7	SNARC ID	unique identifier for people, places and organisations represented in Welsh collections
+http://www.wikidata.org/prop/direct/p1870	7	ARK Name Assigning Authority Number	identifier in the Archival Resource Key registry
+http://www.wikidata.org/prop/direct/p3847	7	Open Library subject ID	identifier for a topic in the Open Library database
+http://www.wikidata.org/prop/direct/p4133	7	Tourer.it ID	identifier for a cultural heritage site in Emilia-Romagna region in Italy, in the Tourer.it open data portal
+http://www.wikidata.org/prop/direct/p4771	7	compArt institution ID	identifier for an institution in the compArt database Digital Art
+http://www.wikidata.org/prop/direct/p4986	7	Routard.com place ID	identifier for a place on the Guide du routard website
+http://www.wikidata.org/prop/direct/p5508	7	archINFORM person/group ID	identifier for a person or group on the archINFORM website
+http://www.wikidata.org/prop/direct/p5739	7	Pontificia Università della Santa Croce ID	identifier for an entity in the online catalogue of the Pontifical University of the Holy Cross (PUSC)
+http://www.wikidata.org/prop/direct/p6286	7	ICCD ID - S form	identifier for the Central Institute for Catalogues and Documentation (form type S)
+http://www.wikidata.org/prop/direct/p7004	7	AtlasFor ID	identifier of a location or an architectural structure in the Atlas Landscapefor (Italian database of cultural heritage)
+http://www.wikidata.org/prop/direct/p8519	7	RKD thesaurus ID	identifier in the RKD thesaurus (Rijksbureau voor Kunsthistorische Documentatie)
+http://www.wikidata.org/prop/direct/p9434	7	Proveana ID	identifier for the provenance research database Proveana of the German Lost Art Foundation
+http://www.wikidata.org/prop/direct/p10419	6	LastDodo-area-ID	identifier in LastDodo for a concept in collections of coins, stamps and postcards
+http://www.wikidata.org/prop/direct/p11137	6	Reddit topic ID	identifier of a topic on Reddit
+http://www.wikidata.org/prop/direct/p1278	6	Legal Entity Identifier	identifier for a legally distinct entity per ISO 17442
+http://www.wikidata.org/prop/direct/p13030	6	Münzkabinett ID	identifier for coin-related entities (people etc.) in the database of the Münzkabinett Berlin
+http://www.wikidata.org/prop/direct/p1481	6	vici.org ID	identifier on vici.org - archaeological atlas of antiquity
+http://www.wikidata.org/prop/direct/p1699	6	SkyscraperPage building ID	identifier for a building in the SkyscraperPage database
+http://www.wikidata.org/prop/direct/p2741	6	Tate artist ID	identifier of an artist in the Tate collection
+http://www.wikidata.org/prop/direct/p2966	6	National Library of Wales Authority ID	identifier of persons, corporate entities and families in the National Library of Wales Archives and Manuscripts database
+http://www.wikidata.org/prop/direct/p380	6	Mérimée ID	identifier for a monument in the Mérimée database of French cultural heritage
+http://www.wikidata.org/prop/direct/p4272	6	DPLA subject term	term for an item's subject area in the Digital Public Library of America
+http://www.wikidata.org/prop/direct/p5361	6	BNB person ID (OBSOLETE)	identifier of a person in the British National Bibliography (bnb.data.bl.uk)
+http://www.wikidata.org/prop/direct/p6006	6	Museum Universe Data File ID	IMLS identifier for a museum, in the United States' 'Museum Universe Data File' (MUDF)
+http://www.wikidata.org/prop/direct/p6058	6	Larousse ID	identifier for a subject on the 'Encyclopédie Larousse'
+http://www.wikidata.org/prop/direct/p650	6	RKDartists ID	identifier in the RKDartists database (Rijksbureau voor Kunsthistorische Documentatie)
+http://www.wikidata.org/prop/direct/p6706	6	De Agostini ID	identifier for a subject on the Enciclopedia De Agostini online
+http://www.wikidata.org/prop/direct/p7003	6	ACMI ID	public identifiers used by the Australian Centre for the Moving Image
+http://www.wikidata.org/prop/direct/p7400	6	LibraryThing author ID	identifier for an author on the LibraryThing website
+http://www.wikidata.org/prop/direct/p7666	6	Visuotinė lietuvių enciklopedija ID	identifier for an item in the online edition of the Visuotinė lietuvių enciklopedija
+http://www.wikidata.org/prop/direct/p9545	6	Encyclopedia of China (Second Edition) ID	identifier for an article in the online version of Encyclopedia of China (Second Edition)
+http://www.wikidata.org/prop/direct/p9957	6	museum-digital place ID	identifier for a place in museum-digital's md:term vocabulary
+http://www.wikidata.org/prop/direct/p10864	5	Bibale ID	numerical identifier for a person in the French database Bibale
+http://www.wikidata.org/prop/direct/p13337	5	domain name	registered internet domain name that identifies this entity
+http://www.wikidata.org/prop/direct/p1607	5	Dialnet author ID	identifier of an author in Dialnet
+http://www.wikidata.org/prop/direct/p1751	5	Art UK collection ID	identifier for art collections, in the UK
+http://www.wikidata.org/prop/direct/p2950	5	Nomisma ID	identifier in Nomisma.org, a linked open data thesaurus of numismatic concepts
+http://www.wikidata.org/prop/direct/p3035	5	ISBN publisher prefix	part of an ISBN(‑13) specific to a publisher
+http://www.wikidata.org/prop/direct/p3106	5	The Guardian topic ID	identifier for a topic at the Guardian newspaper website
+http://www.wikidata.org/prop/direct/p3215	5	SIRET number	number of a French establishment
+http://www.wikidata.org/prop/direct/p345	5	IMDb ID	identifier for the IMDb (with prefix 'tt', 'nm', 'co', 'ev', 'ch' or 'ni')
+http://www.wikidata.org/prop/direct/p4959	5	paris.fr lieux ID	identifier for an equipment in Paris on the paris.fr/website
+http://www.wikidata.org/prop/direct/p527	5	has part(s)	part of this subject; inverse property of 
+http://www.wikidata.org/prop/direct/p5504	5	RISM ID	identifier for a person, institution, or source in the Répertoire International des Sources Musicales database; format: 
+http://www.wikidata.org/prop/direct/p590	5	GNIS Feature ID	identifier for geographic objects in the United States and U.S. territories issued by the USGS. For objects in Antarctica, use Property:P804
+http://www.wikidata.org/prop/direct/p6200	5	BBC News topic ID	identifier for a topic on the BBC News website
+http://www.wikidata.org/prop/direct/p7039	5	National Library of Iceland ID	identifier for authority control managed by the National Library of Iceland
+http://www.wikidata.org/prop/direct/p7522	5	SK cinema authority ID	identifier for a person, organisation, topic, event, genre or work title in the SK cinema authority file (Heslár SFÚ)
+http://www.wikidata.org/prop/direct/p8167	5	WhatDoTheyKnow organisation ID	identifier for a British public organisation in the WhatDoTheyKnow database
+http://www.wikidata.org/prop/direct/p8217	5	iDAI.gazetteer ID	identifier for a place in the database iDAI.gazetteer compiled by the German Archaeological Institute
+http://www.wikidata.org/prop/direct/p8349	5	Proleksis enciklopedija ID	identifier for a topic in Proleksis enciklopedija
+http://www.wikidata.org/prop/direct/p8750	5	Unione Romana Biblioteche Scientifiche ID	identifier for an authority in the catalog of the Unione Romana Biblioteche Scientifiche
+http://www.wikidata.org/prop/direct/p10510	4	Arachne entity ID	identifier for an entity in the archaeological database Arachne, version 4
+http://www.wikidata.org/prop/direct/p1149	4	Library of Congress Classification	subject classification number used in the Library of Congress Classification system; does not include the shelflisting portion assigned to individual publications
+http://www.wikidata.org/prop/direct/p12040	4	J. Paul Getty Museum agent ID	identifier assigned to an agent by the J. Paul Getty Museum, replaces P2432
+http://www.wikidata.org/prop/direct/p12361	4	Bluesky handle	account handle on Bluesky
+http://www.wikidata.org/prop/direct/p13081	4	DDB institution ID	identifier for institutions registered with the German Digital Library (Deutsche Digitale Bibliothek)
+http://www.wikidata.org/prop/direct/p13171	4	bequest income	the sum a organisations receives from bequests/legacies in a timeframe
+http://www.wikidata.org/prop/direct/p13384	4	Clio-online organization ID	identifier for an organization in Clio-online
+http://www.wikidata.org/prop/direct/p1813	4	short name	short name of a place, organisation, person, journal, Wikidata property, etc. Used by some Wikipedia templates
+http://www.wikidata.org/prop/direct/p1889	4	different from	item that is different from another item, with which it may be confused
+http://www.wikidata.org/prop/direct/p2088	4	Crunchbase organization ID	Identifier for an organization, in the Crunchbase database of companies and start-ups, operated by TechCrunch
+http://www.wikidata.org/prop/direct/p2342	4	AGORHA person/institution ID	identifier for a person or institution in the Agorha database (INHA)
+http://www.wikidata.org/prop/direct/p276	4	location	location of the object, structure or event; use P131 to indicate the containing administrative entity, P8138 for statistical entities, or P706 for geographic entities; use P7153 for locations associated with the object
+http://www.wikidata.org/prop/direct/p3318	4	Guía Digital del Patrimonio Cultural de Andalucía ID	identifier for a cultural heritage item in the Patrimonio Inmueble de Andalucía database (BDI)
+http://www.wikidata.org/prop/direct/p3347	4	PermID	identifier for an entity or concept, in Thomson Reuters Open PermID
+http://www.wikidata.org/prop/direct/p3599	4	archival creator authority record at the Archives nationales	identifier of the Archives Nationales (French National Archives)
+http://www.wikidata.org/prop/direct/p3603	4	Minneapolis Institute of Art constituent ID	identifier assigned to a person or organization by the Minneapolis Institute of Art
+http://www.wikidata.org/prop/direct/p361	4	part of	object of which the subject is a part (if this subject is already part of object A which is a part of object B, then please only make the subject part of object A), inverse property of 
+http://www.wikidata.org/prop/direct/p3762	4	openMLOL author ID	identifier of an author in the openMLOL digital library of cultural resources
+http://www.wikidata.org/prop/direct/p3943	4	Tumblr username	account name on Tumblr
+http://www.wikidata.org/prop/direct/p4081	4	BHL creator ID	identifier for a creator of a work in the Biodiversity Heritage Library (BHL)
+http://www.wikidata.org/prop/direct/p5760	4	Petit Futé site ID	identifier for a tourist site on the Petit Futé website
+http://www.wikidata.org/prop/direct/p6773	4	HAL structure ID	numerical code for a research institution as stored in HAL author affiliations
+http://www.wikidata.org/prop/direct/p6821	4	Alvin ID	platform for digital collections and digitized cultural heritage in Uppsala about, managed by Uppsala university library
+http://www.wikidata.org/prop/direct/p7982	4	Hrvatska enciklopedija ID	identifier for an article in the Croatian Encyclopedia (Hrvatska enciklopedija)
+http://www.wikidata.org/prop/direct/p808	4	Asset of cultural interest code	identifier for an item in the Spanish heritage register (included RI/ARI)
+http://www.wikidata.org/prop/direct/p8425	4	IAPH code	identifier for cultural heritage records of Instituto Andaluz del Patrimonio Histórico, Andalusia (Spain)
+http://www.wikidata.org/prop/direct/p8826	4	edition humboldt digital ID	identifier for the register of biographies, places and institutions in edition humboldt digital
+http://www.wikidata.org/prop/direct/p9226	4	ARAE ID	identifier for an entity (person, organization, family) in the Archivo de la Real Academia Española
+http://www.wikidata.org/prop/direct/p10832	3	WorldCat Entities ID	identifier for a person, work, place, historical period, or event from the WorldCat Entities linked data service
+http://www.wikidata.org/prop/direct/p11601	3	beniculturali.it place ID	identifier for a place on the website of the Italian Ministry of Culture
+http://www.wikidata.org/prop/direct/p11892	3	Threads username	item's username on Threads
+http://www.wikidata.org/prop/direct/p12204	3	ELMCIP ID	identifier of a creative work, critical writing, databases and archives, event, organization, person, platform/software, publisher, research collection, or teaching resource in the ELMCIP Knowledge Base
+http://www.wikidata.org/prop/direct/p12701	3	Iconoteca dell'Accademia di architettura ID	identifier for an entity (person, organization, place, object) in the photographic and graphic repository held by the Accademia di architettura di Mendrisio
+http://www.wikidata.org/prop/direct/p12898	3	Museums in Russia ID	identifier of a museum page on the website 
+http://www.wikidata.org/prop/direct/p13311	3	Digital Scriptorium Catalog item ID	identifier for an item in the Digital Scriptorium Catalog Wikibase
+http://www.wikidata.org/prop/direct/p13731	3	Swiss Films company ID	identifier for a company in the Swiss Films database
+http://www.wikidata.org/prop/direct/p13906	3	NLAI ID	identifier for an authority record in the Catalogue of the National Library of Iran
+http://www.wikidata.org/prop/direct/p1670	3	Canadiana Authorities ID (former scheme)	obsolete identifier for authority control per the Library and Archives Canada. Format: 4 digits + 1 letter + 4 digits + optional F
+http://www.wikidata.org/prop/direct/p2048	3	height	vertical length of an entity
+http://www.wikidata.org/prop/direct/p2252	3	National Gallery of Art artist ID	identifier assigned to an artist by the National Gallery of Art in Washington, DC
+http://www.wikidata.org/prop/direct/p2424	3	Berlin cultural heritage ID	identifier for an object in the cultural heritage database of Berlin
+http://www.wikidata.org/prop/direct/p3057	3	Charity Commission no.	official number of a charity registered with the Charity Commission of England and Wales
+http://www.wikidata.org/prop/direct/p3066	3	GLAM ID	unique identifier for heritage institutions as they have been used in the context of the OpenGLAM Benchmark Survey
+http://www.wikidata.org/prop/direct/p3153	3	Open Funder Registry funder ID	identifier for an organisation that funds research, in the Crossref registry
+http://www.wikidata.org/prop/direct/p3273	3	Actorenregister ID	identifier in the Dutch Actorenregister database
+http://www.wikidata.org/prop/direct/p3308	3	lib.reviews ID	ID for “Things” (review subjects) on lib.reviews
+http://www.wikidata.org/prop/direct/p3365	3	Treccani ID	identifier for the Italian Treccani website and encyclopedia
+http://www.wikidata.org/prop/direct/p3503	3	LombardiaBeniCulturali building ID	identifier of a historical building in the cultural heritage database of the Lombardy Region of Italy
+http://www.wikidata.org/prop/direct/p355	3	child organization or unit	child organization/unit of a organization/unit; for companies, generally a fully owned separate corp., see business division (P199); opposite of parent org./unit (P749); use instance of (P31) to distinguish org. (Q43229) and org. unit (Q10387680)
+http://www.wikidata.org/prop/direct/p3569	3	Cultureel Woordenboek ID	identifier for a concept in the Dutch Cultureel Woordenboek ('Cultural Dictionary')
+http://www.wikidata.org/prop/direct/p359	3	Rijksmonument ID	identifier for a monument assigned by the Rijksdienst voor het Cultureel Erfgoed
+http://www.wikidata.org/prop/direct/p3608	3	EU VAT number	VAT number assigned in the EU
+http://www.wikidata.org/prop/direct/p4015	3	Vimeo ID	username or ID on Vimeo
+http://www.wikidata.org/prop/direct/p4033	3	Mastodon address	address on the Mastodon decentralized social network (the form is 'user@server.domain' without a leading '@')
+http://www.wikidata.org/prop/direct/p5050	3	UMAC ID	identifier for a museum or collection in the Worldwide Database of University Museums and Collections
+http://www.wikidata.org/prop/direct/p5337	3	Google News topics ID	identifier for a subject in the news on Google News
+http://www.wikidata.org/prop/direct/p5601	3	TCI destination ID	identifier in the geographical database of the Touring Club Italiano, or Touring Club of Italy
+http://www.wikidata.org/prop/direct/p5785	3	EU Participant Identification Code	ID of organization participating in EU programmes
+http://www.wikidata.org/prop/direct/p6295	3	ARTIC artist ID	identifier for an artist on the Art Institute of Chicago website
+http://www.wikidata.org/prop/direct/p6394	3	ELNET ID	identifier assigned by the ELNET consortium of Estonian libraries. Format: 7 digits, 
+http://www.wikidata.org/prop/direct/p6413	3	JORFSearch organization ID	ідентифікатор для французької урядової організації в базі даних призначень Journal officiel de la République française (JORF)
+http://www.wikidata.org/prop/direct/p6486	3	Pacific Coast Architecture Database building ID	identifier for a building in the Pacific Coast Architecture Database (PCAD)
+http://www.wikidata.org/prop/direct/p709	3	Historic Environment Scotland ID	identifier for a building in the Historic Environment Scotland database
+http://www.wikidata.org/prop/direct/p718	3	Canmore ID	identifier in the Royal Commission on the Ancient and Historical Monuments of Scotland's Canmore database
+http://www.wikidata.org/prop/direct/p749	3	parent organization or unit	parent organization or unit of an organization or unit, opposite of child organization or unit (P355); use instance of (P31) to distinguish organization (Q43229) and organization unit (Q10387680)
+http://www.wikidata.org/prop/direct/p7502	3	Golden ID	ID page in Golden knowledge base
+http://www.wikidata.org/prop/direct/p7831	3	NMVW ID	identifier for persons and organisations at the Dutch National Museum of World Cultures / Wereldmuseum
+http://www.wikidata.org/prop/direct/p8406	3	Grove Art Online ID	identifier of a topic in Grove Art Online
+http://www.wikidata.org/prop/direct/p8562	3	JSTOR publisher ID	identifier for a publisher in JSTOR
+http://www.wikidata.org/prop/direct/p8783	3	AAGM person or institution ID	identifier for a person (artist, architect, sitter, benefactor etc) or organisation in the website database of Aberdeen Art Galleries and Museums (AAGM)
+http://www.wikidata.org/prop/direct/p9641	3	fondoambiente.it ID	identifier in the database of the Fondo per l'Ambiente Italiano
+http://www.wikidata.org/prop/direct/p10189	2	Bloomsbury Fashion Central ID	numerical identifier for an entry in the Bloomsbury Fashion Central database
+http://www.wikidata.org/prop/direct/p10780	2	Radio France person ID	alphabetical identifier for a person on the Radio France website
+http://www.wikidata.org/prop/direct/p10834	2	BVMC organization ID	identifier of a corporate body on the Biblioteca Virtual Miguel de Cervantes, data.cervantesvirtual.com
+http://www.wikidata.org/prop/direct/p1101	2	floors above ground	above ground floor count of a building (ground floor and attic included)
+http://www.wikidata.org/prop/direct/p11555	2	Kunstbulletin institution ID	identifier for an institution on Kunstbulletin
+http://www.wikidata.org/prop/direct/p11559	2	TikTok location ID	identifier for a place in TikTok
+http://www.wikidata.org/prop/direct/p1248	2	KulturNav-ID	identifier for people, places, events, etc. used by some Nordic museums
+http://www.wikidata.org/prop/direct/p12582	2	Oxford Reference overview ID	identifier for an overview page for a topic in the Oxford Reference
+http://www.wikidata.org/prop/direct/p126	2	maintained by	person or organization in charge of keeping the subject (for instance an infrastructure) in functioning order
+http://www.wikidata.org/prop/direct/p1260	2	Swedish Open Cultural Heritage URI	identifier
+http://www.wikidata.org/prop/direct/p1280	2	CONOR.SI ID	identifier in the National and University Library, Ljubljana database
+http://www.wikidata.org/prop/direct/p13059	2	Babelio subject ID	identifier for a subject on the French literature site Babelio
+http://www.wikidata.org/prop/direct/p1320	2	OpenCorporates ID	identifier for a corporation in the OpenCorporates database. Format: country prefix, optional subnational entity abbrevation, 
+http://www.wikidata.org/prop/direct/p13750	2	Arab Encyclopedia concept ID	digital identifier for a topic within the articles of the Arabic Encyclopedia
+http://www.wikidata.org/prop/direct/p13779	2	ScholarGPS institution ID	identifier for an institution on ScholarGPS
+http://www.wikidata.org/prop/direct/p13804	2	Sancho el Sabio Foundation ID	identifier for authority names from the catalogue of Sancho el Sabio Foundation
+http://www.wikidata.org/prop/direct/p1483	2	kulturnoe-nasledie.ru ID	identifier for an item in a Russian cultural heritage register
+http://www.wikidata.org/prop/direct/p1695	2	NLP ID	National Library of Poland unique identifier. Format: 
+http://www.wikidata.org/prop/direct/p1700	2	SIPA ID	identifier in the SIPA (Sistema de Informação para o Património Arquitectónico) database of heritage sites in Portugal
+http://www.wikidata.org/prop/direct/p1702	2	DGPC ID	identifier in the DGPC (Directorate General of Cultural Heritage) database of heritage sites in Portugal
+http://www.wikidata.org/prop/direct/p1947	2	Mapillary photo ID	ID for a photo on Mapillary, a service for crowdsourcing map photos
+http://www.wikidata.org/prop/direct/p1953	2	Discogs artist ID	identifier for a band or person in the Discogs database
+http://www.wikidata.org/prop/direct/p2049	2	width	width of an object
+http://www.wikidata.org/prop/direct/p2538	2	Nationalmuseum Sweden ID	identifier for Nationalmuseum in Sweden
+http://www.wikidata.org/prop/direct/p2572	2	hashtag	reference keyword associated with this item for online communities (do not include the 
+http://www.wikidata.org/prop/direct/p2657	2	EU Transparency Register ID	identity code for an organisation, in the transparency register of the European Union
+http://www.wikidata.org/prop/direct/p2917	2	COAM structure ID	identifier of a building or structure of the city of Madrid in the Official Architects' Association of Madrid (COAM) database
+http://www.wikidata.org/prop/direct/p2963	2	Goodreads author ID	identifier of an author on the Goodreads website
+http://www.wikidata.org/prop/direct/p3185	2	VK username	identifier for a person or organization in VK.com (VKontakte)
+http://www.wikidata.org/prop/direct/p3206	2	data.gouv.fr organisation ID	identifier of an organization on the French national open-data platform data.gouv.fr
+http://www.wikidata.org/prop/direct/p3267	2	Flickr user ID	identifier for a person or organisation, with an account at Flickr
+http://www.wikidata.org/prop/direct/p3579	2	Weibo user ID	Weibo user's identifier
+http://www.wikidata.org/prop/direct/p3740	2	number of works	qualifier on identifiers, e.g. for creators or locations, giving the number of works in the external database associated with the subject of the identifier
+http://www.wikidata.org/prop/direct/p3789	2	Telegram username	this item's username, channel or group on Telegram
+http://www.wikidata.org/prop/direct/p3794	2	Dictionary of Sydney ID	identifier in the Dictionary of Sydney
+http://www.wikidata.org/prop/direct/p381	2	PCP reference number	identifier for cultural properties in Switzerland
+http://www.wikidata.org/prop/direct/p3820	2	Flanders Arts Institute venue ID (former scheme)	identifier of a venue in the Flanders Arts Institute database for performing arts
+http://www.wikidata.org/prop/direct/p3988	2	National Library Board Singapore ID (former scheme)	Former identifier of a person, organisation or place from the name authorities of National Library Board
+http://www.wikidata.org/prop/direct/p3999	2	date of official closure	date of official closure of a building or event
+http://www.wikidata.org/prop/direct/p4129	2	Cinema Treasures ID	identifier for a cinema in the Cinema Treasures database
+http://www.wikidata.org/prop/direct/p4389	2	Science Museum people ID	identifier of a person or organisation on the website of the Science Museum Group
+http://www.wikidata.org/prop/direct/p4431	2	Google Doodle	Google Doodle celebrating this entity or event
+http://www.wikidata.org/prop/direct/p455	2	Emporis building ID	former identifier for a building in the defunct Emporis database (for building complexes, see P2270)
+http://www.wikidata.org/prop/direct/p4629	2	Online Books Page author ID	identifier for an author, at the Online Books Page website
+http://www.wikidata.org/prop/direct/p466	2	occupant	person or organization occupying property
+http://www.wikidata.org/prop/direct/p4948	2	DDB item ID	identifier for items in Deutsche Digitale Bibliothek
+http://www.wikidata.org/prop/direct/p5163	2	Odnoklassniki ID	identifier for a person or organization in Odnoklassniki
+http://www.wikidata.org/prop/direct/p5208	2	BAG building ID	BAG building ID for Dutch buildings (
+http://www.wikidata.org/prop/direct/p528	2	catalog code	catalog name of an object, use with qualifier P972
+http://www.wikidata.org/prop/direct/p5381	2	EGROKN ID	identifier for a monument in the Unified state register of objects of cultural heritage (monuments of history and culture) of the peoples of the Russian Federation
+http://www.wikidata.org/prop/direct/p576	2	dissolved, abolished or demolished date	point in time at which the subject (organisation, building) ceased to exist; see 
+http://www.wikidata.org/prop/direct/p5991	2	carbon footprint	total emissions caused by an individual, event, organisation, or product, expressed as carbon dioxide equivalent; has to be calculated via a scientificly proven methodology
+http://www.wikidata.org/prop/direct/p6082	2	NYC Building Identification Number (BIN)	unique ID used by the City of New York to identify a building
+http://www.wikidata.org/prop/direct/p6262	2	Fandom article ID	identifier of an article on Fandom (Wikia). Format: subdomain:Page_title (language-code.subdomain:Page_title for non-English wikis)
+http://www.wikidata.org/prop/direct/p6264	2	Harvard Index of Botanists ID	numerical identifier for a person in the Harvard Index of Botanists
+http://www.wikidata.org/prop/direct/p6329	2	Share-VDE 1.0 author ID	identifier for entities (people and organizations) in the federated linked data platform Share Virtual Discovery Environment
+http://www.wikidata.org/prop/direct/p649	2	NRHP reference number	identifier in the National Register of Historic Places assigned by the National Park Service of the USA
+http://www.wikidata.org/prop/direct/p6621	2	Le Figaro tag ID	identifier for a topic on the website of Le Figaro
+http://www.wikidata.org/prop/direct/p6744	2	FragDenStaat public body ID	identifier for public bodies from FragDenStaat.de
+http://www.wikidata.org/prop/direct/p6848	2	abART institution ID	identifier of institution in Czech database abART
+http://www.wikidata.org/prop/direct/p7140	2	München Wiki article ID	identifier for articles at muenchenwiki.de
+http://www.wikidata.org/prop/direct/p7369	2	National Library of Chile ID	identifier for authority control managed by the National Library of Chile
+http://www.wikidata.org/prop/direct/p7414	2	State Catalogue of the Museum Fund of Russia museum ID	идентификатор музея на Госкаталог.ру
+http://www.wikidata.org/prop/direct/p757	2	World Heritage Site ID	the identifier for a site as assigned by UNESCO. Use on one item per site, link parts with property 
+http://www.wikidata.org/prop/direct/p7630	2	Dictionary of Scottish Architects building ID	identifier for a building in the Dictionary of Scottish Architects database and website
+http://www.wikidata.org/prop/direct/p7842	2	Vienna History Wiki ID	numeric identifier of a page in the Vienna History Wiki
+http://www.wikidata.org/prop/direct/p7847	2	DigitaltMuseum ID	Identifier at DigitaltMuseum
+http://www.wikidata.org/prop/direct/p7917	2	Museums in Austria Code	Registration Code from the association of museums in Austria
+http://www.wikidata.org/prop/direct/p8038	2	SIUSA archive conservator ID	identifier for an archive conservator in the Unified Information System for the Archival Superintendencies (SUISA)
+http://www.wikidata.org/prop/direct/p8408	2	KBpedia ID	identifier for the KBpedia knowledge graph, which provides consistent mappings across seven large-scale public knowledge bases including Wikidata, and is used to promote data interoperability and extraction of training sets for machine learning
+http://www.wikidata.org/prop/direct/p8816	2	Dzen ID	identifier for a news source on Dzen
+http://www.wikidata.org/prop/direct/p8828	2	AAA attraction ID	identifier for a tourist attraction on the American Automobile Association website
+http://www.wikidata.org/prop/direct/p8980	2	KANTO ID	identifier for a person or an organization in the database KANTO curated by the National Library of Finland
+http://www.wikidata.org/prop/direct/p8988	2	Mapy.com ID	identifier for a point of interest in Mapy.com
+http://www.wikidata.org/prop/direct/p9037	2	BHCL UUID	UUID of authorities used in the Bibliography of the History of the Czech Lands (BHCL)
+http://www.wikidata.org/prop/direct/p9050	2	ICCD site ID	identifier for a place or an organisation in the General catalog of Italian cultural heritage
+http://www.wikidata.org/prop/direct/p9152	2	CollectieGelderland creator ID	identifier for a creator in the collaborative platform CollectieGelderland
+http://www.wikidata.org/prop/direct/p9322	2	SVKKL authority ID	identifier in the regional authority database of Central Bohemian Research Library
+http://www.wikidata.org/prop/direct/p9326	2	PatER ID	identifier of cultural heritage in PatER, a website by Italian region Emilia-Romagna
+http://www.wikidata.org/prop/direct/p9346	2	France 24 topic ID (French)	identifier of a topic on the French version of the France 24 website
+http://www.wikidata.org/prop/direct/p9585	2	Lexikon der österreichischen Provenienzforschung ID	identifier for an entry in the Dictionary of Austrian Provenance Research
+http://www.wikidata.org/prop/direct/p9591	2	#SOSBrutalism ID	identifier for #SOSBrutalism database website
+http://www.wikidata.org/prop/direct/p9629	2	Armeniapedia ID	numeric identifier for an article in the online encyclopedia Armeniapedia
+http://www.wikidata.org/prop/direct/p966	2	MusicBrainz label ID	identifier for a record label in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p9885	2	Bing entity ID	identifier for an entity on Microsoft Bing
+http://www.wikidata.org/prop/direct/p9934	2	Zenodo communities ID	identifier for Communities created and curated by Zenodo users
+http://www.wikidata.org/prop/direct/p9943	2	Hill Museum & Manuscript Library ID	identifier for the HMML Authority File (HAF) database
+http://www.wikidata.org/prop/direct/p10068	1	SEEK company ID	unique identifier of a company on the Australian SEEK recruitment website
+http://www.wikidata.org/prop/direct/p10069	1	Tabakalera ID	identifier for an authority in the catalogue of Tabakalera, contemporary culture centre in Donostia
+http://www.wikidata.org/prop/direct/p10075	1	CREPČ institution ID	identifier for an institution in the Slovak bibliographic database Centrálny register evidencie publikačnej činnosti
+http://www.wikidata.org/prop/direct/p10152	1	Rutube channel ID	identifier of a RUTUBE channel of a person or organisation (not to be confused with the name of the channel)
+http://www.wikidata.org/prop/direct/p1030	1	light characteristic	description of a navigational light sequence or colour displayed on a nautical chart. Explicitly state white light (W)
+http://www.wikidata.org/prop/direct/p10301	1	Lobby Register of the German Bundestag ID	identity code for an organisation or a person in the lobby transparency register of the German Bundestag
+http://www.wikidata.org/prop/direct/p1048	1	NCL ID	identifier for authority control issued by the National Central Library in Taiwan
+http://www.wikidata.org/prop/direct/p10856	1	National Archives of Australia entity ID	identifier for government agencies created by, and people and organizations associated with, the Commonwealth of Australia, allocated by the National Archives of Australia
+http://www.wikidata.org/prop/direct/p10989	1	RailScot line or company ID	identifier for a historical railway line or company on the RailScot website
+http://www.wikidata.org/prop/direct/p11079	1	Linktree ID	ID for a person (or rarely, organisation) on Linktree
+http://www.wikidata.org/prop/direct/p11158	1	Dimitri and Aliki Perrotis Central Library ID	identifier for an authority in the catalogue of the Dimitris and Aliki Perrotis Central Library
+http://www.wikidata.org/prop/direct/p11386	1	Listal ID	identifier for a person, a character, a creation or a place in the Listal database
+http://www.wikidata.org/prop/direct/p11408	1	Pixiv Encyclopedia ID	identifier for an article on Pixiv Encyclopedia
+http://www.wikidata.org/prop/direct/p1155	1	Scopus affiliation ID	identifier for an organisation in author affiliations per Scopus
+http://www.wikidata.org/prop/direct/p11550	1	RISM siglum	siglum assigned by the Répertoire international des sources musicales to institutions worldwide (libraries, archives and private collections) that hold historical musical materials
+http://www.wikidata.org/prop/direct/p11807	1	WGA work ID	identifier of an artwork on the Web Gallery of Art website
+http://www.wikidata.org/prop/direct/p1184	1	Handle ID	Handle System identifier, which is a superset of the DOI
+http://www.wikidata.org/prop/direct/p11971	1	NFDI4Culture ID	identifier for all NFDI4Culture resources on the NFDI4Culture Information Portal
+http://www.wikidata.org/prop/direct/p12088	1	Open Library publisher ID	identifier for a publisher in OpenLibrary.org
+http://www.wikidata.org/prop/direct/p12127	1	Art Platform Japan ID	identifier for an artwork, artist, or institution on Art Platform Japan
+http://www.wikidata.org/prop/direct/p12137	1	Linked Open Data Comune Firenze ID	identifier for an entity in the Linked Open Data platform of the municipality of Florence (Italy)
+http://www.wikidata.org/prop/direct/p12142	1	EIDR party ID	identifier for production and distribution companies related to films
+http://www.wikidata.org/prop/direct/p12145	1	Cultural Heritage Online (Japan) institution ID	identifier for museums on Cultural Heritage Online
+http://www.wikidata.org/prop/direct/p1220	1	Internet Broadway Database person ID	identifier for personnel or organizations on Broadway
+http://www.wikidata.org/prop/direct/p1233	1	ISFDB author ID	identifier for a person in the Internet Speculative Fiction Database
+http://www.wikidata.org/prop/direct/p12353	1	CRIS Unique Site Number	identifier in the New York State Cultural Resource Information System
+http://www.wikidata.org/prop/direct/p12458	1	Parsifal cluster ID	identifier for a cluster related to a person or an organization in Parsifal, the collective catalogue of the Unione romana biblioteche ecclesiastiche (Union of Roman ecclesiastical libraries)
+http://www.wikidata.org/prop/direct/p12494	1	NACSIS-CAT library ID	identifier for a library (or other organization) participating in the NACSIS-CAT union catalog
+http://www.wikidata.org/prop/direct/p12613	1	HCERES organisation ID	identifier for an organisation on the website of High Council for the Evaluation of Research and Higher Education
+http://www.wikidata.org/prop/direct/p12661	1	Asociation Espanola de Amigos de los Castillos ID	~8000 castles and medival towers in Spain
+http://www.wikidata.org/prop/direct/p12754	1	Bildindex der Kunst und Architektur PID	persistent identifier for an artwork or a building in Bildindex
+http://www.wikidata.org/prop/direct/p12823	1	Burgenwelt ID	identifier of the castle in the Burgenwelt database
+http://www.wikidata.org/prop/direct/p12852	1	NooSFere publisher ID	ID for a publishing house in the NooSFere database
+http://www.wikidata.org/prop/direct/p12855	1	BHMPI object ID	identifier of an object in the photographic archive of the BHMPI
+http://www.wikidata.org/prop/direct/p12966	1	Mapcarta ID	identifier for a page on Mapcarta.com (place, region or point of interest)
+http://www.wikidata.org/prop/direct/p1305	1	CTBUH Skyscraper Center building ID	identifier for a building as used on the CTBUH's www.skyscrapercenter.com
+http://www.wikidata.org/prop/direct/p13205	1	Amsterdam Monumentenstad ID	identier for a building in the Amsterdam Monumentenstad database
+http://www.wikidata.org/prop/direct/p13698	1	Historical picture postcards University of Osnabrück ID	identificator for persons and publishers of historical picture postcards (University of Osnabrück)
+http://www.wikidata.org/prop/direct/p14128	1	French Trade Mark Number	identifier for a trade mark in France
+http://www.wikidata.org/prop/direct/p1438	1	Jewish Encyclopedia ID (Russian)	Article ID in the Electronic Jewish Encyclopedia in Russian
+http://www.wikidata.org/prop/direct/p1449	1	nickname	informal name (for a pseudonym use P742)
+http://www.wikidata.org/prop/direct/p1584	1	Pleiades ID	identifier for a place in Pleiades hosted at pleiades.stoa.org
+http://www.wikidata.org/prop/direct/p159	1	headquarters location	city or town where an organization's headquarters is or has been situated. Use P276 qualifier for specific building
+http://www.wikidata.org/prop/direct/p1662	1	DOI prefix	identifier specific to a DOI registrant
+http://www.wikidata.org/prop/direct/p1667	1	Getty Thesaurus of Geographic Names ID	identifier in the Getty Thesaurus of Geographic Names
+http://www.wikidata.org/prop/direct/p1669	1	Cultural Objects Names Authority ID	identifier from the Getty Cultural Objects Name Authority
+http://www.wikidata.org/prop/direct/p1769	1	denkXweb object ID	identifier in the online database for cultural heritage monuments in the German state of Hesse
+http://www.wikidata.org/prop/direct/p1795	1	Smithsonian American Art Museum person/institution ID	identifier for a person or institution, in the Smithsonian American Art Museum: person/institution thesaurus
+http://www.wikidata.org/prop/direct/p1814	1	name in kana	the reading of a Japanese name in kana
+http://www.wikidata.org/prop/direct/p1936	1	Digital Atlas of the Roman Empire ID	Identifier of a Roman site, in the Digital Atlas of the Roman Empire
+http://www.wikidata.org/prop/direct/p1958	1	Trismegistos Geo ID	identifier of an ancient place on trismegistos.org
+http://www.wikidata.org/prop/direct/p1988	1	Le Delarge artist ID	identifier for an artist in the Delarge dictionary
+http://www.wikidata.org/prop/direct/p2043	1	length	measured dimension of an object
+http://www.wikidata.org/prop/direct/p2044	1	elevation above sea level	height of the item (geographical object) as measured relative to sea level
+http://www.wikidata.org/prop/direct/p2124	1	member count	number of entities that are part of an organization at a particular time
+http://www.wikidata.org/prop/direct/p2174	1	Museum of Modern Art artist ID	identifier assigned to an artist by the Museum of Modern Art
+http://www.wikidata.org/prop/direct/p2283	1	uses	item or concept used by the subject or in the operation (see also instrument [P1303] and armament [P520])
+http://www.wikidata.org/prop/direct/p2326	1	GNS Unique Feature ID	identifier for geographic entities according to the National Geospatial-Intelligence Agency's GEOnet Names Server
+http://www.wikidata.org/prop/direct/p2382	1	Chemins de mémoire ID	is a digital initiative by the French government that provides an interactive and educational platform for exploring France’s historical memory.
+http://www.wikidata.org/prop/direct/p2468	1	Theatricalia theatre ID	identifier for a theatre in the theatricalia.com database
+http://www.wikidata.org/prop/direct/p2472	1	ACMA Radiocommunications Client Number	identifier of an organisation or person who holds a radiocommunications licence within Australia
+http://www.wikidata.org/prop/direct/p2740	1	ResearchGate institute ID	identifier of an organization in ResearchGate
+http://www.wikidata.org/prop/direct/p2750	1	Photographers' Identities Catalog ID	identifier used in Photographers' Identities Catalog
+http://www.wikidata.org/prop/direct/p2923	1	focal height	height of the lamp of a lighthouse from water level
+http://www.wikidata.org/prop/direct/p2929	1	lighthouse range	the distance at which the light can be seen. If the light has colors, there will be several ranges, one for each color. Use qualifier 
+http://www.wikidata.org/prop/direct/p2942	1	Dailymotion channel ID	identifier of the Dailymotion channel of a person, or organization
+http://www.wikidata.org/prop/direct/p2971	1	GCatholic church ID	ID of a church on GCatholic.org
+http://www.wikidata.org/prop/direct/p2980	1	ARLHS lighthouse ID	identifier on the ARLHS World List of Lights
+http://www.wikidata.org/prop/direct/p3008	1	Australian Heritage Database Place ID	identifier 
+http://www.wikidata.org/prop/direct/p3021	1	Iranica ID	identifier of an article, on iranicaonline.org
+http://www.wikidata.org/prop/direct/p3040	1	SoundCloud ID	identifier for a person, band, radio station, album, or other entity, on SoundCloud
+http://www.wikidata.org/prop/direct/p3059	1	Architectuurgids building ID	unique identifier for a building in the Dutch architectuurgids.nl database
+http://www.wikidata.org/prop/direct/p3220	1	KvK company ID	identifier of a company in the Dutch KvK Business Register
+http://www.wikidata.org/prop/direct/p3241	1	Catholic Encyclopedia ID	page of an article on newadvent.org
+http://www.wikidata.org/prop/direct/p3407	1	Klosterdatenbank ID	entry in the Germania Sacra Klosterdatenbank
+http://www.wikidata.org/prop/direct/p3418	1	Google Play Store app ID	package name of an app registered on Google Play
+http://www.wikidata.org/prop/direct/p3509	1	Dagens Nyheter topic ID	identifier for a topic, used by the Swedish daily newspaper Dagens Nyheter
+http://www.wikidata.org/prop/direct/p3534	1	Australian Government Organisations Register ID	identifier of an Australian government organisation within the now discontinued Australian Government Organisations Register
+http://www.wikidata.org/prop/direct/p3548	1	Australian Business Number	unique identifier for a business entity registered in Australia
+http://www.wikidata.org/prop/direct/p3553	1	Zhihu topic ID	numeric id of topics (tags) of questions on Zhihu, a Chinese question-and-answer website
+http://www.wikidata.org/prop/direct/p3562	1	Admiralty number	identifier of lighthouses by United Kingdom Hydrographic Office
+http://www.wikidata.org/prop/direct/p3563	1	NGA lighthouse ID	identifier of a lighthouse in the USA's National Geospatial-Intelligence Agency database
+http://www.wikidata.org/prop/direct/p3601	1	MarineTraffic Lighthouse ID	identifier of a lighthouse or light beacon in the MarineTraffic database
+http://www.wikidata.org/prop/direct/p3638	1	Oorlogsmonument ID	identifier for a war memorial in the database maintained by the Dutch Nationaal Comité 4 en 5 mei
+http://www.wikidata.org/prop/direct/p3761	1	IPv4 routing prefix	range of IPv4 addresses
+http://www.wikidata.org/prop/direct/p3788	1	BNMM authority ID	authority control identifier used at the National Library of Argentina
+http://www.wikidata.org/prop/direct/p3793	1	IPv6 routing prefix	range of IPv6 addresses
+http://www.wikidata.org/prop/direct/p3861	1	App Store app ID	identifier for a mobile application in App Store
+http://www.wikidata.org/prop/direct/p3863	1	Italian Navy Lighthouses and Beacons ID	identifier of a lighthouse or beacon in 
+http://www.wikidata.org/prop/direct/p3888	1	Boijmans artist ID	identifier for an artist in the Museum Boijmans Van Beuningen
+http://www.wikidata.org/prop/direct/p3914	1	GuideStar Israel organization ID	ID in the Israeli non-profit organizations database GuideStar
+http://www.wikidata.org/prop/direct/p3979	1	Unifrance company ID	identifier of a company on unifrance.org
+http://www.wikidata.org/prop/direct/p4161	1	Michelin Voyages ID	identifier for a place in the website Michelin Voyages
+http://www.wikidata.org/prop/direct/p4171	1	World Heritage Tentative List ID	identifier for a site on the UNESCO World Heritage Tentative Lists
+http://www.wikidata.org/prop/direct/p4174	1	Wikimedia username	user name of a person across all Wikimedia projects
+http://www.wikidata.org/prop/direct/p4201	1	PagesJaunes ID	identifier for a professional in France in the PagesJaunes website
+http://www.wikidata.org/prop/direct/p4244	1	Bavarian monument authority ID	identifier for cultural heritage monuments (ensembles, buildings and grounds) in Bavaria, issued by the Bavarian State Office for the Preservation of Monuments
+http://www.wikidata.org/prop/direct/p4273	1	New York City Landmarks Preservation Commission ID	landmarks designated by the New York City Landmarks Preservation Commission
+http://www.wikidata.org/prop/direct/p4293	1	PM20 folder ID	identifier for a folder in the ZBW Pressemappe 20. Jahrhundert (20th century press archive)
+http://www.wikidata.org/prop/direct/p434	1	MusicBrainz artist ID	identifier for an artist in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p4388	1	Mappy place ID	identifier for place in Mappy
+http://www.wikidata.org/prop/direct/p4672	1	Early Modern Letters Online location ID	identifier for a location in the Early Modern Letters Online database maintained by the University of Oxford
+http://www.wikidata.org/prop/direct/p4679	1	MAVISE company ID	identifier for a company in the MAVISE database of the European Audiovisual Observatory
+http://www.wikidata.org/prop/direct/p4801	1	LC and MARC vocabularies ID	identifier for an item in one of the controlled vocabularies maintained by the Library of Congress
+http://www.wikidata.org/prop/direct/p4871	1	GEPRIS organization ID	Identifier of an organization in GEPRIS database of funded research projects
+http://www.wikidata.org/prop/direct/p4903	1	New Georgia Encyclopedia ID	identifier of a topic in the online New Georgia Encyclopedia
+http://www.wikidata.org/prop/direct/p5034	1	National Library of Korea ID	identifier for name and subject authority in the database of the National Library of Korea
+http://www.wikidata.org/prop/direct/p5063	1	Interlingual Index ID	ідэнтыфікатар Міжмоўнага індэксу
+http://www.wikidata.org/prop/direct/p5232	1	D&B Business Directory ID	identifier for a company in the D&B Business Directory
+http://www.wikidata.org/prop/direct/p5260	1	App Store developer ID	identifier for an iOS app developer on App Store
+http://www.wikidata.org/prop/direct/p5652	1	Carthalia ID	ID of a page at 
+http://www.wikidata.org/prop/direct/p5768	1	Osservatorio culturale del Cantone Ticino ID	Osservatorio culturale del Cantone Ticino ID for a cultural institution
+http://www.wikidata.org/prop/direct/p5818	1	BGCI garden ID	identifier for a botanical garden in the Botanic Gardens Conservation International online database
+http://www.wikidata.org/prop/direct/p5858	1	Index Herbariorum code	code in Index Herbariorum for plant collections
+http://www.wikidata.org/prop/direct/p5883	1	Tourisme & Handicap ID	identifier for a place on the Tourisme & Handicap website
+http://www.wikidata.org/prop/direct/p5905	1	Comic Vine ID	identifier at the Comic Vine database of comic books, fictional characters, people, films and television series/episodes
+http://www.wikidata.org/prop/direct/p5909	1	HKCAN ID	Hong Kong Chinese Authority (Name) ID
+http://www.wikidata.org/prop/direct/p6015	1	Handbook of Texas ID	identifier for a subject in the Handbook of Texas Online
+http://www.wikidata.org/prop/direct/p6222	1	DIR3 ID	official identifier of a public Spanish organization
+http://www.wikidata.org/prop/direct/p6228	1	OesterreichWiki ID	numeric identifier of a page in the Austria regional wiki Oesterreichwiki (former RegiowikiAT)
+http://www.wikidata.org/prop/direct/p6460	1	Swedish Organization Number	sequence of two numberpairs that is unique to a Swedish company or organization given out by the responsible government department
+http://www.wikidata.org/prop/direct/p6482	1	Image Archive, Herder Institute	link to the online database (Bildkatalog) of the image archive for the display of image sources
+http://www.wikidata.org/prop/direct/p6573	1	Klexikon article ID	ID of an article in Klexikon
+http://www.wikidata.org/prop/direct/p6733	1	National Taxonomy of Exempt Entities code	classification code for American nonprofit organizations
+http://www.wikidata.org/prop/direct/p6734	1	Archaeology Data Service person ID	identifier for a person in the Archaeology Data Service library of bibliographic data
+http://www.wikidata.org/prop/direct/p7020	1	Arachne collection ID	identifier for a collection in the Arachne database
+http://www.wikidata.org/prop/direct/p7028	1	National Library of Luxembourg ID	identifier for authority control managed by the National Library of Luxembourg
+http://www.wikidata.org/prop/direct/p729	1	service entry	date or point in time on which a piece or class of equipment entered operational service
+http://www.wikidata.org/prop/direct/p7446	1	Basis Wien institution ID	identifier of an institution in the Basis Wien database
+http://www.wikidata.org/prop/direct/p7638	1	OverDrive creator ID	identifier for an author or creator at OverDrive
+http://www.wikidata.org/prop/direct/p7678	1	Wikimapia ID	link to Wikimapia item
+http://www.wikidata.org/prop/direct/p7764	1	Archives Portal Europe ID	identifier for an archival institution in the directory of Archives Portal Europe
+http://www.wikidata.org/prop/direct/p7856	1	Salzburg Museums ID	identifier for museums and other GLAM-institutions in the state of Salzburg, Austria
+http://www.wikidata.org/prop/direct/p7886	1	Media Arts Database ID	identifier for the Media Arts Database created by the Japanese government department Bunkacho
+http://www.wikidata.org/prop/direct/p7901	1	Encyclopedia of Chicago ID	identifier for an article in the Encyclopedia of Chicago
+http://www.wikidata.org/prop/direct/p8060	1	Glassdoor company ID	identifier for a company on the Glassdoor employee review website
+http://www.wikidata.org/prop/direct/p8068	1	ToposText place ID	identifier for a place in the website ToposText
+http://www.wikidata.org/prop/direct/p8083	1	Visit Tuscany ID	identifier for a touristic attraction in Tuscany in the website Visit Tuscany, developed by Regione Toscana
+http://www.wikidata.org/prop/direct/p8136	1	Il Sole 24 Ore topic ID	identifier for a topic on the website of Il Sole 24 Ore newspaper
+http://www.wikidata.org/prop/direct/p8199	1	Anagrafe Istituti Culturali Ecclesiastici ID	identifier for a cultural institution in the database Anagrafe Istituti Culturali Ecclesiastici
+http://www.wikidata.org/prop/direct/p8200	1	BeWeb cultural institution ID	identifier for a cultural institution, in the Italian Episcopal Conference database
+http://www.wikidata.org/prop/direct/p8293	1	AusStage venue ID	identifier for a venue at AusStage
+http://www.wikidata.org/prop/direct/p8296	1	Cinema Context ID	identifier of an item in Cinema Context
+http://www.wikidata.org/prop/direct/p8424	1	OpenHistoricalMap relation ID	identifier of a relation in OpenHistoricalMap, preferably a chronology relation; see also P402, the corresponding property for OpenStreetMap relations
+http://www.wikidata.org/prop/direct/p8543	1	Kultis ID	identifier of a protected monument in the Monumentbrowser database of South Tyrol
+http://www.wikidata.org/prop/direct/p8669	1	Encyclopaedia Beliana ID	identifier of an article in Encyclopaedia Beliana
+http://www.wikidata.org/prop/direct/p8713	1	Stadtwiki Dresden article	article in Wiki of the town Dresden, Saxony, Germany
+http://www.wikidata.org/prop/direct/p8814	1	WordNet 3.1 Synset ID	Synset identifier in Princeton’s WordNet Version 3.1
+http://www.wikidata.org/prop/direct/p8897	1	Reliwiki page ID	identifier of the page in the Reliwiki database of Dutch places of worship
+http://www.wikidata.org/prop/direct/p8974	1	SPAP ID	identifier used by the Swiss Performing Arts Platform
+http://www.wikidata.org/prop/direct/p902	1	HDS ID	identifier in HDS/HLS/DHS/DSS: Historical Dictionary of Switzerland (Q642074), a national encyclopedia
+http://www.wikidata.org/prop/direct/p9051	1	ICCD cultural heritage ID	identifier for a cultural heritage object of Italian cultural heritage in the General catalog of Italian cultural heritage
+http://www.wikidata.org/prop/direct/p9100	1	GitHub topic	GitHub topic for a repository or subject
+http://www.wikidata.org/prop/direct/p9106	1	Oxford Classical Dictionary ID	identifier for a topic in the Oxford Classical Dictionary online
+http://www.wikidata.org/prop/direct/p9255	1	Resident Advisor club ID	identifier for a club or venue listed on the Resident Advisor website
+http://www.wikidata.org/prop/direct/p9287	1	Cyprus Bibliography ID	identifier for an authority in the Cyprus Bibliography (catalogue of all Cypriot publications after 1980)
+http://www.wikidata.org/prop/direct/p9318	1	Ávvir topic ID	identifier of a topic in the Northern Sámi publication Ávvir
+http://www.wikidata.org/prop/direct/p9327	1	Cartigli di Bologna ID	identifier for a building, park, garden, or canal in Bologna on the Cartigli di Bologna website
+http://www.wikidata.org/prop/direct/p9339	1	Bavarian Monument Map object ID (architectural monument)	identifier for an architectural monument in Bavaria, used in the Bavarian Monument Map, published by Bavarian State Office for Monument Protection
+http://www.wikidata.org/prop/direct/p9527	1	Historic Hawai‘i Foundation place ID	identifier for a location on the Historic Hawai‘i Foundation website
+http://www.wikidata.org/prop/direct/p9637	1	Erfgoedkaart ID	identifier of heritage organisations in Belgium
+http://www.wikidata.org/prop/direct/p9765	1	Great Ukrainian Encyclopedia Online ID	ID for an entry on the official website of the Great Ukrainian Encyclopedia
+http://www.wikidata.org/prop/direct/p9875	1	Fondation du patrimoine ID	alphabetical identifier for a French cultural heritage site on the Fondation du patrimoine website

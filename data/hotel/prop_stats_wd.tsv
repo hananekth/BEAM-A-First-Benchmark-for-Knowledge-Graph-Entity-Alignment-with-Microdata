@@ -1,0 +1,263 @@
+predicate	count	label	description
+http://www.w3.org/2000/01/rdf-schema#label	4805		
+http://schema.org/description	4739		
+http://www.wikidata.org/prop/direct/p625	2395	coordinate location	geocoordinates of the subject. For Earth, please note that only the WGS84 geodetic datum is currently supported
+http://www.w3.org/2004/02/skos/core#altLabel	2017		
+http://schema.org/dateModified	1938		
+http://schema.org/version	1938		
+http://wikiba.se/ontology#identifiers	1938		
+http://wikiba.se/ontology#sitelinks	1938		
+http://wikiba.se/ontology#statements	1938		
+http://www.wikidata.org/prop/direct/p3749	1193	Google Maps Customer ID	in Google Maps, Customer identifier for a place
+http://www.wikidata.org/prop/direct/p10487	1113	Skyscanner hotel ID	identifier for a hotel on the skyscanner website
+http://www.wikidata.org/prop/direct/p281	1081	postal code	code assigned by postal authorities for the subject area or building for the purpose of sorting and routing mail
+http://www.wikidata.org/prop/direct/p2013	1036	Facebook username	identifier for an official (preferably) Facebook person, product or organization page (everything that follows URL part 'https://www.facebook.com/')
+http://www.wikidata.org/prop/direct/p6375	1036	street address	full street address where subject is located. Include building number, city/locality, post code, but not country; use also P669 if the street has its own separate item
+http://www.wikidata.org/prop/direct/p10533	913	Agoda hotel numeric ID	numeric identifier for an hotel on the Agoda website
+http://www.wikidata.org/prop/direct/p10532	872	Booking.com numeric ID	numeric identifier for a hotel on the Booking.com website
+http://www.wikidata.org/prop/direct/p3134	855	TripAdvisor ID	identifier of a place (region, hotel, restaurant, attraction), in TripAdvisor
+http://www.wikidata.org/prop/direct/p528	790	catalog code	catalog name of an object, use with qualifier P972
+http://www.wikidata.org/prop/direct/p3898	775	Hotels.com hotel ID	identifier for a hotel on the Hotels.com website
+http://www.wikidata.org/prop/direct/p3607	772	Booking.com hotel ID	identifier for a hotel on the Booking.com website
+http://www.wikidata.org/prop/direct/p2003	758	Instagram username	item's username on Instagram
+http://www.wikidata.org/prop/direct/p1566	737	GeoNames ID	identifier in the GeoNames geographical database
+http://www.wikidata.org/prop/direct/p10425	596	Trip.com hotel ID	identifier for the hotel on the online travel agency website Trip.com
+http://www.wikidata.org/prop/direct/p5651	574	Expedia hotel ID	identifier for an hotel on the Expedia website
+http://www.wikidata.org/prop/direct/p571	551	inception	time when an entity begins to exist; for date of official opening use P1619
+http://www.wikidata.org/prop/direct/p2900	533	fax number	telephone number of a facsimile line
+http://www.wikidata.org/prop/direct/p6008	509	Agoda hotel ID	identifier for an hotel on the Agoda website
+http://www.wikidata.org/prop/direct/p444	503	review score	review score received by a creative work or other entity
+http://www.wikidata.org/prop/direct/p373	484	Commons category	name of the Wikimedia Commons category containing files related to this item (without the prefix 
+http://www.wikidata.org/prop/direct/p8733	450	number of rooms	number of rooms in a building
+http://www.wikidata.org/prop/direct/p2671	431	Google Knowledge Graph ID	identifier for Google Knowledge Graph API, starting with 
+http://www.wikidata.org/prop/direct/p1448	411	official name	official name of the subject in its official language(s)
+http://www.wikidata.org/prop/direct/p10689	329	OpenStreetMap way ID	identifier for a way in OpenStreetMap
+http://www.wikidata.org/prop/direct/p1968	328	Foursquare City Guide venue ID	ID of a place in Foursquare City Guide
+http://www.wikidata.org/prop/direct/p1619	312	date of official opening	date or point in time a place, organization, or event officially opened
+http://www.wikidata.org/prop/direct/p2002	284	X (Twitter) username	username on X (formerly Twitter); do not include the '@' symbol
+http://www.wikidata.org/prop/direct/p1101	259	floors above ground	above ground floor count of a building (ground floor and attic included)
+http://www.wikidata.org/prop/direct/p10547	256	Kayak hotel ID	numerical identifier of an hotel on the Kayak.com website
+http://www.wikidata.org/prop/direct/p11693	226	OpenStreetMap node ID	ID of a node in OpenStreetMap for the item
+http://www.wikidata.org/prop/direct/p11219	197	Travel Weekly hotel ID	identifier of a hotel listed on the Travel Weekly website
+http://www.wikidata.org/prop/direct/p11388	171	Hilton Hotel ID	identifier of a hotel operated by Hilton Hotels
+http://www.wikidata.org/prop/direct/p10426	154	tiket.com hotel ID	identifier for the hotel on the website tiket.com
+http://www.wikidata.org/prop/direct/p13516	137	CAMRA pub ID	Whatpub /CAMRA's database is a comprehensive repository of public houses in the UK with a focus on the ales that are traditional there
+http://www.wikidata.org/prop/direct/p2397	136	YouTube channel ID	ID of the YouTube channel of a person or organisation (not to be confused with the name of the channel) The ID can also be used for music.youtube.com IDs
+http://www.wikidata.org/prop/direct/p3108	132	Yelp ID	identifier of a place, in Yelp.com
+http://www.wikidata.org/prop/direct/p12496	129	WhatPub pub ID	identifier for a pub on WhatPub
+http://www.wikidata.org/prop/direct/p11245	128	YouTube handle	unique identifier of a person, organization or channel on YouTube; do not include the 
+http://www.wikidata.org/prop/direct/p7411	128	Pubs Galore ID	external identifier for pubs in the United Kingdom
+http://www.wikidata.org/prop/direct/p8687	126	social media followers	number of subscribers on a particular social media website (use as main statement only; see P3744 instead for qualifier). Qualify with 
+http://www.wikidata.org/prop/direct/p7678	116	Wikimapia ID	link to Wikimapia item
+http://www.wikidata.org/prop/direct/p12485	113	British Listed Buildings ID	identifier for the British Listed Buildings website
+http://www.wikidata.org/prop/direct/p4264	111	LinkedIn company or organization ID	identifier for an official company, school, organisation page, or showcase page, on LinkedIn
+http://www.wikidata.org/prop/direct/p10046	103	Apple Maps ID	identifier of a place in Apple Maps (either legacy numeric AUID or hex “place-id”)
+http://www.wikidata.org/prop/direct/p9921	94	Issuu ID	identifier for a publication or company at Issuu.com
+http://www.wikidata.org/prop/direct/p613	90	OS grid reference	grid location reference from the Ordnance Survey National Grid reference system used in Great Britain
+http://www.wikidata.org/prop/direct/p1216	88	National Heritage List for England number	number on the National Heritage List for England
+http://www.wikidata.org/prop/direct/p10448	76	Traveloka hotel ID	identifier of a hostel listed on traveloka.com
+http://www.wikidata.org/prop/direct/p7136	71	Goibibo Hotel ID	external identifiers for Goibibo hotels
+http://www.wikidata.org/prop/direct/p10427	65	PegiPegi Hotel ID	identifier for the hotel on the website pegipegi.com
+http://www.wikidata.org/prop/direct/p1699	63	SkyscraperPage building ID	identifier for a building in the SkyscraperPage database
+http://www.wikidata.org/prop/direct/p646	59	Freebase ID	identifier for a page in the Freebase database. Format: 
+http://www.wikidata.org/prop/direct/p2044	49	elevation above sea level	height of the item (geographical object) as measured relative to sea level
+http://www.wikidata.org/prop/direct/p2046	47	area	area occupied by an object
+http://www.wikidata.org/prop/direct/p4173	42	Instagram location ID	identifier for a location on Instagram
+http://www.wikidata.org/prop/direct/p2847	41	Google+ ID	Google+ account identifier of this person or organization: either starting with a 
+http://www.wikidata.org/prop/direct/p3836	40	Pinterest username	username of the Pinterest account of a person or an organization
+http://www.wikidata.org/prop/direct/p1305	31	CTBUH Skyscraper Center building ID	identifier for a building as used on the CTBUH's www.skyscrapercenter.com
+http://www.wikidata.org/prop/direct/p402	31	OpenStreetMap relation ID	identifier for a relation in OpenStreetMap
+http://www.wikidata.org/prop/direct/p214	30	VIAF cluster ID	identifier for the Virtual International Authority File database [format: up to 22 digits]; please note: VIAF is a cluster, the ID can include multiple items
+http://www.wikidata.org/prop/direct/p12749	29	SNARC ID	unique identifier for people, places and organisations represented in Welsh collections
+http://www.wikidata.org/prop/direct/p10442	26	hostelworld hostel ID	identifier of a hostel listed on hostelworld.com
+http://www.wikidata.org/prop/direct/p1459	23	Cadw Building ID	identifier for listed buildings in Wales
+http://www.wikidata.org/prop/direct/p3417	23	Quora topic ID	identifier for a topic on Quora (English language version)
+http://www.wikidata.org/prop/direct/p455	22	Emporis building ID	former identifier for a building in the defunct Emporis database (for building complexes, see P2270)
+http://www.wikidata.org/prop/direct/p454	21	Structurae structure ID	identifier for a building in the Structurae database
+http://www.wikidata.org/prop/direct/p7133	20	Cleartrip hotel ID	external identifiers for Cleartrip hotels
+http://www.wikidata.org/prop/direct/p2795	19	directions	describe how to find the subject - directions, objects along way, comments
+http://www.wikidata.org/prop/direct/p2048	18	height	vertical length of an entity
+http://www.wikidata.org/prop/direct/p2088	16	Crunchbase organization ID	Identifier for an organization, in the Crunchbase database of companies and start-ups, operated by TechCrunch
+http://www.wikidata.org/prop/direct/p244	14	Library of Congress authority ID	Library of Congress name authority (persons, families, corporate bodies, events, places, works and expressions) and subject authority identifier [Format: 1-2 specific letters followed by 8-10 digits (see regex). For manifestations, use P1144]
+http://www.wikidata.org/prop/direct/p3185	14	VK username	identifier for a person or organization in VK.com (VKontakte)
+http://www.wikidata.org/prop/direct/p5436	14	number of viewers/listeners	number of viewers of a television or broadcasting program; web traffic on websites
+http://www.wikidata.org/prop/direct/p5735	13	Historic Hotels Worldwide ID	identifier for an hotel on the Historic Hotels Worldwide website
+http://www.wikidata.org/prop/direct/p11222	12	Accor hotel ID	identifier of a hotel operated by Accor Hotels
+http://www.wikidata.org/prop/direct/p4003	12	Facebook page ID	official Facebook page of this entity (only for use with URLs containing “/pages/”)
+http://www.wikidata.org/prop/direct/p1301	11	number of elevators	number of elevators in a building
+http://www.wikidata.org/prop/direct/p1139	10	floors below ground	total number of below ground floors of the building
+http://www.wikidata.org/prop/direct/p227	10	GND ID	identifier from the Gemeinsame Normdatei authority file of names, subjects, and organizations
+http://www.wikidata.org/prop/direct/p2572	10	hashtag	reference keyword associated with this item for online communities (do not include the 
+http://www.wikidata.org/prop/direct/p4658	10	Coflein ID	identifier for an historic site, monument or building in the National Monuments Record of Wales (NMRW) database
+http://www.wikidata.org/prop/direct/p576	10	dissolved, abolished or demolished date	point in time at which the subject (organisation, building) ceased to exist; see 
+http://www.wikidata.org/prop/direct/p1004	9	MusicBrainz place ID	Identifier for a place in the MusicBrainz open music encyclopedia
+http://www.wikidata.org/prop/direct/p10595	9	Marriott hotel ID	Marriott hotel identifier
+http://www.wikidata.org/prop/direct/p7085	9	TikTok username	this item's username on TikTok; do not include the “@” symbol
+http://www.wikidata.org/prop/direct/p1814	8	name in kana	the reading of a Japanese name in kana
+http://www.wikidata.org/prop/direct/p5383	8	archINFORM project ID	identifier for a project on the archINFORM website
+http://www.wikidata.org/prop/direct/p1320	7	OpenCorporates ID	identifier for a corporation in the OpenCorporates database. Format: country prefix, optional subnational entity abbrevation, 
+http://www.wikidata.org/prop/direct/p13591	7	Yale LUX ID	identifier for an entity in Yale's LUX cross collection knowledge graph
+http://www.wikidata.org/prop/direct/p213	7	ISNI	International Standard Name Identifier for an identity. Starting with 0000.
+http://www.wikidata.org/prop/direct/p2561	7	name	name the subject is known by; preferably use a more specific subproperty if available
+http://www.wikidata.org/prop/direct/p2581	7	BabelNet ID	ID in BabelNet encyclopedic dictionary
+http://www.wikidata.org/prop/direct/p5734	7	Historic Hotels of America ID	identifier for an hotel on the Historic Hotels of America website
+http://www.wikidata.org/prop/direct/p813	7	retrieved	date or point in time that information was retrieved from a database or website (for use in online sources)
+http://www.wikidata.org/prop/direct/p11892	6	Threads username	item's username on Threads
+http://www.wikidata.org/prop/direct/p1365	6	replaces	person, state or item replaced. Use 
+http://www.wikidata.org/prop/direct/p1366	6	replaced by	other person or item which continues the item by replacing it in its role. Use P156 (
+http://www.wikidata.org/prop/direct/p649	6	NRHP reference number	identifier in the National Register of Historic Places assigned by the National Park Service of the USA
+http://www.wikidata.org/prop/direct/p12523	5	FSA Food Hygiene Rating System ID	identifier for an establishment that serves food issued by the UK's Food Standards Agency
+http://www.wikidata.org/prop/direct/p1838	5	PSS-archi ID	identifier for a building in the PSS-archi database
+http://www.wikidata.org/prop/direct/p3225	5	Corporate Number (Japan)	identifier assigned to companies and other organizations by the National Tax Agency of Japan
+http://www.wikidata.org/prop/direct/p5834	5	Leading Hotels of the World hotel ID	identifier for an hotel on the Leading Hotels of the World website
+http://www.wikidata.org/prop/direct/p1083	4	maximum capacity	number of people allowed for a venue or vehicle
+http://www.wikidata.org/prop/direct/p11187	4	ihg Hotel ID	identifier of a hotel operated by InterContinental Hotels Group
+http://www.wikidata.org/prop/direct/p1128	4	employees	total number of employees of a company at a given 
+http://www.wikidata.org/prop/direct/p269	4	IdRef ID	identifier for authority control in the French collaborative library catalog (see also P1025). Format: 8 digits followed by a digit or 
+http://www.wikidata.org/prop/direct/p2951	4	Cultural heritage database in Austria ObjektID	identifier given by the published BDA (Bundesdenkmalamt) list of monuments
+http://www.wikidata.org/prop/direct/p3608	4	EU VAT number	VAT number assigned in the EU
+http://www.wikidata.org/prop/direct/p718	4	Canmore ID	identifier in the Royal Commission on the Ancient and Historical Monuments of Scotland's Canmore database
+http://www.wikidata.org/prop/direct/p7532	4	room number	number or identifier of a room, which can qualify the address (P6375) of a place to complete it
+http://www.wikidata.org/prop/direct/p8988	4	Mapy.com ID	identifier for a point of interest in Mapy.com
+http://www.wikidata.org/prop/direct/p9154	4	Heritage Information System ID in the database of cultural heritage in Austria	identifier published in the Bundesdenkmalamt list of monuments since 2021
+http://www.wikidata.org/prop/direct/p9964	4	Kalliope-Verbund (GND) ID	identifier for an entity in the Kalliope-Verbund database
+http://www.wikidata.org/prop/direct/p10388	3	MakeMyTrip hotel ID	identifier for hotels enlisted on MakeMyTrip website
+http://www.wikidata.org/prop/direct/p11729	3	Kulturenvanteri monument ID	numerical identifier for a monument or heritage site in the Kulturenvanteri.com database of Turkey
+http://www.wikidata.org/prop/direct/p1278	3	Legal Entity Identifier	identifier for a legally distinct entity per ISO 17442
+http://www.wikidata.org/prop/direct/p12966	3	Mapcarta ID	identifier for a page on Mapcarta.com (place, region or point of interest)
+http://www.wikidata.org/prop/direct/p1705	3	native label	label for the items in their official language or their original language
+http://www.wikidata.org/prop/direct/p1997	3	Facebook location ID	identifier for a place in Facebook
+http://www.wikidata.org/prop/direct/p2186	3	Wiki Loves Monuments ID	unique ID for the monuments included in Wiki Loves Monuments national lists
+http://www.wikidata.org/prop/direct/p2555	3	fee	fee or toll payable to use, transit or enter the subject (only for one-time fees, do NOT use it for an ongoing fee, tuition fee or trading fee)
+http://www.wikidata.org/prop/direct/p4219	3	Tyrolean Art Cadastre inventory ID	identifier of a cadastre published by the regional government of Tyrol, Austria
+http://www.wikidata.org/prop/direct/p580	3	start time	time an entity begins to exist or a statement starts being valid
+http://www.wikidata.org/prop/direct/p709	3	Historic Environment Scotland ID	identifier for a building in the Historic Environment Scotland database
+http://www.wikidata.org/prop/direct/p8189	3	National Library of Israel J9U ID	identifier used by the National Library of Israel
+http://www.wikidata.org/prop/direct/p10832	2	WorldCat Entities ID	identifier for a person, work, place, historical period, or event from the WorldCat Entities linked data service
+http://www.wikidata.org/prop/direct/p1249	2	time of earliest written record	first time a subject was mentioned in writing
+http://www.wikidata.org/prop/direct/p1451	2	motto text	short motivation sentence associated to item
+http://www.wikidata.org/prop/direct/p1889	2	different from	item that is different from another item, with which it may be confused
+http://www.wikidata.org/prop/direct/p2326	2	GNS Unique Feature ID	identifier for geographic entities according to the National Geospatial-Intelligence Agency's GEOnet Names Server
+http://www.wikidata.org/prop/direct/p2966	2	National Library of Wales Authority ID	identifier of persons, corporate entities and families in the National Library of Wales Archives and Manuscripts database
+http://www.wikidata.org/prop/direct/p3032	2	adjacent structure or building	structure or building adjacent to the item
+http://www.wikidata.org/prop/direct/p3059	2	Architectuurgids building ID	unique identifier for a building in the Dutch architectuurgids.nl database
+http://www.wikidata.org/prop/direct/p3215	2	SIRET number	number of a French establishment
+http://www.wikidata.org/prop/direct/p3308	2	lib.reviews ID	ID for “Things” (review subjects) on lib.reviews
+http://www.wikidata.org/prop/direct/p3500	2	Ringgold ID	identifier for organisations in the publishing industry supply chain
+http://www.wikidata.org/prop/direct/p359	2	Rijksmonument ID	identifier for a monument assigned by the Rijksdienst voor het Cultureel Erfgoed
+http://www.wikidata.org/prop/direct/p380	2	Mérimée ID	identifier for a monument in the Mérimée database of French cultural heritage
+http://www.wikidata.org/prop/direct/p3988	2	National Library Board Singapore ID (former scheme)	Former identifier of a person, organisation or place from the name authorities of National Library Board
+http://www.wikidata.org/prop/direct/p3999	2	date of official closure	date of official closure of a building or event
+http://www.wikidata.org/prop/direct/p4156	2	Czech Registration ID (IČO)	8-digit identifier for an organization (or self-employed entrepreneur) in the Czech Republic, conferred by the Czech Statistical Office
+http://www.wikidata.org/prop/direct/p4573	2	Merchant Category Code	four-digit number used to classify businesses by the type of goods or services they provide
+http://www.wikidata.org/prop/direct/p4856	2	conscription number	number identifying a building in one cadastral area/village/neighborhood
+http://www.wikidata.org/prop/direct/p5208	2	BAG building ID	BAG building ID for Dutch buildings (
+http://www.wikidata.org/prop/direct/p5432	2	setlist.fm venue ID	identifier for a music venue at Setlist.fm
+http://www.wikidata.org/prop/direct/p5890	2	Preferred Hotels & Resorts hotel ID	identifier for an hotel on the Preferred Hotels & Resorts website
+http://www.wikidata.org/prop/direct/p6082	2	NYC Building Identification Number (BIN)	unique ID used by the City of New York to identify a building
+http://www.wikidata.org/prop/direct/p6473	2	NMSRCP reference number	identifier in the State Register of Cultural Properties assigned by the New Mexico Historic Preservation Division
+http://www.wikidata.org/prop/direct/p7772	2	Atlas Obscura place ID	identifier for places on the Atlas Obscura website
+http://www.wikidata.org/prop/direct/p8841	2	Restaurant Guru restaurant ID	identifier for a restaurant on the Restaurant Guru website
+http://www.wikidata.org/prop/direct/p8868	2	AAA hotel ID	identifier for an hotel on the American Automobile Association website
+http://www.wikidata.org/prop/direct/p8987	2	ISDS ID	identifier of an electronic mailbox assigned by the Czech Republic government to businesses, individuals and government agencies of the Czech Republic
+http://www.wikidata.org/prop/direct/p935	2	Commons gallery	name of the Wikimedia Commons gallery page(s) related to this item (is suitable to allow multiple links to more gallery pages)
+http://www.wikidata.org/prop/direct/p9957	2	museum-digital place ID	identifier for a place in museum-digital's md:term vocabulary
+http://www.wikidata.org/prop/direct/p10285	1	Indeed company ID	alphabetical identifier for the company on the employment website Indeed
+http://www.wikidata.org/prop/direct/p1059	1	CVR number	unique identifier for a business in Denmark's Central Business Register (CVR), the official database of Danish businesses.
+http://www.wikidata.org/prop/direct/p10677	1	Winterthur Glossar ID	identifier for an entry in the Winterthur Glossar
+http://www.wikidata.org/prop/direct/p10786	1	date of incorporation	date when company, organization or city was incorporated
+http://www.wikidata.org/prop/direct/p11079	1	Linktree ID	ID for a person (or rarely, organisation) on Linktree
+http://www.wikidata.org/prop/direct/p11137	1	Reddit topic ID	identifier of a topic on Reddit
+http://www.wikidata.org/prop/direct/p11216	1	Best Western hotel ID	identifier for a hotel operated by Best Western
+http://www.wikidata.org/prop/direct/p11705	1	Facebook numeric ID	numeric identifier for a Facebook page or profile
+http://www.wikidata.org/prop/direct/p12387	1	Qantas hotel ID	identifier of a hotel in the Qantas database
+http://www.wikidata.org/prop/direct/p12534	1	Singapore Infopedia ID	identifier of Singapore Infopedia articles
+http://www.wikidata.org/prop/direct/p12552	1	Hyatt hotel ID	5-letter identifier for hotels under the Hyatt brand
+http://www.wikidata.org/prop/direct/p12597	1	museum-digital ID	identification of a person or institution in the vocabulary of the digital museum
+http://www.wikidata.org/prop/direct/p12674	1	Kunstenpunt Knowledge Graph ID	identifier in the Flanders Arts Institute database for performing arts
+http://www.wikidata.org/prop/direct/p12701	1	Iconoteca dell'Accademia di architettura ID	identifier for an entity (person, organization, place, object) in the photographic and graphic repository held by the Accademia di architettura di Mendrisio
+http://www.wikidata.org/prop/direct/p12802	1	poblesdecatalunya.cat ID	identifier for poblesdecatalunya.cat, which is a catalog of buildings, public art and urban ensembles of artistic or historical interest in Catalonia
+http://www.wikidata.org/prop/direct/p12961	1	monument ID in the archive of Linz	Identifier in the monument database published by the regional government of Linz, Austria
+http://www.wikidata.org/prop/direct/p13822	1	National Library Board Singapore ID	identifier of a person, organisation or place from the name authorities of National Library Board
+http://www.wikidata.org/prop/direct/p1417	1	Encyclopædia Britannica Online ID	identifier for an article in the online version of Encyclopædia Britannica
+http://www.wikidata.org/prop/direct/p1476	1	title	published name of a work, such as a newspaper article, a literary work, piece of music, a website, or a performance work
+http://www.wikidata.org/prop/direct/p1584	1	Pleiades ID	identifier for a place in Pleiades hosted at pleiades.stoa.org
+http://www.wikidata.org/prop/direct/p1626	1	Thai cultural heritage ID	identifier for cultural heritage properties in Thailand
+http://www.wikidata.org/prop/direct/p1651	1	YouTube video ID	identifier of a video on YouTube; qualify trailers with 
+http://www.wikidata.org/prop/direct/p1700	1	SIPA ID	identifier in the SIPA (Sistema de Informação para o Património Arquitectónico) database of heritage sites in Portugal
+http://www.wikidata.org/prop/direct/p1708	1	LfDS object ID	identifier for national heritage sites issued by the Landesamt für Denkmalpflege Sachsen
+http://www.wikidata.org/prop/direct/p1711	1	British Museum person or institution ID	identifier for a person or institution in the British Museum person-institution thesaurus
+http://www.wikidata.org/prop/direct/p1764	1	Flemish Heritage Object ID	identifier for a 
+http://www.wikidata.org/prop/direct/p1813	1	short name	short name of a place, organisation, person, journal, Wikidata property, etc. Used by some Wikipedia templates
+http://www.wikidata.org/prop/direct/p1822	1	Denkmalliste Hamburg object ID	identifier for cultural monuments in Hamburg, Germany
+http://www.wikidata.org/prop/direct/p2043	1	length	measured dimension of an object
+http://www.wikidata.org/prop/direct/p2130	1	capital cost	amount of money spent on building or producing an object
+http://www.wikidata.org/prop/direct/p2163	1	FAST ID	authority control identifier in WorldCat's “FAST Linked Data” authority file
+http://www.wikidata.org/prop/direct/p2284	1	price	published price listed or paid for a product (use with unit of currency)
+http://www.wikidata.org/prop/direct/p2347	1	YSO ID	identifier for a concept in the General Finnish Ontology YSO
+http://www.wikidata.org/prop/direct/p268	1	Bibliothèque nationale de France ID	identifier for the subject issued by BNF (Bibliothèque nationale de France). Format: 8 digits followed by a check-digit or letter, do not include the initial 'cb'.
+http://www.wikidata.org/prop/direct/p2762	1	CTBUH Skyscraper Center building complex ID	identifier for a building complex as used on the CTBUH's www.skyscrapercenter.com
+http://www.wikidata.org/prop/direct/p2814	1	P-number	Branch identifier from the Danish company register for linking physical sites to an organization
+http://www.wikidata.org/prop/direct/p2899	1	minimum age	minimum age for, for example, movie certification
+http://www.wikidata.org/prop/direct/p3152	1	Findsmiley ID	identifier for Danish companies serving food
+http://www.wikidata.org/prop/direct/p3220	1	KvK company ID	identifier of a company in the Dutch KvK Business Register
+http://www.wikidata.org/prop/direct/p3267	1	Flickr user ID	identifier for a person or organisation, with an account at Flickr
+http://www.wikidata.org/prop/direct/p3347	1	PermID	identifier for an entity or concept, in Thomson Reuters Open PermID
+http://www.wikidata.org/prop/direct/p3377	1	Bloomberg company ID	identifier for a company, in the Bloomberg database
+http://www.wikidata.org/prop/direct/p3424	1	Polish cultural heritage register number	reference in a Polish cultural heritage register
+http://www.wikidata.org/prop/direct/p3579	1	Weibo user ID	Weibo user's identifier
+http://www.wikidata.org/prop/direct/p3600	1	protected heritage site in Brussels ID	identifier of a protected heritage site in Brussels, Belgium
+http://www.wikidata.org/prop/direct/p3789	1	Telegram username	this item's username, channel or group on Telegram
+http://www.wikidata.org/prop/direct/p381	1	PCP reference number	identifier for cultural properties in Switzerland
+http://www.wikidata.org/prop/direct/p3820	1	Flanders Arts Institute venue ID (former scheme)	identifier of a venue in the Flanders Arts Institute database for performing arts
+http://www.wikidata.org/prop/direct/p3977	1	Songkick venue ID	identifier for a venue, on Songkick
+http://www.wikidata.org/prop/direct/p4015	1	Vimeo ID	username or ID on Vimeo
+http://www.wikidata.org/prop/direct/p4075	1	Czech Monument Catalogue Number	ID given to protected but also some unprotected monuments and other objects in the Czech Republic on the official Monument Catalogue of the National Heritage Institute
+http://www.wikidata.org/prop/direct/p4115	1	INSPIRE ID	universal identifier from Infrastructure for Spatial Information in the European Community (INSPIRE), used across EU databases
+http://www.wikidata.org/prop/direct/p4117	1	Historic England research records ID	Historic England identifier for archaeological, architectural, and maritime sites
+http://www.wikidata.org/prop/direct/p4160	1	Michelin Restaurants ID	identifier for a restaurant in the Michelin Restaurants website
+http://www.wikidata.org/prop/direct/p4201	1	PagesJaunes ID	identifier for a professional in France in the PagesJaunes website
+http://www.wikidata.org/prop/direct/p4272	1	DPLA subject term	term for an item's subject area in the Digital Public Library of America
+http://www.wikidata.org/prop/direct/p4273	1	New York City Landmarks Preservation Commission ID	landmarks designated by the New York City Landmarks Preservation Commission
+http://www.wikidata.org/prop/direct/p4293	1	PM20 folder ID	identifier for a folder in the ZBW Pressemappe 20. Jahrhundert (20th century press archive)
+http://www.wikidata.org/prop/direct/p433	1	issue	issue of a newspaper, a scientific journal or magazine for reference purpose
+http://www.wikidata.org/prop/direct/p4535	1	EUTA theatre ID	identifier for a theatre in the European Theatre Architecture (EUTA) database
+http://www.wikidata.org/prop/direct/p458	1	IMO ship number	identifier for a ship, ship owner or ship manager per the International Maritime Organization
+http://www.wikidata.org/prop/direct/p4595	1	post town	town/city part of the postal address, can be different from administrative location
+http://www.wikidata.org/prop/direct/p4839	1	Wolfram Language entity code	input form for an entity in Wolfram Language
+http://www.wikidata.org/prop/direct/p4970	1	alternative name	qualifier for alternative name(s), given for a subject in a database entry, or preserved in references (even these are no longer the preferred name)
+http://www.wikidata.org/prop/direct/p5161	1	Trustpilot company ID	identifier of a company or website on the Trustpilot customer reviews website
+http://www.wikidata.org/prop/direct/p527	1	has part(s)	part of this subject; inverse property of 
+http://www.wikidata.org/prop/direct/p5694	1	Moroccan cultural heritage ID	identifier used for cultural heritage in Morocco
+http://www.wikidata.org/prop/direct/p577	1	publication date	date or point in time when a work or product was first published or released
+http://www.wikidata.org/prop/direct/p5774	1	Historic Hotels of Europe ID	identifier for an hotel on the Historic Hotels of Europe website
+http://www.wikidata.org/prop/direct/p5782	1	DBUnico MIBACT ID	database identifier from the Italian Ministry MIBACT (DBUnico 2.0)
+http://www.wikidata.org/prop/direct/p5836	1	Relais & Châteaux ID	identifier for an hotel or restaurant on the Relais & Châteaux website
+http://www.wikidata.org/prop/direct/p5879	1	Qualité Tourisme ID	identifier for a place on the Qualité Tourisme website
+http://www.wikidata.org/prop/direct/p6102	1	Schleswig-Holstein cultural heritage object ID	Object ID in the cultural heritage register of Schleswig-Holstein
+http://www.wikidata.org/prop/direct/p6262	1	Fandom article ID	identifier of an article on Fandom (Wikia). Format: subdomain:Page_title (language-code.subdomain:Page_title for non-English wikis)
+http://www.wikidata.org/prop/direct/p6286	1	ICCD ID - S form	identifier for the Central Institute for Catalogues and Documentation (form type S)
+http://www.wikidata.org/prop/direct/p6486	1	Pacific Coast Architecture Database building ID	identifier for a building in the Pacific Coast Architecture Database (PCAD)
+http://www.wikidata.org/prop/direct/p670	1	house number	number in the street address. To be used as a qualifier of Property:P669 
+http://www.wikidata.org/prop/direct/p6776	1	IMTL.org ID	identifier on the website Images de Montréal (imtl.org)
+http://www.wikidata.org/prop/direct/p6985	1	OYO hotel ID	external identifiers for OYO hotels
+http://www.wikidata.org/prop/direct/p706	1	located in/on physical feature	located on the specified (geo)physical feature. Should not be used when the value is only political/administrative (P131) or a mountain range (P4552). Use P206 for things in/on bodies of water.
+http://www.wikidata.org/prop/direct/p7140	1	München Wiki article ID	identifier for articles at muenchenwiki.de
+http://www.wikidata.org/prop/direct/p729	1	service entry	date or point in time on which a piece or class of equipment entered operational service
+http://www.wikidata.org/prop/direct/p7323	1	Archnet site ID	site ID of archnet.org related to architecture, urban issues, landscape design, visual culture and conservation issues
+http://www.wikidata.org/prop/direct/p762	1	Czech cultural heritage ID	identifier for cultural heritage properties in the Czech Republic
+http://www.wikidata.org/prop/direct/p7729	1	GUI number	Numeric identifier for business entity registered in Taiwan assigned by Ministry of Economic Affairs, Taiwan
+http://www.wikidata.org/prop/direct/p7842	1	Vienna History Wiki ID	numeric identifier of a page in the Vienna History Wiki
+http://www.wikidata.org/prop/direct/p7958	1	Chicago Landmarks ID	identifier for a protected property on the Chicago Landmarks website
+http://www.wikidata.org/prop/direct/p8060	1	Glassdoor company ID	identifier for a company on the Glassdoor employee review website
+http://www.wikidata.org/prop/direct/p8092	1	EcuRed article	article at the encyclopedia EcuRed
+http://www.wikidata.org/prop/direct/p8168	1	FactGrid item ID	identifier for an item in FactGrid
+http://www.wikidata.org/prop/direct/p8350	1	Singapore Infopedia ID (archived)	former identifier of article on Singapore Infopedia site
+http://www.wikidata.org/prop/direct/p8399	1	Unique Property Reference Number	unique identifier for every location that can have an address in the UK
+http://www.wikidata.org/prop/direct/p8713	1	Stadtwiki Dresden article	article in Wiki of the town Dresden, Saxony, Germany
+http://www.wikidata.org/prop/direct/p8828	1	AAA attraction ID	identifier for a tourist attraction on the American Automobile Association website
+http://www.wikidata.org/prop/direct/p9284	1	GB1900 ID	identifier for a place in the GB1900 project transcription of the UK Ordnance Survey six-inch-to-one-mile map, 1888-1913
+http://www.wikidata.org/prop/direct/p949	1	National Library of Israel ID (old)	former identifier for authority control used at the National Library of Israel. Replaced with 
+http://www.wikidata.org/prop/direct/p9885	1	Bing entity ID	identifier for an entity on Microsoft Bing
+http://www.wikidata.org/prop/direct/p9918	1	Kallías ID	identifier in Kallías, the catalog of the German Literature Archive Marbach (DLA Marbach)
+http://www.wikidata.org/prop/direct/p9989	1	stylized name	a widely used but non-standard form of a name (rather than a different name entirely or a pseudonym)

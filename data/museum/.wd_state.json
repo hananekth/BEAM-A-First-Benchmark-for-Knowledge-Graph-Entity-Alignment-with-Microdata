@@ -1,0 +1,7 @@
+{
+  "done_batch": 2,
+  "batch_size": 150,
+  "lang": "en",
+  "endpoint": "https://query.wikidata.org/sparql",
+  "total_subjects": 198
+}
