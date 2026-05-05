@@ -13,6 +13,9 @@ The benchmark aligns **Web Data Commons (WDC) microdata** with **Wikidata** usin
 * 🔗 Supply **ground truth alignments** via *key-based matching* (IATA/ISBN), instead of rare or noisy `owl:sameAs` links.
 * 🌐 Release the dataset under FAIR principles — Findable, Accessible, Interoperable, Reusable.
 
+! New release (05/05/2026) : The tool to generate BEAM Benchmarks (aligning WDC classes with any open source) is online:
+🔗 [beam-search-tool](https://beam.lisn.upsaclay.fr/)
+
 A visualization and navigation tool for exploring the datasets:
 🔗 [rust-kg-explorer](https://github.com/bareyan/rust-kg-explorer)
 
