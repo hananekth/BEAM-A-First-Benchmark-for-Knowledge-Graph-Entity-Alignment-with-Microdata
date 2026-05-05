@@ -16,6 +16,9 @@ The benchmark aligns **Web Data Commons (WDC) microdata** with **Wikidata** usin
 ! New release (05/05/2026) : The tool to generate BEAM Benchmarks (aligning WDC classes with any open source) is online:
 🔗 [beam-search-tool](https://beam.lisn.upsaclay.fr/)
 
+For more understanding of how to use the tool:
+🔗 [beam-tool-github](https://github.com/billalelhachlaf/BEAM-Benchmark-fork)
+
 A visualization and navigation tool for exploring the datasets:
 🔗 [rust-kg-explorer](https://github.com/bareyan/rust-kg-explorer)
 
